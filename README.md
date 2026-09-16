@@ -1,6 +1,9 @@
 # zig-protocol
 
-Allocation-free Zig 0.16.0 Minecraft: Bedrock Edition protocol foundations targeting protocol 2192.
+Allocation-free Zig 0.16.0 Minecraft: Bedrock Edition protocol
+<p align="center">
+    Join our <a href="https://discord.gg/Yv9qPRQNc3">Discord</a>!
+</p>
 
 ## Safety and ownership
 
