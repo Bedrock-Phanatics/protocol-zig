@@ -1,9 +1,16 @@
 const Reader = @import("../codec/reader.zig").Reader;
 const Writer = @import("../codec/writer.zig").Writer;
-const Packet = @import("../packets/set_difficulty.zig").Packet;
-pub fn decode(r: *Reader) !Packet {
-    return .{ .difficulty = try r.readVarU32() };
+const packet = @import("../packets/set_difficulty.zig");
+const Protocol = @import("../protocol.zig").Protocol;
+
+pub fn decode(comptime protocol: Protocol, r: *Reader) !packet.Shape(protocol) {
+    return switch (protocol) {
+        .v2168, .v2169, .v2193 => .{ .difficulty = try r.readVarU32() },
+    };
 }
-pub fn encode(w: *Writer, p: Packet) !void {
-    try w.writeVarU32(p.difficulty);
+
+pub fn encode(comptime protocol: Protocol, w: *Writer, p: packet.Shape(protocol)) !void {
+    switch (protocol) {
+        .v2168, .v2169, .v2193 => try w.writeVarU32(p.difficulty),
+    }
 }

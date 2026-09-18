@@ -1,23 +1,23 @@
 pub const TexturePackInfo = struct {
     uuid: [16]u8,
-    version: []const u8,
+    version: []u8,
     size: u64,
-    content_key: []const u8,
-    sub_pack_name: []const u8,
-    content_identity: []const u8,
+    content_key: []u8,
+    sub_pack_name: []u8,
+    content_identity: []u8,
     has_scripts: bool,
     addon_pack: bool,
     rtx_enabled: bool,
-    download_url: []const u8,
+    download_url: []u8,
 };
 
 pub const StackResourcePack = struct {
-    uuid: []const u8,
-    version: []const u8,
-    sub_pack_name: []const u8,
+    uuid: []u8,
+    version: []u8,
+    sub_pack_name: []u8,
 };
 
-pub const ExperimentData = struct { name: []const u8, enabled: bool };
+pub const ExperimentData = struct { name: []u8, enabled: bool };
 
 pub const ResourcePacksInfoPacket = struct {
     texture_pack_required: bool,

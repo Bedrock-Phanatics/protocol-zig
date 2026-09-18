@@ -2,8 +2,8 @@ const Protocol = @import("../protocol.zig").Protocol;
 const PacketId = @import("../registry/generated_packet_id.zig").PacketId;
 
 pub const V2168 = struct {
-    pub const id: PacketId = .remove_actor;
-    entity_unique_id: i64,
+    pub const id: PacketId = .request_network_settings;
+    client_protocol: i32,
 
     pub fn normalize(self: @This()) Canonical {
         return self;
