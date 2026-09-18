@@ -24,6 +24,7 @@ const packets = struct {
     pub const set_difficulty = @import("../packets/set_difficulty.zig");
     pub const request_chunk_radius = @import("../packets/request_chunk_radius.zig");
     pub const chunk_radius_updated = @import("../packets/chunk_radius_updated.zig");
+    pub const text = @import("../packets/text.zig");
 };
 
 const codecs = struct {
@@ -43,6 +44,7 @@ const codecs = struct {
     pub const set_difficulty = @import("../codecs/set_difficulty.zig");
     pub const request_chunk_radius = @import("../codecs/request_chunk_radius.zig");
     pub const chunk_radius_updated = @import("../codecs/chunk_radius_updated.zig");
+    pub const text = @import("../codecs/text.zig");
 };
 
 const Known = struct {
@@ -81,6 +83,7 @@ pub const CanonicalPacket = union(enum) {
     set_difficulty: packets.set_difficulty.Canonical,
     request_chunk_radius: packets.request_chunk_radius.Canonical,
     chunk_radius_updated: packets.chunk_radius_updated.Canonical,
+    text: packets.text.Canonical,
     unknown: UnknownPacket,
 
     pub fn id(self: @This()) u10 {
@@ -115,6 +118,7 @@ pub fn Packet(comptime protocol: Protocol) type {
         set_difficulty: packets.set_difficulty.Shape(protocol),
         request_chunk_radius: packets.request_chunk_radius.Shape(protocol),
         chunk_radius_updated: packets.chunk_radius_updated.Shape(protocol),
+        text: packets.text.Shape(protocol),
         unknown: UnknownPacket,
 
         pub fn id(self: @This()) u10 {

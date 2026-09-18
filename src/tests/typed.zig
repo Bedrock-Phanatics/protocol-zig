@@ -60,6 +60,8 @@ const fixtures = [_]Fixture{
     .{ .tag = "set_difficulty", .wire = &.{ 0x3c, 2 } },
     .{ .tag = "request_chunk_radius", .wire = &.{ 0x45, 8, 12 } },
     .{ .tag = "chunk_radius_updated", .wire = &.{ 0x46, 8 } },
+    .{ .tag = "text", .wire = &.{ 0x09, 0, 1, 1, 3, 'B', 'o', 'b', 2, 'h', 'i', 0, 0, 0 } },
+    .{ .tag = "text", .wire = &.{ 0x09, 1, 2, 2, 3, 'k', 'e', 'y', 2, 1, 'a', 1, 'b', 0, 0, 0 } },
 };
 
 const login_fixture_protocol_version: i32 = 2169;
@@ -201,6 +203,7 @@ test "every versioned shape exposes normalize returning its module Canonical" {
             root.packets.set_difficulty,
             root.packets.request_chunk_radius,
             root.packets.chunk_radius_updated,
+            root.packets.text,
         }) |m| {
             const S = m.Shape(protocol);
             comptime std.debug.assert(@hasDecl(S, "normalize"));

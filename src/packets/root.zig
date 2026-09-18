@@ -15,3 +15,4 @@ pub const set_commands_enabled = @import("set_commands_enabled.zig");
 pub const set_difficulty = @import("set_difficulty.zig");
 pub const set_health = @import("set_health.zig");
 pub const set_time = @import("set_time.zig");
+pub const text = @import("text.zig");
