@@ -83,3 +83,43 @@ test "all signed and unsigned VarInt boundaries reject every truncated prefix" {
         }
     }
 }
+
+test "fixed integer widths and float bit patterns survive exact wire round trips" {
+    inline for (.{ u8, i8, u16, i16, u32, i32, u64, i64 }, .{ "U8", "I8", "U16", "I16", "U32", "I32", "U64", "I64" }) |T, suffix| {
+        for ([_]T{ std.math.minInt(T), 0, 1, std.math.maxInt(T) }) |value| {
+            var bytes: [8]u8 = undefined;
+            var w = root.Writer.init(&bytes);
+            try @field(root.Writer, "write" ++ suffix)(&w, value);
+            try std.testing.expectEqual(@sizeOf(T), w.cursor);
+            var r = try root.Reader.init(w.written(), .{});
+            try std.testing.expectEqual(value, try @field(root.Reader, "read" ++ suffix)(&r));
+            for (0..w.cursor) |length| {
+                var short = try root.Reader.init(w.written()[0..length], .{});
+                try std.testing.expectError(error.EndOfStream, @field(root.Reader, "read" ++ suffix)(&short));
+            }
+        }
+    }
+    inline for (.{ u16, i16, u32, i32, u64, i64 }, .{ "U16Be", "I16Be", "U32Be", "I32Be", "U64Be", "I64Be" }) |T, suffix| {
+        var bytes: [8]u8 = undefined;
+        var w = root.Writer.init(&bytes);
+        try @field(root.Writer, "write" ++ suffix)(&w, @as(T, 1));
+        try std.testing.expectEqual(@as(u8, 1), bytes[w.cursor - 1]);
+        for (bytes[0 .. w.cursor - 1]) |b| try std.testing.expectEqual(@as(u8, 0), b);
+        var r = try root.Reader.init(w.written(), .{});
+        try std.testing.expectEqual(@as(T, 1), try @field(root.Reader, "read" ++ suffix)(&r));
+    }
+    for ([_]u32{ 0, 0x80000000, 0x3f800000, 0x7f800000, 0x7fc00001 }) |bits| {
+        var bytes: [4]u8 = undefined;
+        var w = root.Writer.init(&bytes);
+        try w.writeF32(@bitCast(bits));
+        var r = try root.Reader.init(&bytes, .{});
+        try std.testing.expectEqual(bits, @as(u32, @bitCast(try r.readF32())));
+    }
+    for ([_]u64{ 0, 0x8000000000000000, 0x3ff0000000000000, 0x7ff0000000000000, 0x7ff8000000000001 }) |bits| {
+        var bytes: [8]u8 = undefined;
+        var w = root.Writer.init(&bytes);
+        try w.writeF64(@bitCast(bits));
+        var r = try root.Reader.init(&bytes, .{});
+        try std.testing.expectEqual(bits, @as(u64, @bitCast(try r.readF64())));
+    }
+}
