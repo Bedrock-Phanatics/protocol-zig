@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+ "bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,8 +13,8 @@ import (
 )
 
 const (
-	baseSchemaPath = "protocol/schema/bedrock-2192.json"
-	overlayPath    = "protocol/schema/cloudburst-2192-overlay.json"
+	baseSchemaPath = "protocol/schema/bedrock-2193.json"
+	overlayPath    = "protocol/schema/cloudburst-2193-overlay.json"
 )
 
 type manifest struct {
@@ -116,6 +117,12 @@ func loadPackets() []packet {
 }
 
 func writeAtomic(path, contents string) {
+ if len(os.Args) == 2 && os.Args[1] == "--check" {
+  actual, err := os.ReadFile(path); must(err)
+  if !bytes.Equal(bytes.ReplaceAll(actual, []byte("\r\n"), []byte("\n")), []byte(contents)) { panic("generated output differs: " + path) }
+  return
+ }
+
 	must(os.MkdirAll(filepath.Dir(path), 0755))
 	temporary := path + ".tmp"
 	must(os.WriteFile(temporary, []byte(contents), 0644))
@@ -125,10 +132,21 @@ func writeAtomic(path, contents string) {
 func main() {
 	packets := loadPackets()
 
-	var catalog strings.Builder
-	catalog.WriteString("// Generated packet model catalog from the protocol 2192 base schema and overlay.\n")
+	var semantic strings.Builder
+ semantic.WriteString("// Generated current protocol registry. Semantic ordinals are not wire IDs.\npub const PacketKind = enum {\n")
+ for _, p := range packets { fmt.Fprintf(&semantic, "    %s,\n", snake(p.Name)) }
+ semantic.WriteString("};\npub fn packetKind(id: u10) ?PacketKind {\n    return switch (id) {\n")
+ for _, p := range packets { fmt.Fprintf(&semantic, "        %d => .%s,\n", p.ID, snake(p.Name)) }
+ semantic.WriteString("        else => null,\n    };\n}\npub fn packetId(kind: PacketKind) ?u10 {\n    return switch (kind) {\n")
+ for _, p := range packets { fmt.Fprintf(&semantic, "        .%s => %d,\n", snake(p.Name), p.ID) }
+ semantic.WriteString("    };\n}\npub const Direction = enum { client, server, both };\npub fn direction(kind: PacketKind) Direction {\n    return switch (kind) {\n")
+ for _, p := range packets { d := "both"; if len(p.Directions)==1 { d=p.Directions[0] }; fmt.Fprintf(&semantic, "        .%s => .%s,\n", snake(p.Name), d) }
+ semantic.WriteString("    };\n}\n")
+ writeAtomic("src/registry/generated_registry.zig", semantic.String())
+ var catalog strings.Builder
+	catalog.WriteString("// Generated packet model catalog from the protocol 2193 base schema and overlay.\n")
 	var registry strings.Builder
-	registry.WriteString("// Generated from the protocol 2192 base schema and overlay.\n")
+	registry.WriteString("// Generated from the protocol 2193 base schema and overlay.\n")
 	registry.WriteString("pub const PacketId = enum(u10) {\n")
 
 	for _, p := range packets {
@@ -136,7 +154,7 @@ func main() {
 		catalog.WriteString(fmt.Sprintf("pub const %s = @import(\"generated/%s.zig\").Packet;\n", n, n))
 		registry.WriteString(fmt.Sprintf("    %s = %d,\n", n, p.ID))
 
-		module := fmt.Sprintf("// Generated catalog entry for protocol 2192. Wire data is borrowed until a semantic codec is registered.\npub const id: u10 = %d;\npub const directions = %q;\npub const Packet = struct { payload: []const u8 };\n", p.ID, strings.Join(p.Directions, ","))
+		module := fmt.Sprintf("// Generated catalog entry for protocol 2193. Wire data is borrowed until a semantic codec is registered.\npub const id: u10 = %d;\npub const directions = %q;\npub const Packet = struct { payload: []const u8 };\n", p.ID, strings.Join(p.Directions, ","))
 		writeAtomic(filepath.Join("src", "packets", "generated", n+".zig"), module)
 	}
 	registry.WriteString("    _,\n};\n")

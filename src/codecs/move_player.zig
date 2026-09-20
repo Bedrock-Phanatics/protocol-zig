@@ -1,6 +1,5 @@
 const std = @import("std");
 const Reader = @import("../codec/reader.zig").Reader;
-const Writer = @import("../codec/writer.zig").Writer;
 const p = @import("../packets/move_player.zig");
 pub fn decode(r: *Reader) !p.MovePlayerPacket {
     const rid = try r.readVarU64();
@@ -14,7 +13,7 @@ pub fn decode(r: *Reader) !p.MovePlayerPacket {
     const teleport: ?p.TeleportData = if (present) .{ .cause = try r.readI32(), .source_entity_type = try r.readI32() } else null;
     return .{ .entity_runtime_id = rid, .position = pos, .rotation = rot, .mode = mode, .on_ground = ground, .ridden_entity_runtime_id = ridden, .teleport = teleport, .tick = try r.readVarU64() };
 }
-pub fn encode(w: *Writer, v: p.MovePlayerPacket) !void {
+pub fn encode(w: anytype, v: p.MovePlayerPacket) !void {
     if ((v.mode == .teleport) != (v.teleport != null)) return error.InvalidValue;
     try w.writeVarU64(v.entity_runtime_id);
     try w.writeVec3f(v.position);

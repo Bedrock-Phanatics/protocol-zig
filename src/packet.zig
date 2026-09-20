@@ -26,6 +26,9 @@ pub fn decode(input: []const u8, limits: DecodeLimits) !Envelope {
 }
 
 pub fn encode(writer: *Writer, envelope: Envelope) !void {
+    const header_bytes: usize = if (envelope.header.toWire() < 128) 1 else 2;
+    const capacity = writer.remainingCapacity();
+    if (header_bytes > capacity or envelope.payload.len > capacity - header_bytes) return error.NoSpaceLeft;
     try writer.writeVarU32(envelope.header.toWire());
     try writer.writeRaw(envelope.payload);
 }

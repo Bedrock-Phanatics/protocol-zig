@@ -105,3 +105,24 @@ test "hostile collection counts are rejected before allocation" {
     var response_reader = try root.Reader.init(response_writer.written(), .{});
     try std.testing.expectError(error.LimitExceeded, codec.decodeResponse(&response_reader, fixed.allocator()));
 }
+
+test "borrowed response validates all strings and stays on input" {
+    const bytes = [_]u8{ 1, 11 } ++ "downloading".* ++ [_]u8{ 1, 3 } ++ "abc".*;
+    var r = try root.Reader.init(&bytes, .{});
+    const v = try codec.decodeResponseBorrowed(&r);
+    try r.finish();
+    try std.testing.expectEqual(packets.PackResponse.send_packs, v.response);
+    var it = v.packs_to_download.iterator();
+    const name = (try it.next()).?;
+    try std.testing.expectEqualSlices(u8, "abc", name);
+    try std.testing.expect(name.ptr == bytes[bytes.len - 3 ..].ptr);
+    try std.testing.expect((try it.next()) == null);
+    for (0..bytes.len) |length| {
+        var short = try root.Reader.init(bytes[0..length], .{});
+        if (codec.decodeResponseBorrowed(&short)) |_| return error.AcceptedTruncation else |_| {}
+    }
+    var bad = bytes;
+    bad[bad.len - 1] = 0xff;
+    var invalid = try root.Reader.init(&bad, .{});
+    try std.testing.expectError(error.InvalidUtf8, codec.decodeResponseBorrowed(&invalid));
+}

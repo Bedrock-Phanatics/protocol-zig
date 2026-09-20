@@ -1,4 +1,4 @@
-// Generated packet model catalog from the protocol 2192 base schema and overlay.
+// Generated packet model catalog from the protocol 2193 base schema and overlay.
 pub const login = @import("generated/login.zig").Packet;
 pub const play_status = @import("generated/play_status.zig").Packet;
 pub const server_to_client_handshake = @import("generated/server_to_client_handshake.zig").Packet;

@@ -1,0 +1,56 @@
+{
+  "protocolVersion": 2193,
+  "minecraftVersion": "1.26.50",
+  "baseProtocolVersion": 2169,
+  "manualPackets": [
+    "Login",
+    "PlayStatus",
+    "ServerToClientHandshake",
+    "ClientToServerHandshake",
+    "Disconnect",
+    "Text",
+    "SetTime",
+    "RemoveActor",
+    "MovePlayer",
+    "SetHealth",
+    "SetCommandsEnabled",
+    "SetDifficulty",
+    "RequestChunkRadius",
+    "ChunkRadiusUpdated",
+    "NetworkStackLatency",
+    "NetworkSettings",
+    "RequestNetworkSettings"
+  ],
+  "additions": [
+    {
+      "name": "SetPlayerFurnaceOptions",
+      "id": 351,
+      "directions": [
+        "server"
+      ]
+    },
+    {
+      "name": "RecordStarted",
+      "id": 352,
+      "directions": [
+        "server"
+      ]
+    }
+  ],
+  "serializerUpdates": [
+    "BossEvent",
+    "CameraPresets",
+    "ClientboundAttributeLayerSync",
+    "DebugDrawer",
+    "DimensionData",
+    "InventoryTransaction",
+    "ItemStackResponse",
+    "MoveEntityDelta",
+    "PlayerAuthInput",
+    "PlaySound",
+    "SubChunk",
+    "ServerboundDiagnostics",
+    "ServerboundPackSettingChange"
+  ],
+  "source": "Sandertv/gophertunnel 7a556a07335b663744b50d38062636ad8283f314; IDs verified against protocol 2193"
+}

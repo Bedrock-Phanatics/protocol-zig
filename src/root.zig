@@ -1,3 +1,11 @@
+pub const profile = @import("profile.zig");
+pub const Current = profile.Current;
+pub const current = profile.current;
+pub const validateProfile = profile.validateProfile;
+pub const SessionFeatures = profile.SessionFeatures;
+pub const BorrowedEnvelope = profile.BorrowedEnvelope;
+pub const registry = @import("registry/root.zig");
+pub const PacketKind = registry.PacketKind;
 pub const DecodeLimits = @import("codec/limits.zig").DecodeLimits;
 pub const DecodeError = @import("codec/errors.zig").DecodeError;
 pub const EncodeError = @import("codec/errors.zig").EncodeError;
@@ -28,6 +36,9 @@ pub const codecs = struct {
     pub const resource_pack = @import("codecs/resource_pack.zig");
 };
 test {
+    _ = @import("tests/profile.zig");
+    _ = @import("tests/encoding.zig");
+    _ = @import("tests/registry.zig");
     _ = @import("tests/primitives.zig");
     _ = @import("tests/packet.zig");
     _ = @import("tests/audit.zig");

@@ -41,7 +41,7 @@ pub fn main(init: std.process.Init) !void {
         }
         const duration = std.Io.Clock.awake.now(io).nanoseconds - began;
         const latency = @as(f64, @floatFromInt(duration)) / @as(f64, @floatFromInt(iterations));
-        try stdout.print("{s} round-trip: {d:.2} ns/op, {d:.2} Mops/s (checksum={d})\n", .{workload, latency, 1000.0 / latency, checksum});
+        try stdout.print("{s} round-trip: {d:.2} ns/op, {d:.2} Mops/s (checksum={d})\n", .{ workload, latency, 1000.0 / latency, checksum });
     }
     try stdout.flush();
 }
