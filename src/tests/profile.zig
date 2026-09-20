@@ -1,5 +1,20 @@
 const std = @import("std");
 const p = @import("../root.zig");
+test "session features require a supported initial compression algorithm" {
+    try (p.SessionFeatures{}).validate();
+    try (p.SessionFeatures{
+        .compression_mode = .implicit,
+        .initial_algorithm = .deflate,
+        .supports_snappy = false,
+    }).validate();
+    try std.testing.expectError(error.UnsupportedProtocol, (p.SessionFeatures{ .compression_mode = .implicit }).validate());
+    try std.testing.expectError(error.UnsupportedProtocol, (p.SessionFeatures{ .compression_mode = .absent, .initial_algorithm = .deflate }).validate());
+    try std.testing.expectError(error.UnsupportedProtocol, (p.SessionFeatures{
+        .compression_mode = .implicit,
+        .initial_algorithm = .snappy,
+        .supports_snappy = false,
+    }).validate());
+}
 test "current profile decodes typed known opaque and unknown packets" {
     comptime p.validateProfile(p.Current);
     const request = try p.Current.decodeBorrowed(&.{ 0xc1, 1, 0, 0, 8, 0x91 }, .{});
@@ -11,6 +26,22 @@ test "current profile decodes typed known opaque and unknown packets" {
     var w = p.Writer.init(&storage);
     try p.Current.encode(&w, request);
     try std.testing.expectEqualSlices(u8, &.{ 0xc1, 1, 0, 0, 8, 0x91 }, w.written());
+}
+
+test "known opaque encoding requires known opaque registry coverage without writes" {
+    const invalid = [_]p.BorrowedEnvelope{
+        .{ .header = .{ .packet_id = p.Current.packetId(.login).? }, .kind = .login, .payload = "typed", .value = .known_opaque },
+        .{ .header = .{ .packet_id = p.Current.packetId(.resource_packs_info).? }, .kind = .resource_packs_info, .payload = "borrowed", .value = .known_opaque },
+    };
+    for (invalid) |envelope| {
+        var bytes = [_]u8{0xa5} ** 32;
+        const before = bytes;
+        var writer = p.Writer.init(&bytes);
+        writer.cursor = 3;
+        try std.testing.expectError(error.InvalidValue, p.Current.encode(&writer, envelope));
+        try std.testing.expectEqualSlices(u8, &before, &bytes);
+        try std.testing.expectEqual(@as(usize, 3), writer.cursor);
+    }
 }
 test "profile checks trailing bytes and all subclient combinations" {
     try std.testing.expectError(error.TrailingData, p.Current.decodeBorrowed(&.{ 4, 1 }, .{}));

@@ -2,6 +2,19 @@ const std = @import("std");
 const p = @import("bedrock_protocol");
 const b = @import("bedwire");
 const Mock = @import("mock_profile").Profile(p);
+const ImplicitDeflate = struct {
+    pub const protocol_number = Mock.protocol_number;
+    pub const features: p.SessionFeatures = .{
+        .uses_request_network_settings = false,
+        .compression_mode = .implicit,
+        .initial_algorithm = .deflate,
+        .supports_snappy = false,
+    };
+    pub const packetKind = Mock.packetKind;
+    pub const packetId = Mock.packetId;
+    pub const decodeBorrowed = Mock.decodeBorrowed;
+    pub const encode = Mock.encode;
+};
 
 fn descriptor(comptime P: type) !b.Descriptor {
     comptime p.validateProfile(P);
@@ -20,9 +33,29 @@ fn descriptor(comptime P: type) !b.Descriptor {
         .supports_deflate = P.features.supports_deflate,
         .supports_snappy = P.features.supports_snappy,
         .compression_mode = @field(b.protocol.CompressionMode, @tagName(P.features.compression_mode)),
+        .initial_algorithm = @field(b.protocol.Algorithm, @tagName(P.features.initial_algorithm)),
         .login_flow = @field(b.protocol.LoginFlow, @tagName(P.features.login_flow)),
         .resource_pack_flow = @field(b.protocol.ResourcePackFlow, @tagName(P.features.resource_pack_flow)),
     }, entries[0..count]);
+}
+fn compressionAlgorithm(value: u16) !b.protocol.Algorithm {
+    return switch (value) {
+        0 => .deflate,
+        1 => .snappy,
+        0xffff => .none,
+        else => error.UnsupportedCompression,
+    };
+}
+test "NetworkSettings compression IDs include none and reject unsupported values" {
+    try std.testing.expectEqual(b.protocol.Algorithm.deflate, try compressionAlgorithm(0));
+    try std.testing.expectEqual(b.protocol.Algorithm.snappy, try compressionAlgorithm(1));
+    try std.testing.expectEqual(b.protocol.Algorithm.none, try compressionAlgorithm(0xffff));
+    try std.testing.expectError(error.UnsupportedCompression, compressionAlgorithm(2));
+}
+test "external implicit deflate profile maps into Bedwire" {
+    const desc = try descriptor(ImplicitDeflate);
+    try std.testing.expectEqual(b.protocol.CompressionMode.implicit, desc.features.compression_mode);
+    try std.testing.expectEqual(b.protocol.Algorithm.deflate, desc.features.initial_algorithm);
 }
 test "real Bedwire admits both profile IDs and consumes decoded compression values" {
     inline for (.{ p.Current, Mock }) |P| {
@@ -48,11 +81,7 @@ test "real Bedwire admits both profile IDs and consumes decoded compression valu
         var received = try client.ingest(settings_frame);
         defer received.deinit();
         const settings = (try P.decodeBorrowed(received.next().?.bytes, .{})).value.typed.network_settings;
-        const algorithm: b.protocol.Algorithm = switch (settings.compression_algorithm) {
-            0 => .deflate,
-            1 => .snappy,
-            else => return error.UnsupportedCompression,
-        };
+        const algorithm = try compressionAlgorithm(settings.compression_algorithm);
         try client.negotiateCompression(algorithm, settings.compression_threshold);
         try server.negotiateCompression(algorithm, settings.compression_threshold);
         try std.testing.expectEqual(b.State.authenticating, client.state);

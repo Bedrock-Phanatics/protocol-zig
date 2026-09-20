@@ -148,14 +148,6 @@ func main() {
 	for _, p := range packets {
 		fmt.Fprintf(&semantic, "        .%s => %d,\n", snake(p.Name), p.ID)
 	}
-	semantic.WriteString("    };\n}\npub const Direction = enum { client, server, both };\npub fn direction(kind: PacketKind) Direction {\n    return switch (kind) {\n")
-	for _, p := range packets {
-		d := "both"
-		if len(p.Directions) == 1 {
-			d = p.Directions[0]
-		}
-		fmt.Fprintf(&semantic, "        .%s => .%s,\n", snake(p.Name), d)
-	}
 	semantic.WriteString("    };\n}\n")
 	writeAtomic("src/registry/generated_registry.zig", semantic.String())
 	var catalog strings.Builder

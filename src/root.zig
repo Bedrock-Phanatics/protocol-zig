@@ -3,6 +3,7 @@ pub const Current = profile.Current;
 pub const current = profile.current;
 pub const validateProfile = profile.validateProfile;
 pub const SessionFeatures = profile.SessionFeatures;
+pub const CompressionAlgorithm = profile.CompressionAlgorithm;
 pub const BorrowedEnvelope = profile.BorrowedEnvelope;
 pub const registry = @import("registry/root.zig");
 pub const PacketKind = registry.PacketKind;
