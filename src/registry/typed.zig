@@ -73,6 +73,6 @@ comptime {
     if (fields.len != bindings.entries.len) @compileError("typed packet union and codec bindings differ");
     for (bindings.entries, 0..) |B, i| {
         if (!@hasField(Packet, @tagName(B.kind))) @compileError("codec has no typed packet field");
-        for (bindings.entries[0..i]) |Previous| if (Previous.kind == B.kind) @compileError("duplicate typed codec binding");
+        for (bindings.entries, 0..) |Previous, j| if (j < i and Previous.kind == B.kind) @compileError("duplicate typed codec binding");
     }
 }
