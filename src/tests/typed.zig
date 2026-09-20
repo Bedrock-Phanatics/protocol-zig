@@ -28,3 +28,30 @@ test "disconnect uses a strict one-byte boolean" {
     try std.testing.expectError(error.InvalidBoolean, root.typed.decode(&.{ 5, 0, 2 }, .{}));
     try std.testing.expectError(error.InvalidBoolean, root.typed.decode(&.{ 5, 0, 0x80, 0 }, .{}));
 }
+
+test "all scalar typed fixtures round trip and reject truncation trailing data and short output" {
+    const fixtures = [_][]const u8{
+        &.{ 1, 0, 0, 8, 0x91, 1, 'x' }, &.{ 2, 0, 0, 0, 3 }, &.{ 3, 1, 'x' },                                               &.{4},                                &.{ 5, 0, 1 },
+        &.{ 10, 2 },                    &.{ 14, 2 },         &([_]u8{ 19, 1 } ++ [_]u8{0} ** 24 ++ [_]u8{ 0, 1, 0, 0, 1 }), &.{ 42, 40 },                         &.{ 59, 1 },
+        &.{ 60, 3 },                    &.{ 69, 2, 4 },      &.{ 70, 2 },                                                   &.{ 115, 1, 0, 0, 0, 0, 0, 0, 0, 1 }, &.{ 0x8f, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+        &.{ 0xc1, 1, 0, 0, 8, 0x91 },
+    };
+    for (fixtures) |wire| {
+        const decoded = try root.typed.decode(wire, .{});
+        try std.testing.expectEqual(wire.len, try root.typed.encodedSize(decoded));
+        var storage: [128]u8 = undefined;
+        var w = root.Writer.init(&storage);
+        try root.typed.encode(&w, decoded);
+        try std.testing.expectEqualSlices(u8, wire, w.written());
+        for (0..wire.len) |length| {
+            if (root.typed.decode(wire[0..length], .{})) |_| return error.AcceptedTruncation else |_| {}
+            @memset(&storage, 0xa5);
+            var short = root.Writer.init(storage[0..length]);
+            try std.testing.expectError(error.NoSpaceLeft, root.typed.encode(&short, decoded));
+            try std.testing.expectEqualSlices(u8, &([_]u8{0xa5} ** 128), &storage);
+        }
+        @memcpy(storage[0..wire.len], wire);
+        storage[wire.len] = 0;
+        try std.testing.expectError(error.TrailingData, root.typed.decode(storage[0 .. wire.len + 1], .{}));
+    }
+}

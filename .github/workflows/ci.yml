@@ -15,8 +15,20 @@ jobs:
         with:
           version: 0.16.0
       - run: zig version
-      - run: zig fmt --check build.zig src benchmarks
+      - run: zig fmt --check build.zig build.zig.zon src benchmarks integration
       - run: zig build test
-      # - run: zig build fuzz -Dfuzz-iterations=100000
+      - run: zig build test -Doptimize=ReleaseFast
+      - run: zig build fuzz -Dfuzz-iterations=20000
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - run: go test ./tools/ziggen2/main.go ./tools/ziggen2/main_test.go
+      - run: go run ./tools/ziggen2/main.go --check
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: Bedrock-Phanatics/bedwire
+          ref: dd435a92b9055af51dc13a174934b42280ac09cf
+          path: .bedwire-compat
+      - run: zig build test-bedwire -Dbedwire-path=.bedwire-compat
       - run: zig build -Doptimize=ReleaseSafe test
       - run: zig build bench

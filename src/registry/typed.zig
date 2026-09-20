@@ -28,16 +28,17 @@ pub fn packetKind(value: Packet) registry.PacketKind {
         inline else => |_, tag| @field(registry.PacketKind, @tagName(tag)),
     };
 }
-pub fn decode(input: []const u8, limits: Limits) !Envelope {
+pub inline fn decode(input: []const u8, limits: Limits) !Envelope {
     var r = try Reader.init(input, limits);
     const header = try Header.fromWire(try r.readVarU32());
     const kind = registry.packetKind(header.packet_id) orelse return error.InvalidPacketId;
+    const value = try decodePayload(&r, kind);
+    try r.finish();
+    return .{ .header = header, .packet = value };
+}
+pub inline fn decodePayload(r: *Reader, kind: registry.PacketKind) !Packet {
     inline for (bindings.entries) |B| {
-        if (kind == B.kind) {
-            const value = @unionInit(Packet, @tagName(B.kind), try B.decode(&r));
-            try r.finish();
-            return .{ .header = header, .packet = value };
-        }
+        if (kind == B.kind) return @unionInit(Packet, @tagName(B.kind), try B.decode(r));
     }
     return error.InvalidPacketId;
 }
@@ -47,7 +48,7 @@ pub fn encodedSize(e: Envelope) !usize {
     return counter.cursor;
 }
 /// Values and capacity are checked before any destination bytes are changed.
-pub fn encode(w: *Writer, e: Envelope) !void {
+pub inline fn encode(w: *Writer, e: Envelope) !void {
     const size = try encodedSize(e);
     if (size > w.remainingCapacity()) return error.NoSpaceLeft;
     try encodeTo(w, e);
@@ -64,5 +65,14 @@ pub fn encodePayload(w: anytype, value_packet: Packet) !void {
                 if (comptime @field(registry.PacketKind, @tagName(tag)) == B.kind) try B.encode(w, value);
             }
         },
+    }
+}
+
+comptime {
+    const fields = @typeInfo(Packet).@"union".fields;
+    if (fields.len != bindings.entries.len) @compileError("typed packet union and codec bindings differ");
+    for (bindings.entries, 0..) |B, i| {
+        if (!@hasField(Packet, @tagName(B.kind))) @compileError("codec has no typed packet field");
+        for (bindings.entries[0..i]) |Previous| if (Previous.kind == B.kind) @compileError("duplicate typed codec binding");
     }
 }

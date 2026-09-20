@@ -11,6 +11,7 @@ pub const DecodeError = @import("codec/errors.zig").DecodeError;
 pub const EncodeError = @import("codec/errors.zig").EncodeError;
 pub const Reader = @import("codec/reader.zig").Reader;
 pub const Writer = @import("codec/writer.zig").Writer;
+/// Deprecated compatibility helper. New session code should use Bedwire framing/compression.
 pub const batch = @import("codec/batch.zig");
 pub const nbt = @import("codec/nbt.zig");
 pub const packet = @import("packet.zig");
@@ -46,4 +47,8 @@ test {
     _ = @import("tests/nbt.zig");
     _ = @import("tests/compression.zig");
     _ = @import("tests/resource_pack.zig");
+}
+
+test "deterministic profile adversarial smoke" {
+    try @import("tests/fuzz.zig").run(@This(), 20_000);
 }

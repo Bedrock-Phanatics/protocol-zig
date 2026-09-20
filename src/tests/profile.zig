@@ -27,9 +27,9 @@ test "profile checks trailing bytes and all subclient combinations" {
 }
 
 test "external layout translates semantic values independently of current" {
-    const Mock = @import("fixtures/mock_profile.zig").Profile(p);
+    const Mock = @import("mock_profile").Profile(p);
     comptime p.validateProfile(Mock);
-    const fixture = [_]u8{ 0xe8, 0x67, 0x91, 8, 0, 0 };
+    const fixture = [_]u8{ 0xe8, 0x6f, 0x91, 8, 0, 0 };
     var value = try Mock.decodeBorrowed(&fixture, .{});
     try std.testing.expectEqual(@as(u2, 1), value.header.sender_subclient);
     try std.testing.expectEqual(@as(u2, 3), value.header.target_subclient);
@@ -41,7 +41,7 @@ test "external layout translates semantic values independently of current" {
     value.value.typed.request_network_settings.client_protocol = 42;
     w.cursor = 0;
     try Mock.encode(&w, value);
-    try std.testing.expectEqualSlices(u8, &.{ 0xe8, 0x67, 42, 0, 0, 0 }, w.written());
+    try std.testing.expectEqualSlices(u8, &.{ 0xe8, 0x6f, 42, 0, 0, 0 }, w.written());
     try std.testing.expectEqual(@as(?u10, 193), p.Current.packetId(.request_network_settings));
     try std.testing.expectEqual(@as(?u10, 1000), Mock.packetId(.request_network_settings));
     const current_value = try p.Current.decodeBorrowed(&.{ 0xc1, 1, 0, 0, 8, 0x91 }, .{});

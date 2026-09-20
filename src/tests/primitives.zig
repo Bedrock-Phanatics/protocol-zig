@@ -65,3 +65,21 @@ test "float-backed compact encodings reject non-finite values" {
     try std.testing.expectError(error.InvalidValue, w.writeSoundPosition(.{ .x = std.math.inf(f32), .y = 0, .z = 0 }));
     try std.testing.expectEqual(@as(usize, 0), w.written().len);
 }
+
+test "all signed and unsigned VarInt boundaries reject every truncated prefix" {
+    inline for (.{ u32, u64, i32, i64 }, .{ "writeVarU32", "writeVarU64", "writeVarI32", "writeVarI64" }, .{ "readVarU32", "readVarU64", "readVarI32", "readVarI64" }) |T, write, read| {
+        const values = [_]T{ std.math.minInt(T), 0, 1, 127, std.math.maxInt(T) };
+        for (values) |value| {
+            var bytes: [10]u8 = undefined;
+            var w = root.Writer.init(&bytes);
+            try @field(root.Writer, write)(&w, value);
+            var r = try root.Reader.init(w.written(), .{});
+            try std.testing.expectEqual(value, try @field(root.Reader, read)(&r));
+            try r.finish();
+            for (0..w.cursor) |length| {
+                var short = try root.Reader.init(w.written()[0..length], .{});
+                try std.testing.expectError(error.EndOfStream, @field(root.Reader, read)(&short));
+            }
+        }
+    }
+}

@@ -126,3 +126,57 @@ test "borrowed response validates all strings and stays on input" {
     var invalid = try root.Reader.init(&bad, .{});
     try std.testing.expectError(error.InvalidUtf8, codec.decodeResponseBorrowed(&invalid));
 }
+
+const info_fixture = [_]u8{ 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{ 0, 1 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ [_]u8{0} ** 8 ++ [_]u8{ 0, 0, 0, 0, 0, 0, 0 };
+const stack_fixture = [_]u8{ 0, 1, 1, 'p', 1, 'v', 0, 0, 1, 0, 0, 0, 1, 'e', 1, 0, 0 };
+const response_fixture = [_]u8{ 1, 11 } ++ "downloading".* ++ [_]u8{ 1, 1, 'p' };
+const text_fixture = [_]u8{ 1, 2, 2, 1, 'm', 1, 1, 'p', 0, 0, 0 };
+fn allocationExercise(a: std.mem.Allocator, which: u8, bytes: []const u8) !void {
+    var r = try root.Reader.init(bytes, .{});
+    switch (which) {
+        0 => {
+            const v = try codec.decodeInfo(&r, a);
+            defer codec.deinitInfo(a, v);
+            try r.finish();
+        },
+        1 => {
+            const v = try codec.decodeStack(&r, a);
+            defer codec.deinitStack(a, v);
+            try r.finish();
+        },
+        2 => {
+            const v = try codec.decodeResponse(&r, a);
+            defer codec.deinitResponse(a, v);
+            try r.finish();
+        },
+        3 => {
+            const v = try codec.decodeText(&r, a);
+            defer codec.deinitText(a, v);
+            try r.finish();
+        },
+        else => unreachable,
+    }
+}
+test "all collection allocation failures unwind and truncated allocations clean up" {
+    inline for (.{ info_fixture, stack_fixture, response_fixture, text_fixture }, 0..) |fixture, which| {
+        try std.testing.checkAllAllocationFailures(std.testing.allocator, allocationExercise, .{ @as(u8, which), &fixture });
+        for (0..fixture.len) |length| {
+            if (allocationExercise(std.testing.allocator, which, fixture[0..length])) |_| return error.AcceptedTruncation else |_| {}
+        }
+    }
+}
+test "borrowed info and stack golden fixtures encode and reject every truncation" {
+    inline for (.{ info_fixture, stack_fixture }, .{ codec.decodeInfoBorrowed, codec.decodeStackBorrowed }, .{ codec.encodeInfoBorrowed, codec.encodeStackBorrowed }) |fixture, decode, encode| {
+        var r = try root.Reader.init(&fixture, .{});
+        const value = try decode(&r);
+        try r.finish();
+        var output: [128]u8 = undefined;
+        var w = root.Writer.init(&output);
+        try encode(&w, value);
+        try std.testing.expectEqualSlices(u8, &fixture, w.written());
+        for (0..fixture.len) |length| {
+            var short = try root.Reader.init(fixture[0..length], .{});
+            if (decode(&short)) |_| return error.AcceptedTruncation else |_| {}
+        }
+    }
+}

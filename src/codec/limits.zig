@@ -1,5 +1,6 @@
 pub const DecodeLimits = struct {
     pub const max_supported_nesting_depth: usize = 128;
+    /// Deprecated batch compatibility limits; individual packet decoding does not use them.
     max_batch_bytes: usize = 4 * 1024 * 1024,
     max_decompressed_batch_bytes: usize = 16 * 1024 * 1024,
     max_packets_per_batch: usize = 1024,

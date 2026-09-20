@@ -39,7 +39,7 @@ pub const Current = struct {
     pub const features: SessionFeatures = .{};
     pub const packetKind = registry.packetKind;
     pub const packetId = registry.packetId;
-    pub fn decodeBorrowed(input: []const u8, limits: Limits) DecodeError!BorrowedEnvelope {
+    pub inline fn decodeBorrowed(input: []const u8, limits: Limits) DecodeError!BorrowedEnvelope {
         const raw = try packet.decode(input, limits);
         const kind = packetKind(raw.header.packet_id);
         var result: BorrowedEnvelope = .{ .header = raw.header, .kind = kind, .payload = raw.payload, .value = .unknown };
@@ -50,7 +50,10 @@ pub const Current = struct {
             .resource_pack_stack => result.value = .{ .resource_pack_stack = try packs.decodeStackBorrowed(&r) },
             .resource_pack_client_response => result.value = .{ .resource_pack_client_response = try packs.decodeResponseBorrowed(&r) },
             else => {
-                if (registry.hasCodec(known)) result.value = .{ .typed = (try typed.decode(input, limits)).packet } else result.value = .known_opaque;
+                if (registry.hasCodec(known)) {
+                    result.value = .{ .typed = try typed.decodePayload(&r, known) };
+                    try r.finish();
+                } else result.value = .known_opaque;
                 return result;
             },
         }
@@ -89,9 +92,15 @@ pub const current = Current;
 pub fn validateProfile(comptime P: type) void {
     const number: u32 = P.protocol_number;
     const features: SessionFeatures = P.features;
-    const kind: *const fn (u10) ?Kind = P.packetKind;
-    const id: *const fn (Kind) ?u10 = P.packetId;
-    const decode: *const fn ([]const u8, Limits) DecodeError!BorrowedEnvelope = P.decodeBorrowed;
-    const encode: *const fn (*Writer, BorrowedEnvelope) EncodeError!void = P.encode;
-    _ = .{ number, features, kind, id, decode, encode };
+    checkFunction(@TypeOf(P.packetKind), fn (u10) ?Kind);
+    checkFunction(@TypeOf(P.packetId), fn (Kind) ?u10);
+    checkFunction(@TypeOf(P.decodeBorrowed), fn ([]const u8, Limits) DecodeError!BorrowedEnvelope);
+    checkFunction(@TypeOf(P.encode), fn (*Writer, BorrowedEnvelope) EncodeError!void);
+    _ = .{ number, features };
+}
+fn checkFunction(comptime Actual: type, comptime Expected: type) void {
+    const actual = @typeInfo(Actual).@"fn";
+    const expected = @typeInfo(Expected).@"fn";
+    if (actual.is_generic or actual.is_var_args or actual.return_type != expected.return_type or actual.params.len != expected.params.len) @compileError("incompatible profile function signature");
+    for (actual.params, expected.params) |a, e| if (a.type != e.type) @compileError("incompatible profile function parameter");
 }

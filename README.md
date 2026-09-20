@@ -1,35 +1,70 @@
-# zig-protocol
+# protocol-zig
 
-Allocation-free Zig 0.16.0 Minecraft: Bedrock Edition protocol
+Allocation-free Zig 0.16.0 Minecraft: Bedrock Edition packet codecs and protocol foundations.
+
 <p align="center">
     Join our <a href="https://discord.gg/Yv9qPRQNc3">Discord</a>!
 </p>
 
-## Safety and ownership
+The current catalog is protocol **2193 / Minecraft 1.26.50**, verified against [gophertunnel revision 7a556a0](https://github.com/Sandertv/gophertunnel/tree/7a556a07335b663744b50d38062636ad8283f314/minecraft/protocol).
 
-`Reader`, generic packet envelopes, strings, byte arrays, generated packet payloads, and NBT document slices borrow their input. They must not outlive or mutate the backing buffer. `Writer` and DEFLATE APIs use caller-provided storage. Core decode paths do not allocate or retain global mutable state, so codec instances require no locks and may be used concurrently when their buffers are independent.
+`protocol-zig` supports the current protocol. External multiversion implementations own historical versions, translation, and profile selection.
 
-Centralized `DecodeLimits` bound packets, batches, decompressed data, packet counts, strings, arrays, NBT bytes, and NBT nesting. Malformed values return errors; external-input validation does not rely on Debug-only checks.
+## Current packets
 
-## Coverage
+```zig
+const protocol = @import("bedrock_protocol");
 
-- Canonical VarInt/VarLong and ZigZag, fixed little/big-endian integers, floats, booleans, UTF-8 strings, byte arrays, vectors, block positions, and Bedrock UUID byte order.
-- Lossless packet envelope forwarding across the complete legal 10-bit packet-ID domain.
-- Compile-time protocol-2192 ID catalog and 236 separately organized generated packet modules.
-- Typed codecs for the handshake/control baseline: Login, PlayStatus, both handshakes, Disconnect, SetTime, RemoveActor, MovePlayer, SetHealth, SetCommandsEnabled, SetDifficulty, RequestChunkRadius, ChunkRadiusUpdated, NetworkStackLatency, NetworkSettings, and RequestNetworkSettings.
-- Allocation-free Bedrock network-little-endian NBT structural validation.
-- Allocation-free batch iteration and bounded raw-DEFLATE decompression using Zig's standard library.
+const packet = try protocol.current.decodeBorrowed(bytes, .{});
+if (packet.kind == .request_network_settings) {
+    const version = packet.value.typed.request_network_settings.client_protocol;
+    _ = version;
+}
 
-Generated catalog modules not listed as typed codecs are borrowed opaque payload models. They support lossless forwarding but not semantic field access yet. Snappy, batch encryption, full NBT materialization/encoding, and semantic codecs for complex gameplay packets remain unsupported and must not be inferred from catalog presence.
+var writer = protocol.Writer.init(output);
+try protocol.current.encode(&writer, packet);
+```
 
-## Commands
+`PacketKind` represents semantic identity. A `BorrowedEnvelope` preserves the header, optional semantic kind, raw payload, and a tagged `value`: `typed`, borrowed resource-pack control views, `known_opaque`, or `unknown`. Unknown and known-opaque packets are losslessly forwardable.
+
+## External profiles
+
+Profiles are namespace types specifying `protocol_number`, `features`, ID mappings, and `decodeBorrowed`/`encode` methods validated at compile time with `validateProfile(Profile)`.
+
+```zig
+pub fn packetKind(id: u10) ?protocol.PacketKind {
+    return if (id == 1000) .request_network_settings else null;
+}
+pub fn packetId(kind: protocol.PacketKind) ?u10 {
+    return if (kind == .request_network_settings) 1000 else null;
+}
+```
+
+The executable [mock profile](src/tests/fixtures/mock_profile.zig) demonstrates external ID mapping, normalized re-encoding, and coexistence with the current profile.
+
+## Ownership and memory
+
+- **Borrowed views**: All borrowed slices and decoded string fields reference the input buffer. Input data must remain valid and immutable while accessing borrowed views. Encode destination buffers must not overlap borrowed source memory.
+- **Typed & opaque codecs**: 16 scalar typed codecs cover core handshake and control packets. Unknown packets and catalog entries without typed codecs are handled as opaque payloads.
+- **Allocating codecs**: Allocator-based codecs remain available under `codecs.resource_pack` when owned data is required.
+- **Primitives & NBT**: Primitives support canonical VarInts, fixed-width integers, floats, booleans, UUIDs, and positions. An allocation-free NBT validator is included for wire validation.
+
+## Ecosystem boundaries
+
+- **Bedwire**: Handles 0xFE framing, batches, compression, encryption, authentication, and session orchestration.
+- **nbt-zig**: Handles full NBT tree representation and serialization. `protocol-zig` provides lightweight wire validation only.
+- **RakNet-Zig / NetherNet-Zig**: Handle lower-level transport protocols.
+
+## Verification
 
 ```console
-zig fmt build.zig src benchmarks
+zig fmt --check build.zig build.zig.zon src benchmarks integration
+zig build
 zig build test
 zig build test -Doptimize=ReleaseSafe
 zig build test -Doptimize=ReleaseFast
-zig build bench -Doptimize=ReleaseFast
+zig build fuzz -Dfuzz-iterations=100000
+zig build bench
+go test ./tools/ziggen2/main.go ./tools/ziggen2/main_test.go
+go run ./tools/ziggen2/main.go --check
 ```
-
-Tests include canonical fixtures, malformed inputs, limits, full packet-ID forwarding, deterministic hostile-input stress, and a native `std.testing.fuzz` target.
