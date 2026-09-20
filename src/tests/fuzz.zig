@@ -5,6 +5,21 @@ pub fn run(comptime p: type, iterations: usize) !void {
     var bytes: [256]u8 = undefined;
     var output: [512]u8 = undefined;
     const limits: p.DecodeLimits = .{ .max_packet_bytes = 256, .max_string_bytes = 128, .max_array_elements = 32, .max_nesting_depth = 8, .max_nbt_bytes = 256 };
+    // Structured boundaries exercise nesting and counts that random bytes rarely reach.
+    const nested = [_]u8{ 10, 0 } ** 10 ++ [_]u8{0} ** 10;
+    var deep = try p.Reader.init(&nested, limits);
+    if (p.nbt.readDocument(&deep)) |_| return error.AcceptedDeepNbt else |err| {
+        if (err != error.LimitExceeded) return err;
+    }
+    const huge_count = [_]u8{ 0xff, 0xff, 0xff, 0xff, 0x0f };
+    const bad_info = [_]u8{ 6, 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ huge_count;
+    const bad_stack = [_]u8{ 7, 0 } ++ huge_count;
+    const bad_response = [_]u8{ 8, 1, 11 } ++ "downloading".* ++ huge_count;
+    inline for (.{ bad_info, bad_stack, bad_response }) |fixture| {
+        if (p.Current.decodeBorrowed(&fixture, limits)) |_| return error.AcceptedHugeCollection else |err| {
+            if (err != error.LimitExceeded) return err;
+        }
+    }
     for (0..iterations) |i| {
         rng.random().bytes(&bytes);
         const length = rng.random().intRangeAtMost(usize, 0, bytes.len);
