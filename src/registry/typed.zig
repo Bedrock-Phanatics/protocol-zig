@@ -23,7 +23,7 @@ pub const Packet = union(enum) {
     request_network_settings: @import("../packets/network_settings.zig").RequestNetworkSettingsPacket,
 };
 pub const Envelope = struct { header: Header, packet: Packet };
-pub fn packetKind(value: Packet) registry.PacketKind {
+pub inline fn packetKind(value: Packet) registry.PacketKind {
     return switch (value) {
         inline else => |_, tag| @field(registry.PacketKind, @tagName(tag)),
     };
@@ -42,7 +42,7 @@ pub inline fn decodePayload(r: *Reader, kind: registry.PacketKind) !Packet {
     }
     return error.InvalidPacketId;
 }
-pub fn encodedSize(e: Envelope) !usize {
+pub inline fn encodedSize(e: Envelope) !usize {
     var counter: @import("../codec/writer.zig").CountingWriter = .{};
     try encodeTo(&counter, e);
     return counter.cursor;
@@ -53,12 +53,13 @@ pub inline fn encode(w: *Writer, e: Envelope) !void {
     if (size > w.remainingCapacity()) return error.NoSpaceLeft;
     try encodeTo(w, e);
 }
-fn encodeTo(w: anytype, e: Envelope) !void {
+inline fn encodeTo(w: anytype, e: Envelope) !void {
     if (e.header.packet_id != registry.packetId(packetKind(e.packet)).?) return error.InvalidValue;
     try w.writeVarU32(e.header.toWire());
     try encodePayload(w, e.packet);
 }
-pub fn encodePayload(w: anytype, value_packet: Packet) !void {
+pub inline fn encodePayload(w: anytype, value_packet: Packet) !void {
+    @setEvalBranchQuota(10000);
     switch (value_packet) {
         inline else => |value, tag| {
             inline for (bindings.entries) |B| {
