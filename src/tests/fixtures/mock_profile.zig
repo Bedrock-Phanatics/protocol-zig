@@ -12,6 +12,7 @@ pub fn Profile(comptime p: type) type {
             if (kind == .request_network_settings) return 1000;
             return p.Current.packetId(kind);
         }
+        pub const packetDirection = p.Current.packetDirection;
         pub fn decodeBorrowed(input: []const u8, limits: p.DecodeLimits) p.DecodeError!p.BorrowedEnvelope {
             const raw = try p.packet.decode(input, limits);
             if (raw.header.packet_id == 193) return .{ .header = raw.header, .payload = raw.payload, .kind = null, .value = .unknown };

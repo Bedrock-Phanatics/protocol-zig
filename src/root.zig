@@ -7,6 +7,7 @@ pub const CompressionAlgorithm = profile.CompressionAlgorithm;
 pub const BorrowedEnvelope = profile.BorrowedEnvelope;
 pub const registry = @import("registry/root.zig");
 pub const PacketKind = registry.PacketKind;
+pub const PacketDirection = registry.PacketDirection;
 pub const DecodeLimits = @import("codec/limits.zig").DecodeLimits;
 pub const DecodeError = @import("codec/errors.zig").DecodeError;
 pub const EncodeError = @import("codec/errors.zig").EncodeError;

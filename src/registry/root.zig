@@ -1,7 +1,9 @@
 pub const current = @import("generated_registry.zig");
 pub const PacketKind = current.PacketKind;
+pub const PacketDirection = current.PacketDirection;
 pub const packetId = current.packetId;
 pub const packetKind = current.packetKind;
+pub const packetDirection = current.packetDirection;
 pub const Coverage = enum { scalar, borrowed_collection, known_opaque };
 pub fn coverage(kind: PacketKind) Coverage {
     return switch (kind) {

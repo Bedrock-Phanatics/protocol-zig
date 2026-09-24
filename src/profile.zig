@@ -9,6 +9,7 @@ const DecodeError = @import("codec/errors.zig").DecodeError;
 const EncodeError = @import("codec/errors.zig").EncodeError;
 const packs = @import("codecs/resource_pack.zig");
 const Kind = registry.PacketKind;
+const PacketDirection = registry.PacketDirection;
 
 /// Wire capabilities only. Session policy and version selection belong to callers.
 pub const SessionFeatures = struct {
@@ -49,6 +50,7 @@ pub const Current = struct {
     pub const features: SessionFeatures = .{};
     pub const packetKind = registry.packetKind;
     pub const packetId = registry.packetId;
+    pub const packetDirection = registry.packetDirection;
     pub inline fn decodeBorrowed(input: []const u8, limits: Limits) DecodeError!BorrowedEnvelope {
         const raw = try packet.decode(input, limits);
         const kind = packetKind(raw.header.packet_id);
@@ -109,6 +111,7 @@ pub fn validateProfile(comptime P: type) void {
     comptime features.validate() catch @compileError("incompatible session features");
     checkFunction(@TypeOf(P.packetKind), fn (u10) ?Kind);
     checkFunction(@TypeOf(P.packetId), fn (Kind) ?u10);
+    checkFunction(@TypeOf(P.packetDirection), fn (Kind) PacketDirection);
     checkFunction(@TypeOf(P.decodeBorrowed), fn ([]const u8, Limits) DecodeError!BorrowedEnvelope);
     checkFunction(@TypeOf(P.encode), fn (*Writer, BorrowedEnvelope) EncodeError!void);
     _ = .{ number, features };

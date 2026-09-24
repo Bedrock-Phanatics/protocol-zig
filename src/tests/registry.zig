@@ -1,6 +1,9 @@
 const std = @import("std");
 const p = @import("../root.zig");
 test "semantic mappings distinguish typed opaque and unknown" {
+    try std.testing.expectEqual(p.PacketDirection.server_to_client, p.registry.packetDirection(.set_time));
+    try std.testing.expectEqual(p.PacketDirection.client_to_server, p.registry.packetDirection(.request_chunk_radius));
+    try std.testing.expectEqual(p.PacketDirection.bidirectional, p.registry.packetDirection(.player_action));
     try std.testing.expectEqual(p.PacketKind.login, p.registry.packetKind(1).?);
     try std.testing.expectEqual(@as(?u10, 193), p.registry.packetId(.request_network_settings));
     try std.testing.expect(p.registry.packetKind(1023) == null);
