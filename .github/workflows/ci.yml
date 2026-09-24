@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           repository: Bedrock-Phanatics/bedwire
-          ref: dd435a92b9055af51dc13a174934b42280ac09cf
+          ref: e49155ab5d3d1064583e6d52dda8214c30b85e09
           path: .bedwire-compat
       - run: zig build test-bedwire -Dbedwire-path=.bedwire-compat
       - run: zig build -Doptimize=ReleaseSafe test
