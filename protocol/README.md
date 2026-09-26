@@ -18,6 +18,6 @@ go -C tools/codegen run . generate -root ../..
 go -C tools/codegen run . corpus -root ../..
 go -C tools/codegen run . coverage -root ../..
 # 4. Differential test against gophertunnel and run the Zig suite.
-go -C tools/differential run . -corpus ../../tests/corpus
+go -C tools/differential run .
 zig build test
 ```

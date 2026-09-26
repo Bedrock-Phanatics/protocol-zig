@@ -155,7 +155,7 @@ func TestCheckedInSchemaGeneratesDeterministically(t *testing.T) {
 		t.Fatal("generation is not deterministic")
 	}
 	hints := loadHints(filepath.Join("..", "..", "protocol", "schema", "sample-hints-"+protocolVersion+".json"))
-	if !reflect.DeepEqual(corpus(s, hints, 1, 2), corpus(s, hints, 1, 2)) {
+	if corpus(s, hints, 1, 2) != corpus(s, hints, 1, 2) {
 		t.Fatal("corpus is not deterministic")
 	}
 	if report, err := coverage(s); err != nil || !strings.Contains(report, "known opaque: 0") {

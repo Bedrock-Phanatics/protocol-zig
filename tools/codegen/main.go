@@ -3,7 +3,7 @@
 //
 //	codegen ingest   -manifest DIR [-root DIR]   refresh protocol/schema/bedrock-<v>.json
 //	codegen generate [-check] [-root DIR]         write or verify generated Zig
-//	codegen corpus   [-check] [-samples N]        write or verify tests/corpus
+//	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus.txt
 //	codegen coverage                              report semantic coverage
 //	codegen diff     OLD.json NEW.json            review a schema change
 package main
@@ -35,8 +35,8 @@ func main() {
 	root := flags.String("root", ".", "repository root")
 	manifest := flags.String("manifest", "", "protocolgen generated/<version> directory")
 	check := flags.Bool("check", false, "fail instead of writing when output differs")
-	samples := flags.Int("samples", 4, "corpus samples per packet and direction")
-	out := flags.String("out", "", "corpus output directory (default: tests/corpus under -root)")
+	samples := flags.Int("samples", 1, "corpus samples per packet and direction")
+	out := flags.String("out", "", "corpus output file (default: tests/corpus.txt under -root)")
 	must(flags.Parse(os.Args[2:]))
 	schemaPath := filepath.Join(*root, "protocol", "schema", "bedrock-"+protocolVersion+".json")
 	switch os.Args[1] {
@@ -59,16 +59,12 @@ func main() {
 	case "corpus":
 		// Deterministic schema-valid packets for round-trip and differential tests.
 		schema := loadSchema(schemaPath)
-		dir := filepath.Join(*root, "tests", "corpus")
-		if *out != "" {
-			dir = *out
-		}
-		files := map[string]string{}
 		hints := loadHints(filepath.Join(*root, "protocol", "schema", "sample-hints-"+protocolVersion+".json"))
-		for name, data := range corpus(schema, hints, 2193, *samples) {
-			files[filepath.Join(dir, filepath.FromSlash(name))] = data
+		path := filepath.Join(*root, "tests", "corpus.txt")
+		if *out != "" {
+			path = *out
 		}
-		os.Exit(sync(files, []string{dir}, *check))
+		os.Exit(sync(map[string]string{path: corpus(schema, hints, 2193, *samples)}, nil, *check))
 	case "coverage":
 		report, err := coverage(loadSchema(schemaPath))
 		fmt.Print(report)
@@ -123,7 +119,7 @@ func sync(files map[string]string, owned []string, check bool) int {
 	}
 	for _, dir := range owned {
 		_ = filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
-			if err != nil || entry.IsDir() || !(strings.HasSuffix(path, ".zig") || strings.HasSuffix(path, ".bin")) {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".zig") {
 				return nil
 			}
 			if _, ok := files[path]; ok {

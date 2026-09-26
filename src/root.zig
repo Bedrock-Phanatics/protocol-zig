@@ -42,20 +42,7 @@ pub const ChunkPosition = vectors.ChunkPosition;
 pub const SubChunkPosition = vectors.SubChunkPosition;
 
 test {
+    // Inline tests of hand-written codecs; the full suite lives in tests/.
     _ = @import("codec/patterns.zig");
     _ = @import("custom/root.zig");
-    _ = @import("tests/primitives.zig");
-    _ = @import("tests/nbt.zig");
-    _ = @import("tests/packet.zig");
-    _ = @import("tests/encoding.zig");
-    _ = @import("tests/registry.zig");
-    _ = @import("tests/profile.zig");
-    _ = @import("tests/typed.zig");
-    _ = @import("tests/resource_pack.zig");
-    _ = @import("tests/generated.zig");
-    _ = @import("tests/corpus.zig");
-}
-
-test "deterministic profile adversarial smoke" {
-    try @import("tests/fuzz.zig").run(@This(), 20_000);
 }

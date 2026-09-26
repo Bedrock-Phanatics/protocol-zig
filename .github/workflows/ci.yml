@@ -2,38 +2,78 @@ name: ci
 on:
   push:
   pull_request:
+  schedule:
+    - cron: '17 3 * * *' # nightly long fuzz and extended differential run
 
 permissions:
   contents: read
 
 env:
+  ZIG_VERSION: 0.16.0
+  GO_VERSION: '1.25'
   # Pinned schema source: protocolgen's reconciled 1.26.51 (protocol 2193) manifest.
-  PROTOCOLGEN_REPOSITORY: bedrock-mc/protocolgen
   PROTOCOLGEN_REVISION: 0b8f17e3b321f7cb89e21dc8563398b9981e632f
+  # Bedwire revision the integration test runs against.
+  BEDWIRE_REVISION: e49155ab5d3d1064583e6d52dda8214c30b85e09
 
 jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: ${{ env.ZIG_VERSION }}
+      - run: zig fmt --check build.zig build.zig.zon src tests
+      - run: zig build test
+      - run: zig build test -Doptimize=ReleaseSafe
+      - run: zig build test -Doptimize=ReleaseFast
+      - run: zig build fuzz -Dfuzz-iterations=20000
+      - run: zig build bench
+
+  cross:
+    name: compile (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-linux-musl, x86_64-linux-musl, aarch64-macos]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: ${{ env.ZIG_VERSION }}
+      - run: zig build check -Dtarget=${{ matrix.target }} -Doptimize=ReleaseSafe
+
   schema:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
-          go-version: '1.25'
-      - run: gofmt -l tools/codegen tools/differential | tee /dev/stderr | (! read)
+          go-version: ${{ env.GO_VERSION }}
+      - name: gofmt
+        run: test -z "$(gofmt -l tools)" || (gofmt -l tools; exit 1)
       - run: go -C tools/codegen vet ./...
       - run: go -C tools/codegen test ./...
+      - run: go -C tools/differential vet ./...
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          repository: ${{ env.PROTOCOLGEN_REPOSITORY }}
+          repository: bedrock-mc/protocolgen
           ref: ${{ env.PROTOCOLGEN_REVISION }}
           path: .protocolgen
-      - name: Canonical schema matches the pinned manifest and reviewed decisions
+      - name: Schema matches the pinned manifest and reviewed decisions
         run: go -C tools/codegen run . ingest -root ../.. -check -manifest ../../.protocolgen/generated/1.26.51
       - name: Generated Zig has no drift
         run: go -C tools/codegen run . generate -root ../.. -check
       - name: Corpus has no drift
         run: go -C tools/codegen run . corpus -root ../.. -check
-      - name: Semantic coverage
+      - name: Every packet has a semantic codec
         run: go -C tools/codegen run . coverage -root ../..
 
   differential:
@@ -42,35 +82,33 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
-          go-version: '1.25'
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: tools/differential/go.sum
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
-          version: 0.16.0
+          version: ${{ env.ZIG_VERSION }}
       - name: Committed corpus against gophertunnel
-        run: go -C tools/differential run . -corpus ../../tests/corpus -allow-unused
-      - name: Extended corpus
-        run: go -C tools/codegen run . corpus -root ../.. -samples 32 -out "$RUNNER_TEMP/extended"
+        run: go -C tools/differential run . -allow-unused
+      - name: Generate an extended corpus
+        run: go -C tools/codegen run . corpus -root ../.. -samples ${{ github.event_name == 'schedule' && 256 || 32 }} -out "$RUNNER_TEMP/extended.txt"
       - name: Extended corpus against gophertunnel (every accepted divergence must still occur)
-        run: go -C tools/differential run . -corpus "$RUNNER_TEMP/extended"
-      - run: zig build test -Doptimize=ReleaseSafe -Dcorpus-dir="$RUNNER_TEMP/extended"
+        run: go -C tools/differential run . -corpus "$RUNNER_TEMP/extended.txt"
+      - name: Extended corpus through the Zig codecs
+        run: zig build test -Doptimize=ReleaseSafe -Dcorpus="$RUNNER_TEMP/extended.txt"
+      - name: Long fuzz campaign
+        if: github.event_name == 'schedule'
+        run: zig build fuzz -Doptimize=ReleaseSafe -Dfuzz-iterations=5000000
 
-  test:
+  bedwire:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
-        with:
-          version: 0.16.0
-      - run: zig version
-      - run: zig fmt --check build.zig build.zig.zon src benchmarks integration
-      - run: zig build test
-      - run: zig build test -Doptimize=ReleaseSafe
-      - run: zig build test -Doptimize=ReleaseFast
-      - run: zig build fuzz -Dfuzz-iterations=20000
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: Bedrock-Phanatics/bedwire
-          ref: e49155ab5d3d1064583e6d52dda8214c30b85e09
-          path: .bedwire-compat
-      - run: zig build test-bedwire -Dbedwire-path=.bedwire-compat
-      - run: zig build bench
+          ref: ${{ env.BEDWIRE_REVISION }}
+          path: .bedwire
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: ${{ env.ZIG_VERSION }}
+      - run: zig build test-bedwire -Dbedwire-path=.bedwire
