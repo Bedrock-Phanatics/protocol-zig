@@ -13,8 +13,6 @@ pub const DecodeError = @import("codec/errors.zig").DecodeError;
 pub const EncodeError = @import("codec/errors.zig").EncodeError;
 pub const Reader = @import("codec/reader.zig").Reader;
 pub const Writer = @import("codec/writer.zig").Writer;
-/// Deprecated compatibility helper. New session code should use Bedwire framing/compression.
-pub const batch = @import("codec/batch.zig");
 pub const nbt = @import("codec/nbt.zig");
 pub const packet = @import("packet.zig");
 pub const typed = @import("registry/typed.zig");
@@ -47,7 +45,6 @@ test {
     _ = @import("tests/audit.zig");
     _ = @import("tests/typed.zig");
     _ = @import("tests/nbt.zig");
-    _ = @import("tests/compression.zig");
     _ = @import("tests/resource_pack.zig");
 }
 

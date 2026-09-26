@@ -1,7 +1,7 @@
 const std = @import("std");
 const root = @import("../root.zig");
 
-test "fixed integers UUID vectors and batch framing" {
+test "fixed integers and UUID vectors" {
     var storage: [256]u8 = undefined;
     var w = root.Writer.init(&storage);
     const uuid = [_]u8{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
@@ -13,14 +13,6 @@ test "fixed integers UUID vectors and batch framing" {
     try std.testing.expectEqual(@as(u32, 0x89abcdef), try r.readU32Be());
     try std.testing.expectEqual(uuid, try r.readUuid());
     try r.finish();
-    var framed: [32]u8 = undefined;
-    var fw = root.Writer.init(&framed);
-    try root.batch.writePacket(&fw, &.{ 1, 2, 3 }, .{});
-    try root.batch.writePacket(&fw, &.{4}, .{});
-    var it = try root.batch.Iterator.init(fw.written(), .{});
-    try std.testing.expectEqualSlices(u8, &.{ 1, 2, 3 }, (try it.next()).?);
-    try std.testing.expectEqualSlices(u8, &.{4}, (try it.next()).?);
-    try std.testing.expectEqual(@as(?[]const u8, null), try it.next());
 }
 
 test "truncation never advances beyond input" {
@@ -53,17 +45,6 @@ fn fuzzParser(_: void, smith: *std.testing.Smith) !void {
     _ = r.readVarU32() catch {};
     try std.testing.expect(r.cursor <= r.input.len);
     _ = root.packet.decode(bytes[0..len], r.limits) catch {};
-}
-test "batch total limit is independent from per-packet limit" {
-    const limits: root.DecodeLimits = .{ .max_packet_bytes = 4, .max_decompressed_batch_bytes = 16 };
-    const framed = [_]u8{ 4, 1, 2, 3, 4, 4, 5, 6, 7, 8 };
-    var it = try root.batch.Iterator.init(&framed, limits);
-    try std.testing.expectEqualSlices(u8, &.{ 1, 2, 3, 4 }, (try it.next()).?);
-    try std.testing.expectEqualSlices(u8, &.{ 5, 6, 7, 8 }, (try it.next()).?);
-    try std.testing.expectEqual(@as(?[]const u8, null), try it.next());
-
-    var oversized = try root.batch.Iterator.init(&.{ 5, 1, 2, 3, 4, 5 }, limits);
-    try std.testing.expectError(error.LimitExceeded, oversized.next());
 }
 
 test "invalid reader checkpoint is rejected without changing cursor" {
