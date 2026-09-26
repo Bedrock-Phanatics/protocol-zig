@@ -44,7 +44,7 @@ test "current and external profiles drive real Bedwire sessions" {
             .header = .{ .packet_id = Profile.packetId(.request_network_settings).? },
             .kind = .request_network_settings,
             .payload = &.{},
-            .value = .{ .typed = .{ .request_network_settings = .{ .client_protocol = @intCast(Profile.protocol_number) } } },
+            .value = .{ .typed = .{ .request_network_settings = .{ .client_network_version = @intCast(Profile.protocol_number) } } },
         });
         const request_frame = try client.encodeOne(writer.written());
         var request_packets = try server.ingest(request_frame.bytes);
@@ -52,7 +52,7 @@ test "current and external profiles drive real Bedwire sessions" {
         const request = request_packets.next().?;
         try std.testing.expectEqual(p.PacketKind.request_network_settings, request.kind);
         const normalized = try server.decodePacket(request);
-        try std.testing.expectEqual(@as(i32, @intCast(Profile.protocol_number)), normalized.value.typed.request_network_settings.client_protocol);
+        try std.testing.expectEqual(@as(i32, @intCast(Profile.protocol_number)), normalized.value.typed.request_network_settings.client_network_version);
         request_packets.deinit();
         try std.testing.expectEqual(b.State.network_settings, server.state);
 
@@ -63,8 +63,8 @@ test "current and external profiles drive real Bedwire sessions" {
             .payload = &.{},
             .value = .{ .typed = .{ .network_settings = .{
                 .compression_threshold = 256,
-                .compression_algorithm = 0,
-                .client_throttle = false,
+                .compression_algorithm = .zlib,
+                .client_throttle_enabled = false,
                 .client_throttle_threshold = 0,
                 .client_throttle_scalar = 0,
             } } },

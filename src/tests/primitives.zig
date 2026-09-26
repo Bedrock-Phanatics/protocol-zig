@@ -38,32 +38,25 @@ test "limits and UTF-8 are enforced without allocation" {
     var invalid = try root.Reader.init(&.{ 2, 0xc3, 0x28 }, .{});
     try std.testing.expectError(error.InvalidUtf8, invalid.readString());
 }
-test "chunk subchunk sound byte-float and colour fixtures" {
-    var storage: [128]u8 = undefined;
+test "positions vectors and UUIDs use their Bedrock layouts" {
+    var storage: [64]u8 = undefined;
     var w = root.Writer.init(&storage);
+    const uuid = [_]u8{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     try w.writeChunkPosition(.{ .x = -2, .z = 300 });
     try w.writeSubChunkPosition(.{ .x = 1, .y = -2, .z = 3 });
-    try w.writeSoundPosition(.{ .x = 1.25, .y = -2.5, .z = 3.0 });
-    try w.writeByteFloat(-90.0);
-    try w.writeRgba(.{ .r = 1, .g = 2, .b = 3, .a = 4 });
-    try w.writeBeArgb(.{ .r = 1, .g = 2, .b = 3, .a = 4 });
+    try w.writeBlockPosition(.{ .x = -1, .y = 64, .z = 1 });
+    try w.writeVec3f(.{ .x = 1.25, .y = -2.5, .z = 3.0 });
+    try w.writeUuid(uuid);
+    // UUIDs travel as two little-endian u64 halves.
+    try std.testing.expectEqualSlices(u8, &.{ 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8 }, w.written()[w.cursor - 16 ..]);
 
     var r = try root.Reader.init(w.written(), .{});
     try std.testing.expectEqual(root.ChunkPosition{ .x = -2, .z = 300 }, try r.readChunkPosition());
     try std.testing.expectEqual(root.SubChunkPosition{ .x = 1, .y = -2, .z = 3 }, try r.readSubChunkPosition());
-    try std.testing.expectEqual(root.Vec3f{ .x = 1.25, .y = -2.5, .z = 3.0 }, try r.readSoundPosition());
-    try std.testing.expectEqual(@as(f32, 270.0), try r.readByteFloat());
-    try std.testing.expectEqual(root.Rgba{ .r = 1, .g = 2, .b = 3, .a = 4 }, try r.readRgba());
-    try std.testing.expectEqual(root.Rgba{ .r = 1, .g = 2, .b = 3, .a = 4 }, try r.readBeArgb());
+    try std.testing.expectEqual(root.BlockPosition{ .x = -1, .y = 64, .z = 1 }, try r.readBlockPosition());
+    try std.testing.expectEqual(root.Vec3f{ .x = 1.25, .y = -2.5, .z = 3.0 }, try r.readVec3f());
+    try std.testing.expectEqual(uuid, try r.readUuid());
     try r.finish();
-}
-
-test "float-backed compact encodings reject non-finite values" {
-    var storage: [32]u8 = undefined;
-    var w = root.Writer.init(&storage);
-    try std.testing.expectError(error.InvalidValue, w.writeByteFloat(std.math.nan(f32)));
-    try std.testing.expectError(error.InvalidValue, w.writeSoundPosition(.{ .x = std.math.inf(f32), .y = 0, .z = 0 }));
-    try std.testing.expectEqual(@as(usize, 0), w.written().len);
 }
 
 test "all signed and unsigned VarInt boundaries reject every truncated prefix" {
@@ -122,4 +115,37 @@ test "fixed integer widths and float bit patterns survive exact wire round trips
         var r = try root.Reader.init(&bytes, .{});
         try std.testing.expectEqual(bits, @as(u64, @bitCast(try r.readF64())));
     }
+}
+
+test "truncation never advances beyond input" {
+    var r = try root.Reader.init(&.{ 0xff, 0xff, 0xff }, .{});
+    try std.testing.expectError(error.EndOfStream, r.readU64());
+    try std.testing.expect(r.cursor <= r.input.len);
+}
+
+test "bounded parser stress on deterministic hostile input" {
+    var prng = std.Random.DefaultPrng.init(0xbed0c2192);
+    const random = prng.random();
+    var bytes: [96]u8 = undefined;
+    for (0..20_000) |_| {
+        random.bytes(&bytes);
+        const len = random.intRangeAtMost(usize, 0, bytes.len);
+        var r = try root.Reader.init(bytes[0..len], .{ .max_packet_bytes = bytes.len });
+        _ = r.readVarU64() catch {};
+        try std.testing.expect(r.cursor <= r.input.len);
+    }
+}
+
+test "native fuzz target for reader and envelope" {
+    try std.testing.fuzz({}, fuzzParser, .{});
+}
+
+fn fuzzParser(_: void, smith: *std.testing.Smith) !void {
+    var bytes: [256]u8 = undefined;
+    smith.bytesWithHash(&bytes, 0x5ef77a31);
+    const len: usize = smith.valueRangeAtMostWithHash(u16, 0, bytes.len, 0x96653389);
+    var r = root.Reader.init(bytes[0..len], .{ .max_packet_bytes = bytes.len, .max_string_bytes = 64, .max_byte_array_bytes = 128, .max_array_elements = 32 }) catch return;
+    _ = r.readVarU32() catch {};
+    try std.testing.expect(r.cursor <= r.input.len);
+    _ = root.packet.decode(bytes[0..len], r.limits) catch {};
 }

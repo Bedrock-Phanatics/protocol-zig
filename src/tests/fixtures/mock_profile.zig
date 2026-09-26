@@ -20,7 +20,7 @@ pub fn Profile(comptime p: type) type {
             var r = try p.Reader.init(raw.payload, limits);
             const number = try r.readI32();
             try r.finish();
-            return .{ .header = raw.header, .kind = .request_network_settings, .payload = raw.payload, .value = .{ .typed = .{ .request_network_settings = .{ .client_protocol = number } } } };
+            return .{ .header = raw.header, .kind = .request_network_settings, .payload = raw.payload, .value = .{ .typed = .{ .request_network_settings = .{ .client_network_version = number } } } };
         }
         pub fn encode(w: *p.Writer, e: p.BorrowedEnvelope) p.EncodeError!void {
             if (e.kind != packetKind(e.header.packet_id)) return error.InvalidValue;
@@ -28,7 +28,7 @@ pub fn Profile(comptime p: type) type {
                 if (e.value != .typed or e.value.typed != .request_network_settings) return error.InvalidValue;
                 if (w.remainingCapacity() < 6) return error.NoSpaceLeft;
                 try w.writeVarU32(e.header.toWire());
-                try w.writeI32(e.value.typed.request_network_settings.client_protocol);
+                try w.writeI32(e.value.typed.request_network_settings.client_network_version);
             } else if (e.header.packet_id == 193) {
                 if (e.value != .unknown) return error.InvalidValue;
                 try p.packet.encode(w, .{ .header = e.header, .payload = e.payload });

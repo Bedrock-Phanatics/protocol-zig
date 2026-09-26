@@ -14,7 +14,7 @@ pub fn run(comptime p: type, iterations: usize) !void {
     const huge_count = [_]u8{ 0xff, 0xff, 0xff, 0xff, 0x0f };
     const bad_info = [_]u8{ 6, 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ huge_count;
     const bad_stack = [_]u8{ 7, 0 } ++ huge_count;
-    const bad_response = [_]u8{ 8, 1, 11 } ++ "downloading".* ++ huge_count;
+    const bad_response = [_]u8{ 8, 1, 11 } ++ "downloading".* ++ [_]u8{ 0xff, 0x7f };
     inline for (.{ bad_info, bad_stack, bad_response }) |fixture| {
         if (p.Current.decodeBorrowed(&fixture, limits)) |_| return error.AcceptedHugeCollection else |err| {
             if (err != error.LimitExceeded) return err;

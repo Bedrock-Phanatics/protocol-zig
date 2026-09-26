@@ -6,7 +6,54 @@ on:
 permissions:
   contents: read
 
+env:
+  # Pinned schema source: protocolgen's reconciled 1.26.51 (protocol 2193) manifest.
+  PROTOCOLGEN_REPOSITORY: bedrock-mc/protocolgen
+  PROTOCOLGEN_REVISION: 0b8f17e3b321f7cb89e21dc8563398b9981e632f
+
 jobs:
+  schema:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.25'
+      - run: gofmt -l tools/codegen tools/differential | tee /dev/stderr | (! read)
+      - run: go -C tools/codegen vet ./...
+      - run: go -C tools/codegen test ./...
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: ${{ env.PROTOCOLGEN_REPOSITORY }}
+          ref: ${{ env.PROTOCOLGEN_REVISION }}
+          path: .protocolgen
+      - name: Canonical schema matches the pinned manifest and reviewed decisions
+        run: go -C tools/codegen run . ingest -root ../.. -check -manifest ../../.protocolgen/generated/1.26.51
+      - name: Generated Zig has no drift
+        run: go -C tools/codegen run . generate -root ../.. -check
+      - name: Corpus has no drift
+        run: go -C tools/codegen run . corpus -root ../.. -check
+      - name: Semantic coverage
+        run: go -C tools/codegen run . coverage -root ../..
+
+  differential:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.25'
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.16.0
+      - name: Committed corpus against gophertunnel
+        run: go -C tools/differential run . -corpus ../../tests/corpus -allow-unused
+      - name: Extended corpus
+        run: go -C tools/codegen run . corpus -root ../.. -samples 32 -out "$RUNNER_TEMP/extended"
+      - name: Extended corpus against gophertunnel (every accepted divergence must still occur)
+        run: go -C tools/differential run . -corpus "$RUNNER_TEMP/extended"
+      - run: zig build test -Doptimize=ReleaseSafe -Dcorpus-dir="$RUNNER_TEMP/extended"
+
   test:
     runs-on: ubuntu-24.04
     steps:
@@ -17,18 +64,13 @@ jobs:
       - run: zig version
       - run: zig fmt --check build.zig build.zig.zon src benchmarks integration
       - run: zig build test
+      - run: zig build test -Doptimize=ReleaseSafe
       - run: zig build test -Doptimize=ReleaseFast
       - run: zig build fuzz -Dfuzz-iterations=20000
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-      - run: go test ./tools/ziggen2/main.go ./tools/ziggen2/main_test.go
-      - run: go run ./tools/ziggen2/main.go --check
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: Bedrock-Phanatics/bedwire
           ref: e49155ab5d3d1064583e6d52dda8214c30b85e09
           path: .bedwire-compat
       - run: zig build test-bedwire -Dbedwire-path=.bedwire-compat
-      - run: zig build -Doptimize=ReleaseSafe test
       - run: zig build bench

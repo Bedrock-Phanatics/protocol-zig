@@ -29,9 +29,9 @@ pub fn main(init: std.process.Init) !void {
                 const decoded = try protocol.packet.decode(writer.written(), .{});
                 checksum +%= decoded.header.toWire();
             } else if (comptime std.mem.eql(u8, workload, "typed")) {
-                try protocol.typed.encode(&writer, .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_protocol = @intCast(i) } } });
+                try protocol.typed.encode(&writer, .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_network_version = @intCast(i) } } });
                 const decoded = try protocol.typed.decode(writer.written(), .{});
-                checksum +%= @intCast(decoded.packet.request_network_settings.client_protocol);
+                checksum +%= @intCast(decoded.packet.request_network_settings.client_network_version);
             } else {
                 try protocol.packet.encode(&writer, .{ .header = .{ .packet_id = @truncate(i) }, .payload = "opaque payload" });
                 const decoded = try protocol.packet.decode(writer.written(), .{});
@@ -75,14 +75,14 @@ pub fn main(init: std.process.Init) !void {
                 const kinds = std.enums.values(protocol.PacketKind);
                 checksum +%= protocol.Current.packetId(kinds[i % kinds.len]).?;
             } else if (comptime std.mem.eql(u8, name, "typed-decode")) {
-                checksum +%= @intCast((try protocol.typed.decode(&fixture, .{})).packet.request_network_settings.client_protocol);
+                checksum +%= @intCast((try protocol.typed.decode(&fixture, .{})).packet.request_network_settings.client_network_version);
             } else if (comptime std.mem.eql(u8, name, "typed-encode")) {
-                try protocol.typed.encode(&writer, .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_protocol = @intCast(i) } } });
+                try protocol.typed.encode(&writer, .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_network_version = @intCast(i) } } });
                 checksum +%= writer.cursor;
             } else if (comptime std.mem.eql(u8, name, "current-dispatch")) {
-                checksum +%= @intCast((try protocol.Current.decodeBorrowed(&fixture, .{})).value.typed.request_network_settings.client_protocol);
+                checksum +%= @intCast((try protocol.Current.decodeBorrowed(&fixture, .{})).value.typed.request_network_settings.client_network_version);
             } else if (comptime std.mem.eql(u8, name, "external-dispatch")) {
-                checksum +%= @intCast((try Mock.decodeBorrowed(&legacy, .{})).value.typed.request_network_settings.client_protocol);
+                checksum +%= @intCast((try Mock.decodeBorrowed(&legacy, .{})).value.typed.request_network_settings.client_network_version);
             } else {
                 try protocol.packet.encode(&writer, .{ .header = .{ .packet_id = @truncate(i) }, .payload = "opaque payload" });
                 checksum +%= writer.cursor;

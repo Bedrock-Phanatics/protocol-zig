@@ -14,13 +14,13 @@ test "typed preflight rejects late invalid string without writes" {
     const before = bytes;
     var w = p.Writer.init(&bytes);
     w.cursor = 3;
-    const e: p.typed.Envelope = .{ .header = .{ .packet_id = 5 }, .packet = .{ .disconnect = .{ .reason = 0, .message_skipped = false, .message = "valid", .filtered_message = &.{0xff} } } };
+    const e: p.typed.Envelope = .{ .header = .{ .packet_id = 5 }, .packet = .{ .disconnect = .{ .reason = .unknown, .messages = .{ .messages = .{ .message = "valid", .filtered_message = &.{0xff} } } } } };
     try std.testing.expectError(error.InvalidValue, p.typed.encode(&w, e));
     try std.testing.expectEqualSlices(u8, &before, &bytes);
     try std.testing.expectEqual(@as(usize, 3), w.cursor);
 }
 test "typed capacity failure never partially writes" {
-    const e: p.typed.Envelope = .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_protocol = 2193 } } };
+    const e: p.typed.Envelope = .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_network_version = 2193 } } };
     for (0..6) |capacity| {
         var bytes = [_]u8{0xa5} ** 6;
         const before = bytes;

@@ -1,0 +1,722 @@
+package main
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"math"
+	"math/big"
+	"math/rand/v2"
+	"os"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+// Hints steer the differential corpus toward values an independent oracle
+// accepts. They never change the schema or the generated codecs.
+type Hints struct {
+	SchemaVersion int    `json:"schema_version"`
+	Comment       string `json:"comment"`
+	NBT           struct {
+		MaxEntries int    `json:"max_entries"`
+		Absent     bool   `json:"absent"`
+		Reason     string `json:"reason"`
+	} `json:"nbt"`
+	Sites map[string]SiteHint `json:"sites"`
+}
+
+type SiteHint struct {
+	Strings   []string  `json:"strings,omitempty"`
+	Min       *int64    `json:"min,omitempty"`
+	Max       *int64    `json:"max,omitempty"`
+	Values    []int64   `json:"values,omitempty"`
+	MinItems  *uint64   `json:"min_items,omitempty"`
+	MaxItems  *uint64   `json:"max_items,omitempty"`
+	Generator string    `json:"generator,omitempty"`
+	Floats    []float64 `json:"floats,omitempty"`
+	// Unique samples a list of enum values without repeats.
+	Unique bool `json:"unique,omitempty"`
+	// Controls names a sibling optional that is present exactly when this
+	// enum takes one of PresentValues.
+	Controls      string  `json:"controls,omitempty"`
+	PresentValues []int64 `json:"present_values,omitempty"`
+	Reason        string  `json:"reason"`
+	Evidence      string  `json:"evidence"`
+}
+
+func loadHints(path string) Hints {
+	data, err := os.ReadFile(path)
+	must(err)
+	var h Hints
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	must(decoder.Decode(&h))
+	for site, hint := range h.Sites {
+		if hint.Reason == "" || hint.Evidence == "" {
+			panic("sample hint " + site + " lacks a reason or evidence")
+		}
+	}
+	return h
+}
+
+// sampler writes random schema-valid wire payloads. Every value respects the
+// schema's constraints, restrictions and checks, so a conforming decoder
+// must accept every sample and re-encode it byte for byte.
+type sampler struct {
+	types map[string]*TypeDef
+	hints Hints
+	rng   *rand.Rand
+	buf   bytes.Buffer
+	depth int
+	// forced holds values chosen ahead of time to satisfy a struct check,
+	// keyed by site.
+	forced map[string]uint64
+	// presence forces an optional at a site present or absent.
+	presence map[string]bool
+}
+
+// corpus returns sample packets keyed by "direction/id/hash.bin". Each file
+// holds a complete packet: the header varint followed by the payload.
+func corpus(s Schema, hints Hints, seed uint64, perPacket int) map[string]string {
+	out := map[string]string{}
+	types := s.typeMap()
+	for _, p := range s.Packets {
+		for _, direction := range p.Directions {
+			for i := 0; i < perPacket; i++ {
+				sm := &sampler{types: types, hints: hints, forced: map[string]uint64{}, presence: map[string]bool{},
+					rng: rand.New(rand.NewPCG(seed, uint64(p.ID)<<8|uint64(i)<<1|boolBit(direction == "server")))}
+				writeVarU32(&sm.buf, uint32(p.ID))
+				sm.fields(p.Name, p.Fields, nil)
+				data := sm.buf.Bytes()
+				sum := sha256.Sum256(data)
+				out[path.Join(direction, fmt.Sprintf("%03d", p.ID), hex.EncodeToString(sum[:6])+".bin")] = string(data)
+			}
+		}
+	}
+	sites := schemaSites(s)
+	var stale []string
+	for site := range hints.Sites {
+		scoped := strings.HasPrefix(site, "list:") || strings.HasPrefix(site, "type:")
+		if !sites[site] && (!scoped || types[site[5:]] == nil) {
+			stale = append(stale, site)
+		}
+	}
+	if len(stale) != 0 {
+		sort.Strings(stale)
+		panic("sample hints name no generated site: " + strings.Join(stale, ", "))
+	}
+	return out
+}
+
+// schemaSites lists every field, variant payload and nested value path.
+func schemaSites(s Schema) map[string]bool {
+	sites := map[string]bool{}
+	var walk func(site string, n Node)
+	walk = func(site string, n Node) {
+		sites[site] = true
+		for step, child := range map[string]*Node{"element": n.Element, "key": n.Key, "value": n.Value} {
+			if child != nil {
+				walk(site+"/"+step, *child)
+			}
+		}
+	}
+	for _, p := range s.Packets {
+		for _, f := range p.Fields {
+			walk(p.Name+"."+f.Name, f.Type)
+		}
+	}
+	for _, t := range s.Types {
+		for _, f := range t.Fields {
+			walk(t.Name+"."+f.Name, f.Type)
+		}
+		for _, v := range t.Variants {
+			if v.Type != nil {
+				walk(t.Name+"."+v.Name, *v.Type)
+			}
+		}
+	}
+	return sites
+}
+
+func boolBit(b bool) uint64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func writeVarU32(b *bytes.Buffer, v uint32) { writeVarU64(b, uint64(v)) }
+
+func writeVarU64(b *bytes.Buffer, v uint64) {
+	for v >= 0x80 {
+		b.WriteByte(byte(v) | 0x80)
+		v >>= 7
+	}
+	b.WriteByte(byte(v))
+}
+
+func (sm *sampler) hint(site string) (SiteHint, bool) {
+	h, ok := sm.hints.Sites[site]
+	return h, ok
+}
+
+// fields samples a struct's fields in order. Checks are satisfied by
+// choosing their factors first and forcing the checked sequence length.
+func (sm *sampler) fields(owner string, fields []Field, checks []Check) {
+	for _, c := range checks {
+		product := c.Scale
+		if product == 0 {
+			product = 1
+		}
+		for _, factor := range c.Factors {
+			v := uint64(sm.rng.IntN(4))
+			sm.forced[owner+"."+factor] = v
+			product *= v
+		}
+		sm.forced[owner+"."+c.Field] = product
+	}
+	for _, f := range fields {
+		sm.node(f.Type, owner+"."+f.Name, nil)
+	}
+}
+
+// node samples one value. inherited carries an integer range hint from an
+// enclosing site down to its integer leaves.
+func (sm *sampler) node(n Node, site string, inherited *SiteHint) {
+	h, hinted := sm.hint(site)
+	if !hinted && inherited != nil {
+		h, hinted = *inherited, true
+	}
+	forced, isForced := sm.forced[site]
+	switch n.Kind {
+	case "string":
+		value := sm.text(n)
+		if hinted && len(h.Strings) != 0 {
+			value = h.Strings[sm.rng.IntN(len(h.Strings))]
+		}
+		if isForced {
+			value = strings.Repeat("s", int(forced))
+		}
+		sm.count(n.Prefix, uint64(len(value)))
+		sm.buf.WriteString(value)
+	case "bytes":
+		if hinted && h.Generator == "item_user_data" {
+			data := sm.itemUserData()
+			sm.count(n.Prefix, uint64(len(data)))
+			sm.buf.Write(data)
+			return
+		}
+		lo, hi := bounds(n.MinLen, n.MaxLen, 24)
+		length := lo + sm.rng.Uint64N(hi-lo+1)
+		if isForced {
+			length = forced
+		}
+		sm.count(n.Prefix, length)
+		for i := uint64(0); i < length; i++ {
+			sm.buf.WriteByte(byte(sm.rng.Uint32()))
+		}
+	case "nbt":
+		sm.nbt()
+	case "bitset":
+		sm.bitset(n.Len)
+	case "list", "map":
+		min, max := n.MinItems, n.MaxItems
+		if n.Element != nil && n.Element.Kind == "ref" {
+			if lh, ok := sm.hint("list:" + n.Element.Ref); ok && lh.MaxItems != nil && (max == nil || *lh.MaxItems < *max) {
+				max = lh.MaxItems
+			}
+		}
+		if hinted && h.MinItems != nil {
+			min = h.MinItems
+		}
+		lo, hi := bounds(min, max, 3)
+		if sm.depth > 3 && lo < hi {
+			hi = lo
+		}
+		count := lo + sm.rng.Uint64N(hi-lo+1)
+		if isForced {
+			count = forced
+		}
+		if hinted && h.Unique && n.Element.Kind == "ref" && sm.types[n.Element.Ref].Kind == "enum" {
+			t := sm.types[n.Element.Ref]
+			order := sm.rng.Perm(len(t.Values))
+			if count > uint64(len(order)) {
+				count = uint64(len(order))
+			}
+			sm.count(n.Prefix, count)
+			for _, i := range order[:count] {
+				sm.integer(t.Repr, t.Values[i].Value)
+			}
+			return
+		}
+		sm.count(n.Prefix, count)
+		sm.depth++
+		for i := uint64(0); i < count; i++ {
+			if n.Kind == "map" {
+				sm.node(*n.Key, site+"/key", nil)
+				sm.node(*n.Value, site+"/value", nil)
+			} else {
+				sm.node(*n.Element, site+"/element", inheritRange(h, hinted))
+			}
+		}
+		sm.depth--
+	case "fixed":
+		for i := uint64(0); i < n.Len; i++ {
+			sm.node(*n.Element, site+"/element", inheritRange(h, hinted))
+		}
+	case "optional":
+		present := sm.rng.IntN(2) == 0
+		if p, ok := sm.presence[site]; ok {
+			present = p
+		}
+		sm.buf.WriteByte(byte(boolBit(present)))
+		if present {
+			sm.node(*n.Value, site+"/value", inheritRange(h, hinted))
+		}
+	case "custom":
+		sm.custom(n.Ref)
+	case "ref":
+		sm.ref(n, site, inheritRange(h, hinted))
+	default:
+		if isForced {
+			sm.integer(n.Kind, int64(forced))
+			return
+		}
+		if hinted && h.Generator == "legacy_request_id" {
+			// gophertunnel sends legacy slots exactly for even IDs below -1.
+			v := []int64{0, 1, -1, 3, -2, -4, -100}[sm.rng.IntN(7)]
+			owner := site[:strings.LastIndexByte(site, '.')]
+			sm.presence[owner+".legacy_set_item_slots"] = v < -1 && v%2 == 0
+			sm.integer(n.Kind, v)
+			return
+		}
+		sm.primitive(n, h, hinted)
+	}
+}
+
+func inheritRange(h SiteHint, hinted bool) *SiteHint {
+	if !hinted || (h.Min == nil && h.Max == nil) {
+		return nil
+	}
+	return &SiteHint{Min: h.Min, Max: h.Max}
+}
+
+func bounds(min, max *uint64, fallback uint64) (uint64, uint64) {
+	lo, hi := uint64(0), fallback
+	if min != nil {
+		lo = *min
+	}
+	if max != nil && *max < hi {
+		hi = *max
+	}
+	if hi < lo {
+		hi = lo
+	}
+	return lo, hi
+}
+
+func (sm *sampler) count(prefix string, v uint64) {
+	switch prefix {
+	case "var_u32":
+		writeVarU32(&sm.buf, uint32(v))
+	case "u32le":
+		_ = binary.Write(&sm.buf, binary.LittleEndian, uint32(v))
+	default:
+		panic("unsupported prefix " + prefix)
+	}
+}
+
+var textPool = []string{"", "a", "Steve", "minecraft:stone", "héllo", "日本語", "🙂 ok", "x y z", "0"}
+
+func (sm *sampler) text(n Node) string {
+	switch n.Pattern {
+	case `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpeg$`:
+		const digits = "0123456789abcdef"
+		var b []byte
+		for i := 0; i < 36; i++ {
+			if i == 8 || i == 13 || i == 18 || i == 23 {
+				b = append(b, '-')
+			} else {
+				b = append(b, digits[sm.rng.IntN(16)])
+			}
+		}
+		return string(b) + ".jpeg"
+	case `^\w+:\w+$`:
+		return []string{"minecraft:spline", "a:b", "ns_1:path_2"}[sm.rng.IntN(3)]
+	case `^(?:catmullrom|linear)$`:
+		return []string{"catmullrom", "linear"}[sm.rng.IntN(2)]
+	}
+	lo, hi := bounds(n.MinLen, n.MaxLen, 1<<20)
+	for attempt := 0; attempt < 64; attempt++ {
+		value := textPool[sm.rng.IntN(len(textPool))]
+		if sm.rng.IntN(4) == 0 {
+			value += strconv.Itoa(sm.rng.IntN(1000))
+		}
+		if uint64(len(value)) >= lo && uint64(len(value)) <= hi {
+			return value
+		}
+	}
+	return strings.Repeat("s", int(lo))
+}
+
+func (sm *sampler) ref(n Node, site string, inherited *SiteHint) {
+	t := sm.types[n.Ref]
+	switch t.Kind {
+	case "struct":
+		if h, ok := sm.hint("type:" + t.Name); ok && h.Generator == "stack_request_item" {
+			sm.stackRequestItem()
+			return
+		}
+		sm.depth++
+		sm.fieldsInherited(t, inherited)
+		sm.depth--
+	case "enum":
+		values := n.Allowed
+		h, hinted := sm.hint(site)
+		if hinted && len(h.Values) != 0 {
+			values = h.Values
+		}
+		if len(values) == 0 {
+			for _, v := range t.Values {
+				values = append(values, v.Value)
+			}
+		}
+		v := values[sm.rng.IntN(len(values))]
+		if hinted && h.Controls != "" {
+			present := false
+			for _, p := range h.PresentValues {
+				present = present || p == v
+			}
+			sm.presence[site[:strings.LastIndexByte(site, '.')]+"."+h.Controls] = present
+		}
+		sm.integer(t.Repr, v)
+	case "union":
+		variants := t.Variants
+		if sm.depth > 4 {
+			// Past the nesting budget prefer variants that cannot recurse.
+			var leaves []Variant
+			for _, v := range variants {
+				if v.Type == nil || (v.Type.Kind != "list" && v.Type.Kind != "map") {
+					leaves = append(leaves, v)
+				}
+			}
+			if len(leaves) != 0 {
+				variants = leaves
+			}
+		}
+		v := variants[sm.rng.IntN(len(variants))]
+		sm.integer(t.Repr, v.Value)
+		if v.Type != nil {
+			sm.depth++
+			sm.node(*v.Type, t.Name+"."+v.Name, inherited)
+			sm.depth--
+		}
+	}
+}
+
+func (sm *sampler) fieldsInherited(t *TypeDef, inherited *SiteHint) {
+	if inherited == nil {
+		sm.fields(t.Name, t.Fields, t.Checks)
+		return
+	}
+	for _, f := range t.Fields {
+		sm.node(f.Type, t.Name+"."+f.Name, inherited)
+	}
+}
+
+func (sm *sampler) primitive(n Node, h SiteHint, hinted bool) {
+	switch n.Kind {
+	case "bool":
+		sm.buf.WriteByte(byte(sm.rng.IntN(2)))
+	case "uuid":
+		for i := 0; i < 16; i++ {
+			sm.buf.WriteByte(byte(sm.rng.Uint32()))
+		}
+	case "f32le":
+		v := float32(sm.float(n))
+		if hinted && len(h.Floats) != 0 {
+			v = float32(h.Floats[sm.rng.IntN(len(h.Floats))])
+		}
+		_ = binary.Write(&sm.buf, binary.LittleEndian, math.Float32bits(v))
+	case "f64le":
+		_ = binary.Write(&sm.buf, binary.LittleEndian, math.Float64bits(sm.float(n)))
+	default:
+		lo, hi := integerBounds(n)
+		if hinted && h.Min != nil && *h.Min > lo {
+			lo = *h.Min
+		}
+		if hinted && h.Max != nil && (*h.Max < hi || hi == -1 && lo >= 0) {
+			hi = *h.Max
+		}
+		var v int64
+		switch sm.rng.IntN(4) {
+		case 0:
+			v = lo
+		case 1:
+			v = hi
+		default:
+			span := uint64(hi - lo)
+			if span == math.MaxUint64 {
+				v = int64(sm.rng.Uint64())
+			} else {
+				v = lo + int64(sm.rng.Uint64N(span+1))
+			}
+		}
+		sm.integer(n.Kind, v)
+	}
+}
+
+func (sm *sampler) float(n Node) float64 {
+	lo, hi := -1e6, 1e6
+	if n.Min != nil {
+		lo, _ = strconv.ParseFloat(n.Min.String(), 64)
+	}
+	if n.Max != nil {
+		hi, _ = strconv.ParseFloat(n.Max.String(), 64)
+	}
+	// Float32 rounding must not leave the bounds.
+	return float64(float32(lo + (hi-lo)*sm.rng.Float64()*0.999))
+}
+
+// integerBounds is the schema range of an integer node clamped to its type.
+// Unsigned 64-bit values above MaxInt64 are carried as their int64 bit pattern.
+func integerBounds(n Node) (int64, int64) {
+	info := primitives[n.Kind]
+	lo, hi := integerRange(info.zig)
+	if n.Min != nil {
+		if v, ok := parseBig(n.Min.String()); ok && v.Cmp(lo) > 0 {
+			lo = v
+		}
+	}
+	if n.Max != nil {
+		if v, ok := parseBig(n.Max.String()); ok && v.Cmp(hi) < 0 {
+			hi = v
+		}
+	}
+	if info.zig == "u64" && !hi.IsInt64() {
+		return lo.Int64(), -1 // full u64 range as a bit pattern
+	}
+	return lo.Int64(), hi.Int64()
+}
+
+func parseBig(s string) (*big.Int, bool) { return new(big.Int).SetString(s, 10) }
+
+func (sm *sampler) integer(kind string, v int64) {
+	le := binary.LittleEndian
+	be := binary.BigEndian
+	b := &sm.buf
+	switch kind {
+	case "u8", "i8":
+		b.WriteByte(byte(v))
+	case "u16le", "i16le":
+		_ = binary.Write(b, le, uint16(v))
+	case "u32le", "i32le":
+		_ = binary.Write(b, le, uint32(v))
+	case "u64le", "i64le":
+		_ = binary.Write(b, le, uint64(v))
+	case "u16be", "i16be":
+		_ = binary.Write(b, be, uint16(v))
+	case "u32be", "i32be":
+		_ = binary.Write(b, be, uint32(v))
+	case "u64be", "i64be":
+		_ = binary.Write(b, be, uint64(v))
+	case "var_u32":
+		writeVarU32(b, uint32(v))
+	case "var_u64":
+		writeVarU64(b, uint64(v))
+	case "zigzag_i32":
+		x := int32(v)
+		writeVarU32(b, uint32(x<<1)^uint32(x>>31))
+	case "zigzag_i64":
+		writeVarU64(b, uint64(v<<1)^uint64(v>>63))
+	default:
+		panic("unsupported integer kind " + kind)
+	}
+}
+
+func (sm *sampler) zigzag32(v int32) { sm.integer("zigzag_i32", int64(v)) }
+
+func (sm *sampler) str(s string) {
+	writeVarU32(&sm.buf, uint32(len(s)))
+	sm.buf.WriteString(s)
+}
+
+// bitset writes the canonical little-endian base-128 form of random bits.
+func (sm *sampler) bitset(bits uint64) {
+	number := new(big.Int)
+	for i := uint64(0); i < bits; i++ {
+		if sm.rng.IntN(3) == 0 {
+			number.SetBit(number, int(i), 1)
+		}
+	}
+	for {
+		b := byte(new(big.Int).And(number, big.NewInt(0x7f)).Uint64())
+		number.Rsh(number, 7)
+		if number.Sign() == 0 {
+			sm.buf.WriteByte(b)
+			return
+		}
+		sm.buf.WriteByte(b | 0x80)
+	}
+}
+
+func (sm *sampler) custom(name string) {
+	switch name {
+	case "RecipeIngredient":
+		switch sm.rng.IntN(4) {
+		case 0:
+			sm.buf.WriteByte(0)
+			sm.zigzag32(32767)
+		case 1:
+			sm.buf.WriteByte(1)
+			sm.str("name")
+			sm.str("minecraft:stick")
+			sm.zigzag32(int32(sm.rng.IntN(32768)))
+		case 2:
+			sm.buf.WriteByte(1)
+			sm.str("molang")
+			sm.str("query.any_tag('minecraft:planks')")
+			_ = binary.Write(&sm.buf, binary.LittleEndian, int16(sm.rng.IntN(20)))
+		case 3:
+			sm.buf.WriteByte(1)
+			sm.str("item_tag")
+			sm.str("minecraft:planks")
+			sm.zigzag32(32767)
+		}
+		sm.zigzag32(int32(sm.rng.IntN(65)))
+	default:
+		panic("no sampler for custom type " + name)
+	}
+}
+
+// itemUserData writes a well-formed item user-data buffer in gophertunnel's
+// canonical form: an NBT marker (0 without NBT, or -1, version 1 and a
+// non-empty little-endian compound) followed by two string lists.
+func (sm *sampler) itemUserData() []byte {
+	var b bytes.Buffer
+	le := binary.LittleEndian
+	if sm.rng.IntN(2) == 0 {
+		_ = binary.Write(&b, le, int16(0))
+	} else {
+		_ = binary.Write(&b, le, int16(-1))
+		b.WriteByte(1)
+		b.WriteByte(10) // compound with an empty name
+		_ = binary.Write(&b, le, int16(0))
+		b.WriteByte(8)
+		_ = binary.Write(&b, le, int16(4))
+		b.WriteString("Name")
+		_ = binary.Write(&b, le, int16(5))
+		b.WriteString("Steve")
+		b.WriteByte(0)
+	}
+	for list := 0; list < 2; list++ {
+		n := sm.rng.IntN(3)
+		_ = binary.Write(&b, le, uint32(n))
+		for i := 0; i < n; i++ {
+			_ = binary.Write(&b, le, int16(15))
+			b.WriteString("minecraft:stone")
+		}
+	}
+	return b.Bytes()
+}
+
+// stackRequestItem writes a deprecated craft-result item the way gophertunnel
+// canonicalises it: no descriptor and no user data, or an item name with
+// canonical user data.
+func (sm *sampler) stackRequestItem() {
+	hasItem := sm.rng.IntN(2) == 0
+	if hasItem {
+		sm.buf.Write([]byte{1, 1})
+		sm.str("minecraft:stone")
+		sm.zigzag32(int32(sm.rng.IntN(16)))
+	} else {
+		sm.buf.Write([]byte{0, 0})
+	}
+	_ = binary.Write(&sm.buf, binary.LittleEndian, uint16(1+sm.rng.IntN(64)))
+	writeVarU32(&sm.buf, sm.rng.Uint32())
+	if !hasItem {
+		sm.buf.WriteByte(0)
+		return
+	}
+	data := sm.itemUserData()
+	writeVarU32(&sm.buf, uint32(len(data)))
+	sm.buf.Write(data)
+}
+
+// nbt writes a small random network-little-endian compound document.
+func (sm *sampler) nbt() {
+	if sm.hints.NBT.Absent && sm.rng.IntN(5) == 0 {
+		sm.buf.WriteByte(0)
+		return
+	}
+	sm.buf.WriteByte(10)
+	sm.str("")
+	sm.nbtCompound(0)
+}
+
+func (sm *sampler) nbtCompound(depth int) {
+	entries := sm.rng.IntN(4)
+	if max := sm.hints.NBT.MaxEntries; max > 0 && entries > max {
+		entries = max
+	}
+	for i := 0; i < entries; i++ {
+		tag := byte(1 + sm.rng.IntN(12))
+		if depth > 2 && (tag == 9 || tag == 10) {
+			tag = 8
+		}
+		sm.buf.WriteByte(tag)
+		sm.str(textPool[1+sm.rng.IntN(len(textPool)-1)])
+		sm.nbtPayload(tag, depth)
+	}
+	sm.buf.WriteByte(0)
+}
+
+func (sm *sampler) nbtPayload(tag byte, depth int) {
+	b := &sm.buf
+	switch tag {
+	case 1:
+		b.WriteByte(byte(sm.rng.Uint32()))
+	case 2:
+		_ = binary.Write(b, binary.LittleEndian, uint16(sm.rng.Uint32()))
+	case 3:
+		sm.zigzag32(int32(sm.rng.Uint32()))
+	case 4:
+		sm.integer("zigzag_i64", int64(sm.rng.Uint64()))
+	case 5:
+		_ = binary.Write(b, binary.LittleEndian, math.Float32bits(float32(sm.rng.Float64())))
+	case 6:
+		_ = binary.Write(b, binary.LittleEndian, math.Float64bits(sm.rng.Float64()))
+	case 7:
+		n := sm.rng.IntN(4)
+		sm.zigzag32(int32(n))
+		for i := 0; i < n; i++ {
+			b.WriteByte(byte(sm.rng.Uint32()))
+		}
+	case 8:
+		sm.str(textPool[sm.rng.IntN(len(textPool))])
+	case 9:
+		element := byte(1 + sm.rng.IntN(8))
+		n := sm.rng.IntN(3)
+		if n == 0 {
+			element = 0 // an empty list has no element type
+		}
+		b.WriteByte(element)
+		sm.zigzag32(int32(n))
+		for i := 0; i < n; i++ {
+			sm.nbtPayload(element, depth+1)
+		}
+	case 10:
+		sm.nbtCompound(depth + 1)
+	case 11, 12:
+		n := sm.rng.IntN(3)
+		sm.zigzag32(int32(n))
+		for i := 0; i < n; i++ {
+			sm.nbtPayload(tag-8, depth) // int or long elements
+		}
+	}
+}

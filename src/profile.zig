@@ -7,7 +7,7 @@ const Counter = @import("codec/writer.zig").CountingWriter;
 const Limits = @import("codec/limits.zig").DecodeLimits;
 const DecodeError = @import("codec/errors.zig").DecodeError;
 const EncodeError = @import("codec/errors.zig").EncodeError;
-const packs = @import("codecs/resource_pack.zig");
+const version = @import("v2193/root.zig");
 const Kind = registry.PacketKind;
 const PacketDirection = registry.PacketDirection;
 
@@ -30,48 +30,34 @@ pub const SessionFeatures = struct {
     }
 };
 pub const CompressionAlgorithm = enum { none, deflate, snappy };
-/// All slices, including collection views and typed string fields, borrow the input.
+/// All slices and lists in `value` borrow the input passed to `decodeBorrowed`.
 pub const BorrowedEnvelope = struct {
     header: packet.Header,
     kind: ?Kind,
     payload: []const u8,
     value: union(enum) {
         typed: typed.Packet,
-        resource_packs_info: packs.BorrowedInfo,
-        resource_pack_stack: packs.BorrowedStack,
-        resource_pack_client_response: packs.BorrowedResponse,
-        known_opaque,
+        /// An ID this profile does not define; `payload` carries the body.
         unknown,
     },
 };
 pub const Current = struct {
-    pub const protocol_number: u32 = 2193;
-    pub const minecraft_version = "1.26.50";
+    pub const protocol_number: u32 = version.protocol_version;
+    pub const minecraft_version = version.minecraft_version;
     pub const features: SessionFeatures = .{};
     pub const packetKind = registry.packetKind;
     pub const packetId = registry.packetId;
     pub const packetDirection = registry.packetDirection;
-    pub inline fn decodeBorrowed(input: []const u8, limits: Limits) DecodeError!BorrowedEnvelope {
+    pub fn decodeBorrowed(input: []const u8, limits: Limits) DecodeError!BorrowedEnvelope {
         const raw = try packet.decode(input, limits);
-        const kind = packetKind(raw.header.packet_id);
-        var result: BorrowedEnvelope = .{ .header = raw.header, .kind = kind, .payload = raw.payload, .value = .unknown };
-        const known = kind orelse return result;
+        const kind = packetKind(raw.header.packet_id) orelse
+            return .{ .header = raw.header, .kind = null, .payload = raw.payload, .value = .unknown };
         var r = try Reader.init(raw.payload, limits);
-        switch (known) {
-            .resource_packs_info => result.value = .{ .resource_packs_info = try packs.decodeInfoBorrowed(&r) },
-            .resource_pack_stack => result.value = .{ .resource_pack_stack = try packs.decodeStackBorrowed(&r) },
-            .resource_pack_client_response => result.value = .{ .resource_pack_client_response = try packs.decodeResponseBorrowed(&r) },
-            else => {
-                if (registry.hasCodec(known)) {
-                    result.value = .{ .typed = try typed.decodePayload(&r, known) };
-                    try r.finish();
-                } else result.value = .known_opaque;
-                return result;
-            },
-        }
+        const value = try version.decodePayload(&r, kind);
         try r.finish();
-        return result;
+        return .{ .header = raw.header, .kind = kind, .payload = raw.payload, .value = .{ .typed = value } };
     }
+    /// Values and capacity are checked before any destination bytes change.
     pub fn encode(w: *Writer, e: BorrowedEnvelope) EncodeError!void {
         var counter: Counter = .{};
         try encodeTo(&counter, e);
@@ -80,30 +66,17 @@ pub const Current = struct {
     }
     fn encodeTo(w: anytype, e: BorrowedEnvelope) EncodeError!void {
         if (e.kind != packetKind(e.header.packet_id)) return error.InvalidValue;
-        const expected: ?Kind = switch (e.value) {
-            .typed => |v| typed.packetKind(v),
-            .resource_packs_info => .resource_packs_info,
-            .resource_pack_stack => .resource_pack_stack,
-            .resource_pack_client_response => .resource_pack_client_response,
-            .known_opaque => blk: {
-                const kind = e.kind orelse return error.InvalidValue;
-                if (registry.coverage(kind) != .known_opaque) return error.InvalidValue;
-                break :blk kind;
-            },
-            .unknown => null,
-        };
-        if (expected != e.kind) return error.InvalidValue;
+        switch (e.value) {
+            .typed => |value| if (e.kind != typed.packetKind(value)) return error.InvalidValue,
+            .unknown => if (e.kind != null) return error.InvalidValue,
+        }
         try w.writeVarU32(e.header.toWire());
         switch (e.value) {
-            .typed => |v| try typed.encodePayload(w, v),
-            .resource_packs_info => |v| try packs.encodeInfoBorrowed(w, v),
-            .resource_pack_stack => |v| try packs.encodeStackBorrowed(w, v),
-            .resource_pack_client_response => |v| try packs.encodeResponseBorrowed(w, v),
-            .known_opaque, .unknown => try w.writeRaw(e.payload),
+            .typed => |value| try version.encodePayload(w, value),
+            .unknown => try w.writeRaw(e.payload),
         }
     }
 };
-pub const current = Current;
 /// A profile is a namespace type; selection and calls remain statically dispatched.
 pub fn validateProfile(comptime P: type) void {
     const number: u32 = P.protocol_number;

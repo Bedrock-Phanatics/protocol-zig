@@ -1,182 +1,95 @@
 const std = @import("std");
 const root = @import("../root.zig");
-const packets = root.packets.resource_pack;
-const codec = root.codecs.resource_pack;
+const packets = root.packets;
 
-fn allocator() std.mem.Allocator {
-    return std.testing.allocator;
+const info_fixture = [_]u8{ 6, 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{ 0, 1 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ [_]u8{0} ** 8 ++ [_]u8{ 0, 0, 0, 0, 0, 0, 0 };
+const stack_fixture = [_]u8{ 7, 0, 1, 1, 'p', 1, 'v', 0, 0, 1, 0, 0, 0, 1, 'e', 1, 0, 0 };
+const response_fixture = [_]u8{ 8, 1, 11 } ++ "downloading".* ++ [_]u8{ 1, 3, 'a', '_', '1' };
+
+fn roundTrip(wire: []const u8) !root.typed.Envelope {
+    const decoded = try root.typed.decode(wire, .{});
+    var output: [128]u8 = undefined;
+    var w = root.Writer.init(&output);
+    try root.typed.encode(&w, decoded);
+    try std.testing.expectEqualSlices(u8, wire, w.written());
+    for (0..wire.len) |length| {
+        if (root.typed.decode(wire[0..length], .{})) |_| return error.AcceptedTruncation else |_| {}
+    }
+    return decoded;
 }
 
-test "resource pack client response canonical fixture" {
-    const fixture = [_]u8{ 1, 11, 'd', 'o', 'w', 'n', 'l', 'o', 'a', 'd', 'i', 'n', 'g', 1, 3, 'a', '_', '1' };
-    var r = try root.Reader.init(&fixture, .{});
-    const value = try codec.decodeResponse(&r, allocator());
-    defer codec.deinitResponse(allocator(), value);
-    try std.testing.expectEqual(packets.PackResponse.send_packs, value.response);
-    try std.testing.expectEqualSlices(u8, "a_1", value.packs_to_download[0]);
-    try r.finish();
+test "resource pack client response borrows pack names from the input" {
+    const decoded = try roundTrip(&response_fixture);
+    const downloading = decoded.packet.resource_pack_client_response.response.downloading;
+    try std.testing.expectEqualSlices(u8, "downloading", downloading.response_type);
+    var it = downloading.downloading_packs.iterator();
+    const name = (try it.next()).?;
+    try std.testing.expectEqualSlices(u8, "a_1", name);
+    try std.testing.expect(name.ptr == response_fixture[response_fixture.len - 3 ..].ptr);
+    try std.testing.expect((try it.next()) == null);
+
+    var bad = response_fixture;
+    bad[bad.len - 1] = 0xff;
+    try std.testing.expectError(error.InvalidUtf8, root.typed.decode(&bad, .{}));
+}
+
+test "resource packs info and stack fixtures decode semantically" {
+    const info = (try roundTrip(&info_fixture)).packet.resource_packs_info;
+    try std.testing.expectEqual(@as(usize, 1), info.resource_packs.len);
+    var packs = info.resource_packs.iterator();
+    const pack = (try packs.next()).?;
+    try std.testing.expectEqual(@as(u64, 0), pack.pack_size);
+    try std.testing.expectEqualSlices(u8, "", pack.cdn_url);
+
+    const stack = (try roundTrip(&stack_fixture)).packet.resource_pack_stack;
+    var entries = stack.texture_pack_list.iterator();
+    const entry = (try entries.next()).?;
+    try std.testing.expectEqualSlices(u8, "p", entry.pack_id);
+    try std.testing.expectEqualSlices(u8, "v", entry.version);
+    try std.testing.expectEqual(@as(usize, 1), stack.experiments.toggles.len);
+}
+
+test "hostile collection counts are rejected before elements are visited" {
+    var bytes: [64]u8 = undefined;
+    var w = root.Writer.init(&bytes);
+    try w.writeU8(7);
+    try w.writeBool(false);
+    try w.writeVarU32(1_000_001);
+    try std.testing.expectError(error.LimitExceeded, root.typed.decode(w.written(), .{}));
+
+    w = root.Writer.init(&bytes);
+    try w.writeU8(8);
+    try w.writeVarU32(1);
+    try w.writeString("downloading");
+    try w.writeVarU32(70_000);
+    try std.testing.expectError(error.InvalidValue, root.typed.decode(w.written(), .{}));
+    try std.testing.expectError(error.LimitExceeded, root.typed.decode(w.written(), .{ .max_array_elements = 100 }));
+}
+
+test "owned list copies unwind every allocation failure" {
+    const decoded = try root.typed.decode(&stack_fixture, .{});
+    const list = decoded.packet.resource_pack_stack.texture_pack_list;
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, struct {
+        fn run(allocator: std.mem.Allocator, value: @TypeOf(list)) !void {
+            const owned = try value.toOwnedSlice(allocator);
+            defer allocator.free(owned);
+            try std.testing.expectEqualSlices(u8, "p", owned[0].pack_id);
+        }
+    }.run, .{list});
+}
+
+test "caller-built lists encode their items and match decoded wire lists" {
+    const packs = [_]packets.resource_pack_stack.StackResourcePack{.{ .pack_id = "p", .version = "v", .sub_pack_name = "" }};
+    const toggles = [_]root.types.ExperimentData{.{ .name = "e", .enabled = true }};
+    const envelope: root.typed.Envelope = .{ .header = .{ .packet_id = 7 }, .packet = .{ .resource_pack_stack = .{
+        .texture_pack_required = false,
+        .texture_pack_list = .init(&packs),
+        .base_game_version = "",
+        .experiments = .{ .toggles = .init(&toggles), .experiments_ever_toggled = false },
+        .include_editor_packs = false,
+    } } };
     var output: [64]u8 = undefined;
     var w = root.Writer.init(&output);
-    try codec.encodeResponse(&w, value);
-    try std.testing.expectEqualSlices(u8, &fixture, w.written());
-}
-
-test "resource pack response rejects mismatched state name" {
-    var r = try root.Reader.init(&.{ 1, 6, 'c', 'a', 'n', 'c', 'e', 'l', 0 }, .{});
-    try std.testing.expectError(error.InvalidEnum, codec.decodeResponse(&r, allocator()));
-}
-
-test "text authored and translated fixtures round trip" {
-    const authored = [_]u8{ 0, 1, 1, 3, 'B', 'o', 'b', 2, 'h', 'i', 0, 0, 0 };
-    var authored_reader = try root.Reader.init(&authored, .{});
-    const authored_value = try codec.decodeText(&authored_reader, allocator());
-    try authored_reader.finish();
-    var output: [128]u8 = undefined;
-    var authored_writer = root.Writer.init(&output);
-    try codec.encodeText(&authored_writer, authored_value);
-    try std.testing.expectEqualSlices(u8, &authored, authored_writer.written());
-
-    const translated = [_]u8{ 1, 2, 2, 3, 'k', 'e', 'y', 2, 1, 'a', 1, 'b', 0, 0, 0 };
-    var translated_reader = try root.Reader.init(&translated, .{});
-    const translated_value = try codec.decodeText(&translated_reader, allocator());
-    defer codec.deinitText(allocator(), translated_value);
-    try translated_reader.finish();
-    var translated_writer = root.Writer.init(&output);
-    try codec.encodeText(&translated_writer, translated_value);
-    try std.testing.expectEqualSlices(u8, &translated, translated_writer.written());
-}
-
-test "text rejects inconsistent category and oversized parameter count" {
-    var category_reader = try root.Reader.init(&.{ 0, 0, 1 }, .{});
-    try std.testing.expectError(error.InvalidEnum, codec.decodeText(&category_reader, allocator()));
-
-    const too_many = [_][]const u8{ "1", "2", "3", "4", "5" };
-    var output: [128]u8 = undefined;
-    var w = root.Writer.init(&output);
-    try std.testing.expectError(error.InvalidValue, codec.encodeText(&w, .{ .text_type = .translation, .needs_translation = true, .message = "key", .parameters = &too_many }));
-    try std.testing.expectEqual(@as(usize, 0), w.written().len);
-}
-test "text decode frees parameters when later validation fails" {
-    var bytes: [256]u8 = undefined;
-    var w = root.Writer.init(&bytes);
-    try w.writeBool(false);
-    try w.writeU8(2);
-    try w.writeU8(@intFromEnum(packets.TextType.translation));
-    try w.writeString("key");
-    try w.writeVarU32(1);
-    try w.writeString("parameter");
-    try w.writeString("x" ** 65);
-    try w.writeString("");
-    try w.writeBool(false);
-
-    var r = try root.Reader.init(w.written(), .{});
-    try std.testing.expectError(error.InvalidValue, codec.decodeText(&r, allocator()));
-}
-test "hostile collection counts are rejected before allocation" {
-    var no_space: [0]u8 = .{};
-    var fixed = std.heap.FixedBufferAllocator.init(&no_space);
-
-    var info_bytes: [64]u8 = undefined;
-    var info_writer = root.Writer.init(&info_bytes);
-    try info_writer.writeBool(false);
-    try info_writer.writeBool(false);
-    try info_writer.writeBool(false);
-    try info_writer.writeBool(false);
-    try info_writer.writeUuid([_]u8{0} ** 16);
-    try info_writer.writeString("");
-    try info_writer.writeVarU32(1_000_000);
-    var info_reader = try root.Reader.init(info_writer.written(), .{});
-    try std.testing.expectError(error.LimitExceeded, codec.decodeInfo(&info_reader, fixed.allocator()));
-
-    fixed.reset();
-    var stack_bytes: [16]u8 = undefined;
-    var stack_writer = root.Writer.init(&stack_bytes);
-    try stack_writer.writeBool(false);
-    try stack_writer.writeVarU32(1_000_000);
-    var stack_reader = try root.Reader.init(stack_writer.written(), .{});
-    try std.testing.expectError(error.LimitExceeded, codec.decodeStack(&stack_reader, fixed.allocator()));
-
-    fixed.reset();
-    var response_bytes: [32]u8 = undefined;
-    var response_writer = root.Writer.init(&response_bytes);
-    try response_writer.writeVarU32(1);
-    try response_writer.writeString("downloading");
-    try response_writer.writeVarU32(1_000_000);
-    var response_reader = try root.Reader.init(response_writer.written(), .{});
-    try std.testing.expectError(error.LimitExceeded, codec.decodeResponse(&response_reader, fixed.allocator()));
-}
-
-test "borrowed response validates all strings and stays on input" {
-    const bytes = [_]u8{ 1, 11 } ++ "downloading".* ++ [_]u8{ 1, 3 } ++ "abc".*;
-    var r = try root.Reader.init(&bytes, .{});
-    const v = try codec.decodeResponseBorrowed(&r);
-    try r.finish();
-    try std.testing.expectEqual(packets.PackResponse.send_packs, v.response);
-    var it = v.packs_to_download.iterator();
-    const name = (try it.next()).?;
-    try std.testing.expectEqualSlices(u8, "abc", name);
-    try std.testing.expect(name.ptr == bytes[bytes.len - 3 ..].ptr);
-    try std.testing.expect((try it.next()) == null);
-    for (0..bytes.len) |length| {
-        var short = try root.Reader.init(bytes[0..length], .{});
-        if (codec.decodeResponseBorrowed(&short)) |_| return error.AcceptedTruncation else |_| {}
-    }
-    var bad = bytes;
-    bad[bad.len - 1] = 0xff;
-    var invalid = try root.Reader.init(&bad, .{});
-    try std.testing.expectError(error.InvalidUtf8, codec.decodeResponseBorrowed(&invalid));
-}
-
-const info_fixture = [_]u8{ 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{ 0, 1 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ [_]u8{0} ** 8 ++ [_]u8{ 0, 0, 0, 0, 0, 0, 0 };
-const stack_fixture = [_]u8{ 0, 1, 1, 'p', 1, 'v', 0, 0, 1, 0, 0, 0, 1, 'e', 1, 0, 0 };
-const response_fixture = [_]u8{ 1, 11 } ++ "downloading".* ++ [_]u8{ 1, 1, 'p' };
-const text_fixture = [_]u8{ 1, 2, 2, 1, 'm', 1, 1, 'p', 0, 0, 0 };
-fn allocationExercise(a: std.mem.Allocator, which: u8, bytes: []const u8) !void {
-    var r = try root.Reader.init(bytes, .{});
-    switch (which) {
-        0 => {
-            const v = try codec.decodeInfo(&r, a);
-            defer codec.deinitInfo(a, v);
-            try r.finish();
-        },
-        1 => {
-            const v = try codec.decodeStack(&r, a);
-            defer codec.deinitStack(a, v);
-            try r.finish();
-        },
-        2 => {
-            const v = try codec.decodeResponse(&r, a);
-            defer codec.deinitResponse(a, v);
-            try r.finish();
-        },
-        3 => {
-            const v = try codec.decodeText(&r, a);
-            defer codec.deinitText(a, v);
-            try r.finish();
-        },
-        else => unreachable,
-    }
-}
-test "all collection allocation failures unwind and truncated allocations clean up" {
-    inline for (.{ info_fixture, stack_fixture, response_fixture, text_fixture }, 0..) |fixture, which| {
-        try std.testing.checkAllAllocationFailures(std.testing.allocator, allocationExercise, .{ @as(u8, which), &fixture });
-        for (0..fixture.len) |length| {
-            if (allocationExercise(std.testing.allocator, which, fixture[0..length])) |_| return error.AcceptedTruncation else |_| {}
-        }
-    }
-}
-test "borrowed info and stack golden fixtures encode and reject every truncation" {
-    inline for (.{ info_fixture, stack_fixture }, .{ codec.decodeInfoBorrowed, codec.decodeStackBorrowed }, .{ codec.encodeInfoBorrowed, codec.encodeStackBorrowed }) |fixture, decode, encode| {
-        var r = try root.Reader.init(&fixture, .{});
-        const value = try decode(&r);
-        try r.finish();
-        var output: [128]u8 = undefined;
-        var w = root.Writer.init(&output);
-        try encode(&w, value);
-        try std.testing.expectEqualSlices(u8, &fixture, w.written());
-        for (0..fixture.len) |length| {
-            var short = try root.Reader.init(fixture[0..length], .{});
-            if (decode(&short)) |_| return error.AcceptedTruncation else |_| {}
-        }
-    }
+    try root.typed.encode(&w, envelope);
+    try std.testing.expectEqualSlices(u8, &stack_fixture, w.written());
 }

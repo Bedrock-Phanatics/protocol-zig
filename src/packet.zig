@@ -1,7 +1,11 @@
+//! The packet header and a borrowed, undecoded packet body.
 const Reader = @import("codec/reader.zig").Reader;
 const Writer = @import("codec/writer.zig").Writer;
 const DecodeLimits = @import("codec/limits.zig").DecodeLimits;
+const DecodeError = @import("codec/errors.zig").DecodeError;
 
+/// The varint that starts every game packet: a 10-bit ID and two 2-bit
+/// split-screen sub-client indices.
 pub const Header = packed struct(u14) {
     packet_id: u10,
     sender_subclient: u2 = 0,
@@ -16,16 +20,17 @@ pub const Header = packed struct(u14) {
     }
 };
 
-/// Borrowed envelope. `payload` remains valid only while the input buffer does.
+/// `payload` borrows the decoded input and is valid only while it is.
 pub const Envelope = struct { header: Header, payload: []const u8 };
 
-pub fn decode(input: []const u8, limits: DecodeLimits) !Envelope {
+pub fn decode(input: []const u8, limits: DecodeLimits) DecodeError!Envelope {
     var reader = try Reader.init(input, limits);
     const header = try Header.fromWire(try reader.readVarU32());
     return .{ .header = header, .payload = reader.input[reader.cursor..] };
 }
 
-pub fn encode(writer: *Writer, envelope: Envelope) !void {
+/// Writes nothing unless the whole packet fits.
+pub fn encode(writer: *Writer, envelope: Envelope) error{NoSpaceLeft}!void {
     const header_bytes: usize = if (envelope.header.toWire() < 128) 1 else 2;
     const capacity = writer.remainingCapacity();
     if (header_bytes > capacity or envelope.payload.len > capacity - header_bytes) return error.NoSpaceLeft;
