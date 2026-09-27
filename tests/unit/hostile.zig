@@ -1,5 +1,5 @@
-//! Malformed and adversarial input: truncation of every corpus packet,
-//! recursion limits, hostile counts, and a coverage-guided fuzz target.
+//! Malformed and adversarial input: truncation and single-byte corruption of
+//! every corpus packet, recursion limits, hostile counts, and a coverage-guided fuzz target.
 const std = @import("std");
 const p = @import("bedrock_protocol");
 const campaign = @import("../fuzz/campaign.zig");
@@ -54,7 +54,7 @@ test "encoding a value nested deeper than any decoder accepts fails without writ
     for (output) |byte| try std.testing.expectEqual(@as(u8, 0xa5), byte);
 }
 
-test "every truncation of every corpus packet fails cleanly" {
+test "every truncation and corrupted byte of every corpus packet fails cleanly" {
     const io = std.testing.io;
     const gpa = std.testing.allocator;
     const text = try std.Io.Dir.cwd().readFileAlloc(io, corpus_file, gpa, .limited(64 * 1024 * 1024));
@@ -67,11 +67,16 @@ test "every truncation of every corpus packet fails cleanly" {
         _ = fields.next();
         _ = fields.next();
         const packet = try std.fmt.hexToBytes(&bytes, fields.next().?);
-        for (0..packet.len) |len| {
-            if (p.typed.decode(packet[0..len], .{})) |_| {
-                // A prefix may itself be a valid packet only if it round trips.
-                _ = try campaign.check(packet[0..len]);
-            } else |_| {}
+        // A prefix follows the same parse path and runs out of input.
+        for (0..packet.len) |len| try std.testing.expectError(error.EndOfStream, p.typed.decode(packet[0..len], .{}));
+        // A corrupted byte is rejected or still round-trips exactly.
+        for (packet) |*byte| {
+            const original = byte.*;
+            defer byte.* = original;
+            for ([_]u8{ original ^ 0x80, original ^ 0x01, 0xff }) |value| {
+                byte.* = value;
+                _ = try campaign.check(packet);
+            }
         }
     }
 }

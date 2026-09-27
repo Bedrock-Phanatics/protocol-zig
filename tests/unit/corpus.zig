@@ -1,11 +1,8 @@
 //! Replays tests/corpus.txt. Every line is a complete packet that must decode
 //! from the side that sent it, consume its input exactly and re-encode byte
 //! for byte. Every packet must have a sample for each side that may send it.
-//! Every strict prefix and every single corrupted byte of every sample is
-//! replayed as hostile input.
 const std = @import("std");
 const root = @import("bedrock_protocol");
-const campaign = @import("../fuzz/campaign.zig");
 const corpus_file = @import("build_options").corpus_file;
 
 test "corpus packets round trip byte for byte" {
@@ -39,18 +36,6 @@ test "corpus packets round trip byte for byte" {
         try std.testing.expectEqualSlices(u8, packet, w.written());
         try std.testing.expect((try root.Current.decodeBorrowed(packet, .{})).value == .typed);
         seen[decoded.header.packet_id][@intFromBool(from_server)] = true;
-
-        // A prefix follows the same parse path and runs out of input.
-        for (0..packet.len) |n| try std.testing.expectError(error.EndOfStream, root.typed.decode(packet[0..n], .{}));
-        // A corrupted byte is rejected or still round-trips exactly.
-        for (packet) |*byte| {
-            const original = byte.*;
-            defer byte.* = original;
-            for ([_]u8{ original ^ 0x80, original ^ 0x01, 0xff }) |value| {
-                byte.* = value;
-                _ = try campaign.check(packet);
-            }
-        }
         checked += 1;
     }
     for (std.enums.values(root.PacketKind)) |kind| {

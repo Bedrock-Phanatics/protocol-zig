@@ -98,7 +98,7 @@ func sync(files map[string]string, owned []string, check bool) int {
 	sort.Strings(paths)
 	for _, path := range paths {
 		actual, err := os.ReadFile(path)
-		if err == nil && !strings.HasSuffix(path, ".bin") {
+		if err == nil {
 			// Text outputs may have been checked out with CRLF line endings.
 			actual = bytes.ReplaceAll(actual, []byte("\r\n"), []byte("\n"))
 		}
