@@ -4,7 +4,7 @@
 // its whole payload and re-encode byte for byte, unless a reviewed entry in
 // accepted-divergences.json explains the difference.
 //
-//	go run . -corpus ../../tests/corpus.txt
+//	go run . -corpus ../../tests/corpus-2193.txt
 //	go run . -dump "server 11 0b..."   # show gophertunnel's decoding of one line
 package main
 
@@ -47,7 +47,7 @@ var pools = map[string]packet.Pool{"client": packet.NewClientPool(), "server": p
 var otherSide = map[string]string{"client": "server", "server": "client"}
 
 func main() {
-	corpusPath := flag.String("corpus", "../../tests/corpus.txt", "corpus file")
+	corpusPath := flag.String("corpus", "../../tests/corpus-2193.txt", "corpus file")
 	acceptedPath := flag.String("accepted", "accepted-divergences.json", "reviewed divergences")
 	dump := flag.String("dump", "", "print gophertunnel's decoding of one corpus line")
 	allowUnused := flag.Bool("allow-unused", false, "do not fail when an accepted divergence does not occur (for small corpora)")

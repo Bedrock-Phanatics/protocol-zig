@@ -14,7 +14,7 @@ env:
   # Pinned schema source: protocolgen's reconciled 1.26.51 (protocol 2193) manifest.
   PROTOCOLGEN_REVISION: 0b8f17e3b321f7cb89e21dc8563398b9981e632f
   # Bedwire revision the integration test runs against.
-  BEDWIRE_REVISION: e49155ab5d3d1064583e6d52dda8214c30b85e09
+  BEDWIRE_REVISION: 2b29460947c45395114a6b6c4484714923c6451c
 
 jobs:
   test:
@@ -95,9 +95,13 @@ jobs:
         run: go -C tools/differential run . -corpus "$RUNNER_TEMP/extended.txt"
       - name: Extended corpus through the Zig codecs
         run: zig build test -Doptimize=ReleaseSafe -Dcorpus="$RUNNER_TEMP/extended.txt"
-      - name: Long fuzz campaign
+      - name: Long mutation fuzz campaign
         if: github.event_name == 'schedule'
-        run: zig build fuzz -Doptimize=ReleaseSafe -Dfuzz-iterations=5000000
+        run: zig build fuzz -Doptimize=ReleaseSafe -Dfuzz-iterations=10000000
+      - name: Coverage-guided fuzzing
+        if: github.event_name == 'schedule'
+        timeout-minutes: 60
+        run: zig build test --fuzz=20M
 
   bedwire:
     runs-on: ubuntu-24.04

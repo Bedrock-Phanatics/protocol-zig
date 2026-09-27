@@ -1,4 +1,4 @@
-//! Replays tests/corpus.txt. Every line is a complete packet that must decode
+//! Replays tests/corpus-2193.txt. Every line is a complete packet that must decode
 //! from the side that sent it, consume its input exactly and re-encode byte
 //! for byte. Every packet must have a sample for each side that may send it.
 const std = @import("std");

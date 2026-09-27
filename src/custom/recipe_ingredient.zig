@@ -95,7 +95,7 @@ test "recipe ingredient descriptors round trip and match the schema map bytes" {
     const cases = [_][]const u8{
         &.{ 0, 0xfe, 0xff, 0x03, 2 }, // empty, aux 32767, count 1
         &([_]u8{ 1, 4 } ++ "name".* ++ [_]u8{3} ++ "abc".* ++ [_]u8{ 0, 4 }), // {"name": "abc"}, aux 0, count 2
-        &([_]u8{ 1, 8 } ++ "item_tag".* ++ [_]u8{ 1, 't', 0xfe, 0xff, 0x03, 128 - 128 }),
+        &([_]u8{ 1, 8 } ++ "item_tag".* ++ [_]u8{ 1, 't', 0xfe, 0xff, 0x03, 0 }), // {"item_tag": "t"}, aux 32767, count 0
         &([_]u8{ 1, 6 } ++ "molang".* ++ [_]u8{ 1, 'q', 12, 0, 2 }),
     };
     for (cases) |bytes| {

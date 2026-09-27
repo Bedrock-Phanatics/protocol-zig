@@ -9,11 +9,12 @@
 ## Updating
 
 ```sh
+# Every command takes -protocol <version> (default 2193).
 # 1. Rebuild the schema from a pinned protocolgen checkout (fails on stale decisions).
 go -C tools/codegen run . ingest -root ../.. -manifest /path/to/protocolgen/generated/<version>
 # 2. Review what changed on the wire.
 go -C tools/codegen run . diff old.json ../../protocol/schema/bedrock-2193.json
-# 3. Regenerate codecs and the corpus, then check coverage.
+# 3. Regenerate codecs and tests/corpus-<version>.txt, then check coverage.
 go -C tools/codegen run . generate -root ../..
 go -C tools/codegen run . corpus -root ../..
 go -C tools/codegen run . coverage -root ../..

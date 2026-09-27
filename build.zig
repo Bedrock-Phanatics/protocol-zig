@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) void {
     // zig build test
     const test_step = b.step("test", "Run unit, corpus and generated-codec tests");
     const options = b.addOptions();
-    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus.txt)") orelse b.pathFromRoot("tests/corpus.txt");
+    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus-2193.txt)") orelse b.pathFromRoot("tests/corpus-2193.txt");
     options.addOption([]const u8, "corpus_file", corpus_file);
 
     const suite = b.addTest(.{ .root_module = b.createModule(.{
@@ -47,6 +47,7 @@ pub fn build(b: *std.Build) void {
     // zig build fuzz -Dfuzz-iterations=N
     const fuzz_options = b.addOptions();
     fuzz_options.addOption(usize, "iterations", b.option(usize, "fuzz-iterations", "Deterministic fuzz cases (default: 100000)") orelse 100_000);
+    fuzz_options.addOption([]const u8, "corpus_file", corpus_file);
     const fuzz = b.addExecutable(.{ .name = "protocol-fuzz", .root_module = b.createModule(.{
         .root_source_file = b.path("tests/fuzz/main.zig"),
         .target = target,
@@ -62,6 +63,8 @@ pub fn build(b: *std.Build) void {
     // zig build bench (always optimized unless -Dbench-optimize says otherwise)
     const bench_optimize = b.option(std.builtin.OptimizeMode, "bench-optimize", "Benchmark optimization mode (default: ReleaseFast)") orelse .ReleaseFast;
     const bench_protocol = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = target, .optimize = bench_optimize });
+    const bench_options = b.addOptions();
+    bench_options.addOption([]const u8, "corpus_file", corpus_file);
     const bench = b.addExecutable(.{ .name = "protocol-bench", .root_module = b.createModule(.{
         .root_source_file = b.path("tests/bench/main.zig"),
         .target = target,
@@ -72,6 +75,7 @@ pub fn build(b: *std.Build) void {
                 .root_source_file = b.path("tests/support/mock_profile.zig"),
                 .imports = &.{.{ .name = "bedrock_protocol", .module = bench_protocol }},
             }) },
+            .{ .name = "bench_options", .module = bench_options.createModule() },
         },
     }) });
     b.step("bench", "Run microbenchmarks").dependOn(&b.addRunArtifact(bench).step);

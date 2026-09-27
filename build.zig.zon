@@ -1,6 +1,6 @@
 .{
     .name = .bedrock_protocol,
-    .version = "0.2.0",
+    .version = "0.3.0",
     .minimum_zig_version = "0.16.0",
     .fingerprint = 0xd6c4c0616ae4d32c,
     .paths = .{ "build.zig", "build.zig.zon", "src", "README.md", "LICENSE" },

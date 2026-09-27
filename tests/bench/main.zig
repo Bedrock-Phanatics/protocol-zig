@@ -1,97 +1,164 @@
+//! Microbenchmarks: `zig build bench`.
+//!
+//! Packet cases replay one sample per packet from tests/corpus-2193.txt. Samples
+//! are schema-valid but synthetic, so sizes differ from live traffic; use the
+//! numbers to compare changes, not as absolute throughput. Decoding takes no
+//! allocator, so every case performs zero heap allocations.
 const std = @import("std");
-const protocol = @import("bedrock_protocol");
+const p = @import("bedrock_protocol");
+const Mock = @import("mock_profile").Profile;
+const options = @import("bench_options");
+
+const budget_ns = 150 * std.time.ns_per_ms;
+
+var io: std.Io = undefined;
+var out: *std.Io.Writer = undefined;
+
 pub fn main(init: std.process.Init) !void {
-    const io = init.io;
-    var output: [256]u8 = undefined;
-    var file = std.Io.File.stdout().writer(io, &output);
-    const stdout = &file.interface;
-    var storage: [10]u8 = undefined;
-    var checksum: u64 = 0;
-    const iterations: u64 = 5_000_000;
+    io = init.io;
+    var buffer: [4096]u8 = undefined;
+    var stdout = std.Io.File.stdout().writer(io, &buffer);
+    out = &stdout.interface;
+    defer out.flush() catch {};
+
+    const corpus = try std.Io.Dir.cwd().readFileAlloc(io, options.corpus_file, init.gpa, .limited(64 * 1024 * 1024));
+    defer init.gpa.free(corpus);
+
+    try out.print("{s:<44} {s:>10} {s:>10}\n", .{ "case", "ns/op", "MB/s" });
+    try primitives();
+    try packets(corpus);
+}
+
+/// Runs `op` repeatedly for the time budget and prints its cost.
+fn measure(name: []const u8, bytes_per_op: usize, context: anytype, comptime op: fn (@TypeOf(context)) anyerror!void) !void {
+    var iterations: u64 = 0;
     const start = std.Io.Clock.awake.now(io).nanoseconds;
-    for (0..iterations) |i| {
-        var w = protocol.Writer.init(&storage);
-        try w.writeVarU64(i);
-        var r = try protocol.Reader.init(w.written(), .{});
-        checksum +%= try r.readVarU64();
+    var elapsed: i96 = 0;
+    while (elapsed < budget_ns) {
+        for (0..256) |_| try op(context);
+        iterations += 256;
+        elapsed = std.Io.Clock.awake.now(io).nanoseconds - start;
     }
-    const elapsed = std.Io.Clock.awake.now(io).nanoseconds - start;
     const ns = @as(f64, @floatFromInt(elapsed)) / @as(f64, @floatFromInt(iterations));
-    try stdout.print("varint round-trip: {d:.2} ns/op, {d:.2} Mops/s (checksum={d})\n", .{ ns, 1000.0 / ns, checksum });
-    inline for (.{ "header", "typed", "opaque" }) |workload| {
-        var buffer: [64]u8 = undefined;
-        const began = std.Io.Clock.awake.now(io).nanoseconds;
-        for (0..iterations) |i| {
-            var writer = protocol.Writer.init(&buffer);
-            if (comptime std.mem.eql(u8, workload, "header")) {
-                const header: protocol.packet.Header = .{ .packet_id = @truncate(i), .sender_subclient = @truncate(i >> 10) };
-                try writer.writeVarU32(header.toWire());
-                const decoded = try protocol.packet.decode(writer.written(), .{});
-                checksum +%= decoded.header.toWire();
-            } else if (comptime std.mem.eql(u8, workload, "typed")) {
-                try protocol.typed.encode(&writer, .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_network_version = @intCast(i) } } });
-                const decoded = try protocol.typed.decode(writer.written(), .{});
-                checksum +%= @intCast(decoded.packet.request_network_settings.client_network_version);
-            } else {
-                try protocol.packet.encode(&writer, .{ .header = .{ .packet_id = @truncate(i) }, .payload = "opaque payload" });
-                const decoded = try protocol.packet.decode(writer.written(), .{});
-                checksum +%= decoded.header.packet_id + decoded.payload.len;
-            }
-            std.mem.doNotOptimizeAway(writer.written());
+    const mbps = if (bytes_per_op == 0) 0 else @as(f64, @floatFromInt(bytes_per_op)) / ns * 1000.0;
+    try out.print("{s:<44} {d:>10.1} {d:>10.0}\n", .{ name, ns, mbps });
+}
+
+fn primitives() !void {
+    const Varint = struct {
+        storage: [16]u8 = undefined,
+        value: u64 = 0,
+        fn roundTrip(self: *@This()) !void {
+            var w = p.Writer.init(&self.storage);
+            try w.writeVarU64(self.value);
+            var r = try p.Reader.init(w.written(), .{});
+            self.value +%= try r.readVarU64() | 1;
+            std.mem.doNotOptimizeAway(self.value);
         }
-        const duration = std.Io.Clock.awake.now(io).nanoseconds - began;
-        const latency = @as(f64, @floatFromInt(duration)) / @as(f64, @floatFromInt(iterations));
-        try stdout.print("{s} round-trip: {d:.2} ns/op, {d:.2} Mops/s (checksum={d})\n", .{ workload, latency, 1000.0 / latency, checksum });
-    }
-    const Mock = @import("mock_profile").Profile;
-    inline for (.{ "varint-read", "varint-write", "header-decode", "header-encode", "kind-lookup", "id-lookup", "typed-decode", "typed-encode", "current-dispatch", "external-dispatch", "opaque-forward" }) |name| {
-        var bytes: [64]u8 = undefined;
-        var fixture = [_]u8{ 0xc1, 1, 0, 0, 8, 0x91 };
-        var legacy = [_]u8{ 0xe8, 7, 0x91, 8, 0, 0 };
-        const began = std.Io.Clock.awake.now(io).nanoseconds;
-        for (0..iterations) |i| {
-            var writer = protocol.Writer.init(&bytes);
-            fixture[5] = @truncate(i);
-            legacy[2] = @truncate(i);
-            if (comptime std.mem.eql(u8, name, "varint-read")) {
-                const input = [_]u8{ @as(u8, @truncate(i)) | 0x80, 1 };
-                var r = try protocol.Reader.init(&input, .{});
-                checksum +%= try r.readVarU32();
-            } else if (comptime std.mem.eql(u8, name, "varint-write")) {
-                try writer.writeVarU64(i);
-                checksum +%= writer.cursor;
-            } else if (comptime std.mem.eql(u8, name, "header-decode")) {
-                const input = [_]u8{ @as(u8, @truncate(i)) | 0x80, @as(u8, @truncate(i >> 7)) & 0x7f };
-                // Canonical two-byte headers have a nonzero terminal group.
-                var canonical = input;
-                canonical[1] |= 1;
-                checksum +%= (try protocol.packet.decode(&canonical, .{})).header.toWire();
-            } else if (comptime std.mem.eql(u8, name, "header-encode")) {
-                try writer.writeVarU32((@as(protocol.packet.Header, .{ .packet_id = @truncate(i), .target_subclient = @truncate(i >> 10) })).toWire());
-                checksum +%= writer.cursor;
-            } else if (comptime std.mem.eql(u8, name, "kind-lookup")) {
-                if (protocol.Current.packetKind(@truncate(i))) |kind| checksum +%= @intFromEnum(kind);
-            } else if (comptime std.mem.eql(u8, name, "id-lookup")) {
-                const kinds = std.enums.values(protocol.PacketKind);
-                checksum +%= protocol.Current.packetId(kinds[i % kinds.len]).?;
-            } else if (comptime std.mem.eql(u8, name, "typed-decode")) {
-                checksum +%= @intCast((try protocol.typed.decode(&fixture, .{})).packet.request_network_settings.client_network_version);
-            } else if (comptime std.mem.eql(u8, name, "typed-encode")) {
-                try protocol.typed.encode(&writer, .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_network_version = @intCast(i) } } });
-                checksum +%= writer.cursor;
-            } else if (comptime std.mem.eql(u8, name, "current-dispatch")) {
-                checksum +%= @intCast((try protocol.Current.decodeBorrowed(&fixture, .{})).value.typed.request_network_settings.client_network_version);
-            } else if (comptime std.mem.eql(u8, name, "external-dispatch")) {
-                checksum +%= @intCast((try Mock.decodeBorrowed(&legacy, .{})).value.typed.request_network_settings.client_network_version);
-            } else {
-                try protocol.packet.encode(&writer, .{ .header = .{ .packet_id = @truncate(i) }, .payload = "opaque payload" });
-                checksum +%= writer.cursor;
-            }
-            std.mem.doNotOptimizeAway(writer.written());
+    };
+    var varint: Varint = .{};
+    try measure("varint write+read", 0, &varint, Varint.roundTrip);
+
+    const Lookup = struct {
+        id: u10 = 0,
+        fn kindAndId(self: *@This()) !void {
+            self.id +%= 1;
+            if (p.Current.packetKind(self.id)) |kind| std.mem.doNotOptimizeAway(p.Current.packetId(kind));
         }
-        const elapsed_work = std.Io.Clock.awake.now(io).nanoseconds - began;
-        const latency = @as(f64, @floatFromInt(elapsed_work)) / @as(f64, @floatFromInt(iterations));
-        try stdout.print("{s}: {d:.2} ns/op, {d:.2} Mops/s (checksum={d})\n", .{ name, latency, 1000.0 / latency, checksum });
+    };
+    var lookup: Lookup = .{};
+    try measure("packet id -> kind -> id", 0, &lookup, Lookup.kindAndId);
+
+    const Envelope = struct {
+        input: []const u8,
+        fn decode(self: *const @This()) !void {
+            std.mem.doNotOptimizeAway((try p.packet.decode(self.input, .{})).payload.len);
+        }
+    };
+    const raw = [_]u8{ 0xc1, 0x01 } ++ [_]u8{0} ** 64;
+    try measure("header decode (raw forward)", raw.len, &Envelope{ .input = &raw }, Envelope.decode);
+
+    const External = struct {
+        input: []const u8,
+        fn decode(self: *const @This()) !void {
+            std.mem.doNotOptimizeAway((try Mock.decodeBorrowed(self.input, .{})).payload.len);
+        }
+    };
+    try measure("external profile dispatch", 6, &External{ .input = &.{ 0xe8, 7, 0x91, 8, 0, 0 } }, External.decode);
+}
+
+const Case = struct {
+    input: []const u8,
+    output: []u8,
+
+    fn decode(self: *const Case) !void {
+        std.mem.doNotOptimizeAway(try p.typed.decode(self.input, .{}));
     }
-    try stdout.flush();
+    fn decodeAndWalk(self: *const Case) !void {
+        const decoded = try p.typed.decode(self.input, .{});
+        try walk(decoded.packet);
+    }
+    fn encode(self: *const Case) !void {
+        const decoded = try p.typed.decode(self.input, .{});
+        var w = p.Writer.init(self.output);
+        try p.typed.encode(&w, decoded);
+        std.mem.doNotOptimizeAway(w.cursor);
+    }
+};
+
+/// Touches every lazily decoded list element, as a consumer inspecting the
+/// whole packet would.
+fn walk(value: anytype) p.DecodeError!void {
+    const T = @TypeOf(value);
+    switch (@typeInfo(T)) {
+        .@"struct" => |info| {
+            if (comptime @hasDecl(T, "Element") and @hasDecl(T, "Iterator")) {
+                var it = value.iterator();
+                while (try it.next()) |element| try walk(element);
+                return;
+            }
+            inline for (info.fields) |field| try walk(@field(value, field.name));
+        },
+        .@"union" => |info| if (info.tag_type != null) switch (value) {
+            inline else => |payload| try walk(payload),
+        },
+        .optional => if (value) |payload| try walk(payload),
+        .array => for (value) |element| try walk(element),
+        else => std.mem.doNotOptimizeAway(value),
+    }
+}
+
+const hot_packets = [_]p.PacketKind{
+    .move_player,           .player_auth_input,  .text,                           .set_actor_data,
+    .inventory_transaction, .item_stack_request, .item_stack_response,            .inventory_content,
+    .level_chunk,           .sub_chunk,          .network_chunk_publisher_update, .add_actor,
+    .available_commands,    .crafting_data,      .creative_content,               .start_game,
+};
+
+fn packets(corpus: []const u8) !void {
+    var bytes: [64 * 1024]u8 = undefined;
+    var output: [64 * 1024]u8 = undefined;
+    for (hot_packets) |kind| {
+        const input = findSample(corpus, kind, &bytes) orelse continue;
+        const case: Case = .{ .input = input, .output = &output };
+        var name: [64]u8 = undefined;
+        try measure(try std.fmt.bufPrint(&name, "{s} decode ({d} B)", .{ @tagName(kind), input.len }), input.len, &case, Case.decode);
+        try measure(try std.fmt.bufPrint(&name, "{s} decode + walk lists", .{@tagName(kind)}), input.len, &case, Case.decodeAndWalk);
+        try measure(try std.fmt.bufPrint(&name, "{s} decode + encode (proxy)", .{@tagName(kind)}), input.len, &case, Case.encode);
+    }
+}
+
+/// Returns the first corpus sample of `kind`, decoded into `storage`.
+fn findSample(corpus: []const u8, kind: p.PacketKind, storage: []u8) ?[]const u8 {
+    const id = p.Current.packetId(kind).?;
+    var lines = std.mem.tokenizeAny(u8, corpus, "\r\n");
+    while (lines.next()) |line| {
+        if (line[0] == '#') continue;
+        var fields = std.mem.tokenizeScalar(u8, line, ' ');
+        _ = fields.next();
+        const line_id = std.fmt.parseInt(u10, fields.next() orelse continue, 10) catch continue;
+        if (line_id != id) continue;
+        return std.fmt.hexToBytes(storage, fields.next() orelse return null) catch null;
+    }
+    return null;
 }

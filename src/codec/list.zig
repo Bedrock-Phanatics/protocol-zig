@@ -6,10 +6,13 @@ const DecodeLimits = @import("limits.zig").DecodeLimits;
 
 /// A protocol list. Decoding validates every element once and keeps the
 /// validated wire bytes, so decoding never allocates and re-encoding a
-/// decoded list is a single copy. Callers building packets use `init`.
+/// decoded list is a single copy.
 ///
-/// Element values produced by `iterator` borrow the same input buffer as the
-/// list, so they must not outlive it.
+/// Build lists with `init` (or `empty`). The `wire` form is produced only by
+/// `decode`; its bytes are trusted when encoding, so never construct it by
+/// hand. Elements produced by `iterator` borrow the same input buffer as the
+/// list and must not outlive it. Iterating re-parses elements, so walking
+/// nested lists costs time proportional to input size times nesting depth.
 pub fn List(comptime T: type, comptime C: type) type {
     return struct {
         const Self = @This();

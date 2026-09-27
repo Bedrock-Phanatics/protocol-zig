@@ -3,7 +3,7 @@
 //
 //	codegen ingest   -manifest DIR [-root DIR]   refresh protocol/schema/bedrock-<v>.json
 //	codegen generate [-check] [-root DIR]         write or verify generated Zig
-//	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus.txt
+//	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus-<version>.txt
 //	codegen coverage                              report semantic coverage
 //	codegen diff     OLD.json NEW.json            review a schema change
 package main
@@ -18,7 +18,9 @@ import (
 	"strings"
 )
 
-const protocolVersion = "2193"
+// protocolVersion selects protocol/schema/*-<version>.json and src/v<version>.
+// It is set by the -protocol flag.
+var protocolVersion = "2193"
 
 func must(err error) {
 	if err != nil {
@@ -36,7 +38,8 @@ func main() {
 	manifest := flags.String("manifest", "", "protocolgen generated/<version> directory")
 	check := flags.Bool("check", false, "fail instead of writing when output differs")
 	samples := flags.Int("samples", 1, "corpus samples per packet and direction")
-	out := flags.String("out", "", "corpus output file (default: tests/corpus.txt under -root)")
+	flags.StringVar(&protocolVersion, "protocol", protocolVersion, "protocol version to work on")
+	out := flags.String("out", "", "corpus output file (default: tests/corpus-<version>.txt under -root)")
 	must(flags.Parse(os.Args[2:]))
 	schemaPath := filepath.Join(*root, "protocol", "schema", "bedrock-"+protocolVersion+".json")
 	switch os.Args[1] {
@@ -60,11 +63,11 @@ func main() {
 		// Deterministic schema-valid packets for round-trip and differential tests.
 		schema := loadSchema(schemaPath)
 		hints := loadHints(filepath.Join(*root, "protocol", "schema", "sample-hints-"+protocolVersion+".json"))
-		path := filepath.Join(*root, "tests", "corpus.txt")
+		path := filepath.Join(*root, "tests", "corpus-"+protocolVersion+".txt")
 		if *out != "" {
 			path = *out
 		}
-		os.Exit(sync(map[string]string{path: corpus(schema, hints, 2193, *samples)}, nil, *check))
+		os.Exit(sync(map[string]string{path: corpus(schema, hints, uint64(schema.Target.ProtocolVersion), *samples)}, nil, *check))
 	case "coverage":
 		report, err := coverage(loadSchema(schemaPath))
 		fmt.Print(report)
