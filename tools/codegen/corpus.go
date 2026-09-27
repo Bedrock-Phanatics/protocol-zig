@@ -110,7 +110,6 @@ func corpus(s Schema, hints Hints, seed uint64, perPacket int) string {
 	return out.String()
 }
 
-// schemaSites lists every field, variant payload and nested value path.
 func schemaSites(s Schema) map[string]bool {
 	sites := map[string]bool{}
 	var walk func(site string, n Node)
@@ -162,8 +161,8 @@ func (sm *sampler) hint(site string) (SiteHint, bool) {
 	return h, ok
 }
 
-// fields samples a struct's fields in order. Checks are satisfied by
-// choosing their factors first and forcing the checked sequence length.
+// Checks are satisfied by choosing their factors first and forcing the
+// checked sequence length.
 func (sm *sampler) fields(owner string, fields []Field, checks []Check) {
 	for _, c := range checks {
 		product := c.Scale
@@ -543,7 +542,6 @@ func (sm *sampler) str(s string) {
 	sm.buf.WriteString(s)
 }
 
-// bitset writes the canonical little-endian base-128 form of random bits.
 func (sm *sampler) bitset(bits uint64) {
 	number := new(big.Int)
 	for i := uint64(0); i < bits; i++ {
@@ -645,7 +643,6 @@ func (sm *sampler) stackRequestItem() {
 	sm.buf.Write(data)
 }
 
-// nbt writes a small random network-little-endian compound document.
 func (sm *sampler) nbt() {
 	if sm.hints.NBT.Absent && sm.rng.IntN(5) == 0 {
 		sm.buf.WriteByte(0)

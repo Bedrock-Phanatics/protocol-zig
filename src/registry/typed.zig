@@ -1,4 +1,3 @@
-//! Typed packets with a header, statically dispatched over the current version.
 const Reader = @import("../codec/reader.zig").Reader;
 const Writer = @import("../codec/writer.zig").Writer;
 const CountingWriter = @import("../codec/writer.zig").CountingWriter;
@@ -9,14 +8,12 @@ const Header = @import("../packet.zig").Header;
 const version = @import("../generated/root.zig");
 
 pub const Packet = version.Packet;
-/// Every slice and list inside `packet` borrows the decoded input.
 pub const Envelope = struct { header: Header, packet: Packet };
 
 pub fn packetKind(value: Packet) version.Kind {
     return value;
 }
 
-/// Decodes one complete packet; the whole input must be consumed.
 pub fn decode(input: []const u8, limits: Limits) DecodeError!Envelope {
     var r = try Reader.init(input, limits);
     const header = try Header.fromWire(try r.readVarU32());
@@ -26,7 +23,6 @@ pub fn decode(input: []const u8, limits: Limits) DecodeError!Envelope {
     return .{ .header = header, .packet = value };
 }
 
-/// Validates values and measures the packet without writing.
 pub fn encodedSize(e: Envelope) EncodeError!usize {
     var counter: CountingWriter = .{};
     try encodeTo(&counter, e);

@@ -203,7 +203,6 @@ func readVerified(dir, name, digest string, value any) {
 	must(json.Unmarshal(data, value))
 }
 
-// ingest reads the pinned manifest from a protocolgen checkout.
 func ingest(checkout, reconciliationPath string) Schema {
 	var rec Reconciliation
 	data, err := os.ReadFile(reconciliationPath)
@@ -789,7 +788,6 @@ func (g *ingester) assignOwners(s *Schema) {
 var versionNamespace = regexp.MustCompile(`^v\d+(_\d+)*$`)
 var emptyVariant = regexp.MustCompile(`^Empty\d+$`)
 
-// words splits an identifier or phrase into lower-case words.
 func words(s string) []string {
 	var out []string
 	var cur []rune
@@ -1025,7 +1023,6 @@ func (g *ingester) restrictions(s *Schema) {
 	g.eachSite(s, visit)
 }
 
-// eachSite visits every field and union payload node with its "Owner.name" site.
 func (g *ingester) eachSite(s *Schema, visit func(site string, n *Node)) {
 	for i := range s.Packets {
 		for j := range s.Packets[i].Fields {

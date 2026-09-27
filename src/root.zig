@@ -26,7 +26,6 @@ pub const List = @import("codec/list.zig").List;
 pub const Bitset = @import("codec/bitset.zig").Bitset;
 pub const nbt = @import("codec/nbt.zig");
 
-/// Generated codecs for the one supported release.
 pub const version = @import("generated/root.zig");
 pub const protocol_version = version.protocol_version;
 pub const minecraft_version = version.minecraft_version;

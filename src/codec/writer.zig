@@ -4,14 +4,10 @@ const CountPrefix = @import("reader.zig").CountPrefix;
 const nbt = @import("nbt.zig");
 const DecodeLimits = @import("limits.zig").DecodeLimits;
 
-/// Recursive values deeper than this are rejected on encode, so cyclic or
-/// pathological caller data cannot exhaust the stack.
 pub const max_encode_depth = DecodeLimits.max_supported_nesting_depth;
 
-/// Writes into a caller-provided buffer and never past its end.
 pub const Writer = Output(false);
-/// Runs the same encoding operations to validate and measure a value without
-/// touching any storage.
+/// Validates and measures a value without writing.
 pub const CountingWriter = Output(true);
 
 fn Output(comptime counting: bool) type {
@@ -108,23 +104,19 @@ fn Output(comptime counting: bool) type {
             while (v >= 0x80) : (v >>= 7) try self.writeU8(@as(u8, @truncate(v)) | 0x80);
             try self.writeU8(@truncate(v));
         }
-        /// Zigzag-encoded signed varint.
         pub inline fn writeVarI32(self: *Self, v: i32) Error!void {
             const bits: u32 = @bitCast(v);
             try self.writeVarU32((bits << 1) ^ @as(u32, @bitCast(v >> 31)));
         }
-        /// Zigzag-encoded signed varint.
         pub inline fn writeVarI64(self: *Self, v: i64) Error!void {
             const bits: u64 = @bitCast(v);
             try self.writeVarU64((bits << 1) ^ @as(u64, @bitCast(v >> 63)));
         }
 
-        /// Varint-prefixed text; rejects invalid UTF-8.
         pub fn writeString(self: *Self, v: []const u8) error{ NoSpaceLeft, InvalidValue }!void {
             if (!std.unicode.utf8ValidateSlice(v)) return error.InvalidValue;
             try self.writeByteArray(v);
         }
-        /// Varint-prefixed bytes.
         pub fn writeByteArray(self: *Self, v: []const u8) error{ NoSpaceLeft, InvalidValue }!void {
             if (v.len > std.math.maxInt(u32)) return error.InvalidValue;
             try self.writeVarU32(@intCast(v.len));
@@ -137,7 +129,6 @@ fn Output(comptime counting: bool) type {
                 .u32le => try self.writeU32(@intCast(count)),
             }
         }
-        /// Writes a network NBT document after checking it is exactly one document.
         pub fn writeNbt(self: *Self, document: []const u8) error{ NoSpaceLeft, InvalidValue }!void {
             if (!nbt.isDocument(document)) return error.InvalidValue;
             try self.writeRaw(document);
@@ -151,7 +142,6 @@ fn Output(comptime counting: bool) type {
             self.depth -= 1;
         }
 
-        /// Bedrock sends a UUID as two little-endian u64 halves.
         pub fn writeUuid(self: *Self, v: [16]u8) Error!void {
             var wire: [16]u8 = undefined;
             for (0..8) |i| {

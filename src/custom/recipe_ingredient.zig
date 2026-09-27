@@ -1,5 +1,3 @@
-//! Crafting recipe ingredient (`cerealizer<RecipeIngredient>::SerializedData`).
-//!
 //! The protocol schema models the descriptor as a string-to-string map followed
 //! by an aux value. That is byte-identical to this codec for empty, item-name
 //! and item-tag descriptors; a molang descriptor instead carries an i16 version
@@ -13,11 +11,9 @@ const EncodeError = codec.EncodeError;
 
 pub const RecipeIngredient = struct {
     descriptor: Descriptor,
-    /// Number of items consumed; 0 to 64.
     count: i32,
 
     pub const Descriptor = union(enum) {
-        /// No item. `aux` is the schema's aux value, conventionally 32767.
         empty: struct { aux: i32 },
         item: struct { name: []const u8, aux: i32 },
         molang: struct { expression: []const u8, version: i16 },

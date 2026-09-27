@@ -47,7 +47,6 @@ test "positions vectors and UUIDs use their Bedrock layouts" {
     try w.writeBlockPosition(.{ .x = -1, .y = 64, .z = 1 });
     try w.writeVec3f(.{ .x = 1.25, .y = -2.5, .z = 3.0 });
     try w.writeUuid(uuid);
-    // UUIDs travel as two little-endian u64 halves.
     try std.testing.expectEqualSlices(u8, &.{ 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8 }, w.written()[w.cursor - 16 ..]);
 
     var r = try root.Reader.init(w.written(), .{});

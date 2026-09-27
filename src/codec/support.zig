@@ -1,4 +1,3 @@
-//! Runtime used by generated packet and type codecs.
 const std = @import("std");
 pub const Reader = @import("reader.zig").Reader;
 pub const DecodeError = @import("errors.zig").DecodeError;
@@ -81,8 +80,6 @@ fn primSpec(comptime kind: PrimKind) struct { type, []const u8 } {
     };
 }
 
-/// Reports whether `len` equals the product of the integer `factors` times
-/// `scale`, without overflow; a negative factor never matches.
 pub fn lengthIsProduct(len: usize, factors: anytype, scale: u64) bool {
     var product: u128 = scale;
     inline for (factors) |factor| {
@@ -94,12 +91,10 @@ pub fn lengthIsProduct(len: usize, factors: anytype, scale: u64) bool {
     return product == len;
 }
 
-/// Element codec for a list of plain primitive values.
 pub fn Prim(comptime kind: PrimKind) type {
     const spec = primSpec(kind);
     return struct {
-        /// Byte width when every bit pattern is a valid value, so a list of
-        /// these validates with a single bounds check.
+        /// Set only for kinds where every bit pattern is a valid value.
         pub const fixed_size: ?usize = switch (kind) {
             .u8, .i8, .u16le, .i16le, .u32le, .i32le, .u64le, .i64le => @sizeOf(spec[0]),
             .u16be, .i16be, .u32be, .i32be, .u64be, .i64be, .f32le, .f64le => @sizeOf(spec[0]),

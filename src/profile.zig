@@ -11,7 +11,6 @@ const version = @import("generated/root.zig");
 const Kind = registry.PacketKind;
 const PacketDirection = registry.PacketDirection;
 
-/// Wire capabilities only. Session policy and version selection belong to callers.
 pub const SessionFeatures = struct {
     uses_request_network_settings: bool = true,
     supports_deflate: bool = true,
@@ -30,14 +29,12 @@ pub const SessionFeatures = struct {
     }
 };
 pub const CompressionAlgorithm = enum { none, deflate, snappy };
-/// All slices and lists in `value` borrow the input passed to `decodeBorrowed`.
 pub const BorrowedEnvelope = struct {
     header: packet.Header,
     kind: ?Kind,
     payload: []const u8,
     value: union(enum) {
         typed: typed.Packet,
-        /// An ID this profile does not define; `payload` carries the body.
         unknown,
     },
 };
@@ -57,7 +54,6 @@ pub const Current = struct {
         try r.finish();
         return .{ .header = raw.header, .kind = kind, .payload = raw.payload, .value = .{ .typed = value } };
     }
-    /// Values and capacity are checked before any destination bytes change.
     pub fn encode(w: *Writer, e: BorrowedEnvelope) EncodeError!void {
         var counter: Counter = .{};
         try encodeTo(&counter, e);
@@ -77,7 +73,6 @@ pub const Current = struct {
         }
     }
 };
-/// A profile is a namespace type; selection and calls remain statically dispatched.
 pub fn validateProfile(comptime P: type) void {
     const number: u32 = P.protocol_number;
     const features: SessionFeatures = P.features;

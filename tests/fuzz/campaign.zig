@@ -1,10 +1,4 @@
-//! Deterministic hostile-input campaign.
-//!
-//! Every input either fails with a DecodeError or decodes to a value that
-//! re-encodes to exactly the same bytes, measures to the same size, decodes
-//! the same through the profile, and whose lazily decoded lists all iterate
-//! without error. Inputs are random bytes and mutations (truncation, bit
-//! flips, byte edits, insertions, deletions and splices) of the corpus.
+//! Every input must fail with a DecodeError or re-encode to the same bytes.
 const std = @import("std");
 const p = @import("bedrock_protocol");
 const Mock = @import("mock_profile").Profile;
@@ -35,7 +29,6 @@ pub fn run(corpus: []const u8, iterations: usize) !Stats {
     return stats;
 }
 
-/// Checks one input against every invariant; reports whether it decoded.
 pub fn check(input: []const u8) !bool {
     var output: [max_input + 16]u8 = undefined;
 
@@ -45,7 +38,6 @@ pub fn check(input: []const u8) !bool {
         if (!std.mem.eql(u8, input, w.written())) return error.EnvelopeRoundTrip;
     } else |_| {}
 
-    // Tight limits must fail cleanly as well.
     _ = p.typed.decode(input, .{ .max_string_bytes = 16, .max_array_elements = 4, .max_nesting_depth = 2, .max_nbt_bytes = 32 }) catch {};
     inline for (.{ p.Current, Mock }) |Profile| {
         if (Profile.decodeBorrowed(input, .{})) |value| {
@@ -64,8 +56,6 @@ pub fn check(input: []const u8) !bool {
     return true;
 }
 
-/// Walks a decoded value, iterating every lazily decoded list. Decoding
-/// validated these bytes, so iteration must never fail.
 pub fn visit(value: anytype) p.DecodeError!void {
     const T = @TypeOf(value);
     switch (@typeInfo(T)) {
@@ -151,14 +141,11 @@ fn mutate(random: std.Random, out: []u8, seed: []const u8, seeds: []const []cons
     return len;
 }
 
-/// Hand-built hostile shapes that random mutation rarely reaches.
 fn structuredCases() !void {
-    // Deeply nested NBT stops at the nesting limit.
     const nested = [_]u8{ 10, 0 } ** 80 ++ [_]u8{0} ** 80;
     var r = try p.Reader.init(&nested, .{});
     if (p.nbt.readDocument(&r)) |_| return error.AcceptedDeepNbt else |err| if (err != error.LimitExceeded) return err;
 
-    // Counts far beyond the input fail without visiting every element.
     const huge_count = [_]u8{ 0xff, 0xff, 0xff, 0xff, 0x0f };
     for ([_][]const u8{
         &([_]u8{ 7, 0 } ++ huge_count),

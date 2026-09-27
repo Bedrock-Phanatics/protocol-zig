@@ -1,7 +1,5 @@
 const std = @import("std");
 
-/// Bounds applied while decoding untrusted input. Every count and length read
-/// from the wire is checked against these before it is used.
 pub const DecodeLimits = struct {
     pub const max_supported_nesting_depth: usize = 128;
 
@@ -10,13 +8,12 @@ pub const DecodeLimits = struct {
     max_byte_array_bytes: usize = 8 * 1024 * 1024,
     max_array_elements: usize = 1_000_000,
     max_nbt_bytes: usize = 8 * 1024 * 1024,
-    /// Bounds recursive protocol values and NBT nesting.
     max_nesting_depth: usize = 64,
 
     pub const defaults: DecodeLimits = .{};
 
-    /// Re-reads bytes that were already validated under stricter limits.
-    /// Limits only ever reject input, so relaxing them cannot change a parse.
+    /// Re-reads validated bytes. Limits only ever reject input, so relaxing
+    /// them cannot change a parse.
     pub const revalidated: DecodeLimits = .{
         .max_packet_bytes = std.math.maxInt(usize),
         .max_string_bytes = std.math.maxInt(usize),

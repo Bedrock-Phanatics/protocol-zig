@@ -1,4 +1,3 @@
-//! The packet header and a borrowed, undecoded packet body.
 const Reader = @import("codec/reader.zig").Reader;
 const Writer = @import("codec/writer.zig").Writer;
 const DecodeLimits = @import("codec/limits.zig").DecodeLimits;
@@ -20,7 +19,6 @@ pub const Header = packed struct(u14) {
     }
 };
 
-/// `payload` borrows the decoded input and is valid only while it is.
 pub const Envelope = struct { header: Header, payload: []const u8 };
 
 pub fn decode(input: []const u8, limits: DecodeLimits) DecodeError!Envelope {
@@ -29,7 +27,6 @@ pub fn decode(input: []const u8, limits: DecodeLimits) DecodeError!Envelope {
     return .{ .header = header, .payload = reader.input[reader.cursor..] };
 }
 
-/// Writes nothing unless the whole packet fits.
 pub fn encode(writer: *Writer, envelope: Envelope) error{NoSpaceLeft}!void {
     const header_bytes: usize = if (envelope.header.toWire() < 128) 1 else 2;
     const capacity = writer.remainingCapacity();

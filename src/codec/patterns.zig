@@ -1,5 +1,3 @@
-//! Matchers for the regular expressions the protocol schema publishes. The
-//! generator refuses any pattern without a reviewed matcher here.
 const std = @import("std");
 
 /// `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpeg$`

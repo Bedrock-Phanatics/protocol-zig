@@ -6,12 +6,10 @@ const nbt = @import("nbt.zig");
 
 pub const CountPrefix = enum { var_u32, u32le };
 
-/// Bounds-checked cursor over one packet. Slices it returns borrow `input`.
 pub const Reader = struct {
     input: []const u8,
     cursor: usize = 0,
     limits: DecodeLimits,
-    /// Current recursive-value nesting; bounded by limits.max_nesting_depth.
     depth: usize = 0,
 
     pub fn init(input: []const u8, limits: DecodeLimits) DecodeError!Reader {
@@ -27,7 +25,6 @@ pub const Reader = struct {
         return self.cursor == self.input.len;
     }
 
-    /// Fails unless every input byte was consumed.
     pub fn finish(self: *const Reader) DecodeError!void {
         if (!self.end()) return error.TrailingData;
     }
@@ -45,7 +42,6 @@ pub const Reader = struct {
     pub inline fn readI8(self: *Reader) DecodeError!i8 {
         return @bitCast(try self.readU8());
     }
-    /// Only 0 and 1 are booleans, so every accepted value re-encodes exactly.
     pub fn readBool(self: *Reader) DecodeError!bool {
         return switch (try self.readU8()) {
             0 => false,
@@ -101,8 +97,6 @@ pub const Reader = struct {
         return @bitCast(try self.readU64());
     }
 
-    /// Canonical (shortest) encodings only, so every accepted varint
-    /// re-encodes to the same bytes.
     pub fn readVarU32(self: *Reader) DecodeError!u32 {
         var value: u32 = 0;
         var index: u3 = 0;
@@ -131,12 +125,10 @@ pub const Reader = struct {
         }
         return error.VarIntOverflow;
     }
-    /// Zigzag-encoded signed varint.
     pub inline fn readVarI32(self: *Reader) DecodeError!i32 {
         const v = try self.readVarU32();
         return @bitCast((v >> 1) ^ (0 -% (v & 1)));
     }
-    /// Zigzag-encoded signed varint.
     pub inline fn readVarI64(self: *Reader) DecodeError!i64 {
         const v = try self.readVarU64();
         return @bitCast((v >> 1) ^ (0 -% (v & 1)));
@@ -147,18 +139,14 @@ pub const Reader = struct {
         if (length > maximum) return error.LimitExceeded;
         return length;
     }
-    /// Varint-prefixed UTF-8 text.
     pub fn readString(self: *Reader) DecodeError![]const u8 {
         const bytes = try self.take(try self.readLength(self.limits.max_string_bytes));
         if (!std.unicode.utf8ValidateSlice(bytes)) return error.InvalidUtf8;
         return bytes;
     }
-    /// Varint-prefixed bytes.
     pub fn readByteArray(self: *Reader) DecodeError![]const u8 {
         return self.take(try self.readLength(self.limits.max_byte_array_bytes));
     }
-    /// Reads an element count, rejecting counts above max_array_elements
-    /// before any element is visited.
     pub fn readCount(self: *Reader, comptime prefix: CountPrefix) DecodeError!usize {
         const count: usize = switch (prefix) {
             .var_u32 => try self.readVarU32(),
@@ -167,7 +155,6 @@ pub const Reader = struct {
         if (count > self.limits.max_array_elements) return error.LimitExceeded;
         return count;
     }
-    /// Validates one network-little-endian NBT document and borrows its bytes.
     pub fn readNbt(self: *Reader) DecodeError![]const u8 {
         return nbt.readDocument(self);
     }

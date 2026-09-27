@@ -4,7 +4,6 @@ const DecodeError = @import("errors.zig").DecodeError;
 const EncodeError = @import("errors.zig").EncodeError;
 
 /// A fixed-width bitset sent as an unsigned little-endian base-128 integer.
-/// Only the canonical (shortest) encoding is accepted, so round trips are exact.
 pub fn Bitset(comptime bits: u16) type {
     return struct {
         const Self = @This();

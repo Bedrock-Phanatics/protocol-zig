@@ -1,9 +1,4 @@
-//! Microbenchmarks: `zig build bench`.
-//!
-//! Packet cases replay one sample per packet from tests/corpus.txt. Samples
-//! are schema-valid but synthetic, so sizes differ from live traffic; use the
-//! numbers to compare changes, not as absolute throughput. Decoding takes no
-//! allocator, so every case performs zero heap allocations.
+//! Corpus samples are synthetic: compare runs, don't read these as live throughput.
 const std = @import("std");
 const p = @import("bedrock_protocol");
 const Mock = @import("mock_profile").Profile;
@@ -29,7 +24,6 @@ pub fn main(init: std.process.Init) !void {
     try packets(corpus);
 }
 
-/// Runs `op` repeatedly for the time budget and prints its cost.
 fn measure(name: []const u8, bytes_per_op: usize, context: anytype, comptime op: fn (@TypeOf(context)) anyerror!void) !void {
     var iterations: u64 = 0;
     const start = std.Io.Clock.awake.now(io).nanoseconds;
@@ -105,7 +99,6 @@ const Case = struct {
         try p.typed.encode(&w, decoded);
         std.mem.doNotOptimizeAway(w.cursor);
     }
-    /// The validation and sizing pass that `encode` runs before writing.
     fn measureOnly(self: *const Case) !void {
         std.mem.doNotOptimizeAway(try p.typed.encodedSize(self.decoded));
     }
@@ -116,8 +109,6 @@ const Case = struct {
     }
 };
 
-/// Touches every lazily decoded list element, as a consumer inspecting the
-/// whole packet would.
 fn walk(value: anytype) p.DecodeError!void {
     const T = @TypeOf(value);
     switch (@typeInfo(T)) {
@@ -160,7 +151,6 @@ fn packets(corpus: []const u8) !void {
     }
 }
 
-/// Returns the first corpus sample of `kind`, decoded into `storage`.
 fn findSample(corpus: []const u8, kind: p.PacketKind, storage: []u8) ?[]const u8 {
     const id = p.Current.packetId(kind).?;
     var lines = std.mem.tokenizeAny(u8, corpus, "\r\n");

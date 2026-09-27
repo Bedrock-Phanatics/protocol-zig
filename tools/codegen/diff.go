@@ -68,7 +68,6 @@ func (d *diffWriter) section(title string, lines []string) {
 	}
 }
 
-// diffFields reports added, removed, retyped and reordered fields.
 func diffFields(owner string, a, b []Field) []string {
 	var out []string
 	index := func(fields []Field) map[string]int {
@@ -95,7 +94,6 @@ func diffFields(owner string, a, b []Field) []string {
 			out = append(out, fmt.Sprintf("%s: added field `%s` %s at position %d", owner, f.Name, describe(f.Type), bi[f.Name]))
 		}
 	}
-	// Relative order of the fields both versions share.
 	var order []string
 	for _, f := range b {
 		if _, ok := ai[f.Name]; ok {

@@ -314,7 +314,6 @@ func local(base string, depth int) string {
 	return fmt.Sprintf("%s%d", base, depth-2)
 }
 
-// decode returns statements that decode n into the lvalue target.
 func (f *file) decode(n Node, target, hint string, depth int) []string {
 	in := indent(depth)
 	var out []string
@@ -370,7 +369,6 @@ func (f *file) decode(n Node, target, hint string, depth int) []string {
 	return out
 }
 
-// encode returns statements that encode the expression value.
 func (f *file) encode(n Node, value, hint string, depth int) []string {
 	in := indent(depth)
 	var out []string
@@ -580,7 +578,6 @@ func (f *file) structDef(name string, fields []Field, recursive bool, checks ...
 	f.line("};")
 }
 
-// checks emits reviewed cross-field invariants over the struct value v.
 func (f *file) checks(checks []Check, v string) {
 	for _, c := range checks {
 		factors := make([]string, len(c.Factors))
@@ -711,8 +708,6 @@ func ident(name string) string {
 	return name
 }
 
-// root emits the version namespace: registry tables and the typed packet
-// union with static decode/encode dispatch.
 func (e *emitter) root() string {
 	var b strings.Builder
 	p := func(format string, args ...any) { fmt.Fprintf(&b, format+"\n", args...) }

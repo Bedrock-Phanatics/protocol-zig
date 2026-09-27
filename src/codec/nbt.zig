@@ -1,5 +1,3 @@
-//! Validation of Bedrock network-little-endian NBT (varint lengths and
-//! integers). Documents are validated in place and borrowed, never copied.
 const std = @import("std");
 const Reader = @import("reader.zig").Reader;
 const DecodeError = @import("errors.zig").DecodeError;
@@ -23,9 +21,7 @@ pub const Tag = enum(u8) {
 
 const max_string_bytes = 32767;
 
-/// Validates one complete document and returns its exact bytes, borrowed
-/// from the reader input. A lone TAG_End is the one-byte encoding of an
-/// absent document. Reads never look past `limits.max_nbt_bytes`.
+/// A lone TAG_End is the one-byte encoding of an absent document.
 pub fn readDocument(r: *Reader) DecodeError![]const u8 {
     const start = r.cursor;
     const original = r.input;
@@ -46,7 +42,6 @@ pub fn readDocument(r: *Reader) DecodeError![]const u8 {
     return r.input[start..r.cursor];
 }
 
-/// Reports whether `bytes` is exactly one valid document.
 pub fn isDocument(bytes: []const u8) bool {
     var r: Reader = .{ .input = bytes, .limits = DecodeLimits.revalidated };
     _ = readDocument(&r) catch return false;

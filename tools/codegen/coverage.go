@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-// coverage summarises what the schema defines and fails (returns an error)
-// if any packet is not fully described by semantic fields.
 func coverage(s Schema) (string, error) {
 	var b strings.Builder
 	counts := map[string]int{}

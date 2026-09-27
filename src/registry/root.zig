@@ -1,4 +1,3 @@
-//! Packet identity for the current protocol version.
 const version = @import("../generated/root.zig");
 
 pub const PacketKind = version.Kind;

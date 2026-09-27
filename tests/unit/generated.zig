@@ -3,7 +3,6 @@ const root = @import("bedrock_protocol");
 const v = root.version;
 
 comptime {
-    // Every known packet has a semantic codec; none is a raw payload wrapper.
     const kinds = @typeInfo(v.Kind).@"enum".fields;
     if (kinds.len != 231) @compileError("protocol 2193 defines 231 packets");
     for (kinds) |kind| {

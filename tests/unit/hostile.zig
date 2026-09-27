@@ -1,5 +1,3 @@
-//! Malformed and adversarial input: truncation and single-byte corruption of
-//! every corpus packet, recursion limits, hostile counts, and a coverage-guided fuzz target.
 const std = @import("std");
 const p = @import("bedrock_protocol");
 const campaign = @import("../fuzz/campaign.zig");
@@ -67,9 +65,7 @@ test "every truncation and corrupted byte of every corpus packet fails cleanly" 
         _ = fields.next();
         _ = fields.next();
         const packet = try std.fmt.hexToBytes(&bytes, fields.next().?);
-        // A prefix follows the same parse path and runs out of input.
         for (0..packet.len) |len| try std.testing.expectError(error.EndOfStream, p.typed.decode(packet[0..len], .{}));
-        // A corrupted byte is rejected or still round-trips exactly.
         for (packet) |*byte| {
             const original = byte.*;
             defer byte.* = original;

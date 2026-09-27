@@ -1,5 +1,3 @@
-//! Bounded deterministic hostile-input campaign:
-//! `zig build fuzz -Dfuzz-iterations=N`.
 const std = @import("std");
 const options = @import("fuzz_options");
 

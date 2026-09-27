@@ -1,6 +1,3 @@
-//! Replays tests/corpus.txt. Every line is a complete packet that must decode
-//! from the side that sent it, consume its input exactly and re-encode byte
-//! for byte. Every packet must have a sample for each side that may send it.
 const std = @import("std");
 const root = @import("bedrock_protocol");
 const corpus_file = @import("build_options").corpus_file;
