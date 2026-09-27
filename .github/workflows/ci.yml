@@ -11,8 +11,6 @@ permissions:
 env:
   ZIG_VERSION: 0.16.0
   GO_VERSION: '1.25'
-  # Pinned schema source: protocolgen's reconciled 1.26.51 (protocol 2193) manifest.
-  PROTOCOLGEN_REVISION: 0b8f17e3b321f7cb89e21dc8563398b9981e632f
   # Bedwire revision the integration test runs against.
   BEDWIRE_REVISION: 2b29460947c45395114a6b6c4484714923c6451c
 
@@ -30,11 +28,16 @@ jobs:
         with:
           version: ${{ env.ZIG_VERSION }}
       - run: zig fmt --check build.zig build.zig.zon src tests
-      - run: zig build test
-      - run: zig build test -Doptimize=ReleaseSafe
-      - run: zig build test -Doptimize=ReleaseFast
-      - run: zig build fuzz -Dfuzz-iterations=20000
-      - run: zig build bench
+      - if: ${{ !cancelled() }}
+        run: zig build test
+      - if: ${{ !cancelled() }}
+        run: zig build test -Doptimize=ReleaseSafe
+      - if: ${{ !cancelled() }}
+        run: zig build test -Doptimize=ReleaseFast
+      - if: ${{ !cancelled() }}
+        run: zig build fuzz -Dfuzz-iterations=20000
+      - if: ${{ !cancelled() }}
+        run: zig build bench
 
   cross:
     name: compile (${{ matrix.target }})
@@ -59,21 +62,28 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - name: gofmt
         run: test -z "$(gofmt -l tools)" || (gofmt -l tools; exit 1)
-      - run: go -C tools/codegen vet ./...
-      - run: go -C tools/codegen test ./...
-      - run: go -C tools/differential vet ./...
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          repository: bedrock-mc/protocolgen
-          ref: ${{ env.PROTOCOLGEN_REVISION }}
-          path: .protocolgen
+      - if: ${{ !cancelled() }}
+        run: go -C tools/codegen vet ./...
+      - if: ${{ !cancelled() }}
+        run: go -C tools/codegen test ./...
+      - if: ${{ !cancelled() }}
+        run: go -C tools/differential vet ./...
+      - name: Check out the protocolgen revision pinned in reconciliation.json
+        if: ${{ !cancelled() }}
+        run: |
+          git clone --quiet --filter=blob:none https://github.com/bedrock-mc/protocolgen .protocolgen
+          git -C .protocolgen checkout --quiet "$(jq -r .manifest.revision protocol/schema/reconciliation.json)"
       - name: Schema matches the pinned manifest and reviewed decisions
-        run: go -C tools/codegen run . ingest -root ../.. -check -manifest ../../.protocolgen/generated/1.26.51
+        if: ${{ !cancelled() }}
+        run: go -C tools/codegen run . ingest -root ../.. -check -manifest ../../.protocolgen
       - name: Generated Zig has no drift
+        if: ${{ !cancelled() }}
         run: go -C tools/codegen run . generate -root ../.. -check
       - name: Corpus has no drift
+        if: ${{ !cancelled() }}
         run: go -C tools/codegen run . corpus -root ../.. -check
       - name: Every packet has a semantic codec
+        if: ${{ !cancelled() }}
         run: go -C tools/codegen run . coverage -root ../..
 
   differential:
@@ -92,8 +102,10 @@ jobs:
       - name: Generate an extended corpus
         run: go -C tools/codegen run . corpus -root ../.. -samples ${{ github.event_name == 'schedule' && 256 || 32 }} -out "$RUNNER_TEMP/extended.txt"
       - name: Extended corpus against gophertunnel (every accepted divergence must still occur)
+        if: ${{ !cancelled() }}
         run: go -C tools/differential run . -corpus "$RUNNER_TEMP/extended.txt"
       - name: Extended corpus through the Zig codecs
+        if: ${{ !cancelled() }}
         run: zig build test -Doptimize=ReleaseSafe -Dcorpus="$RUNNER_TEMP/extended.txt"
       - name: Long mutation fuzz campaign
         if: github.event_name == 'schedule'

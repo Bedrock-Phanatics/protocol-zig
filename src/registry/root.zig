@@ -1,5 +1,5 @@
 //! Packet identity for the current protocol version.
-const version = @import("../v2193/root.zig");
+const version = @import("../generated/root.zig");
 
 pub const PacketKind = version.Kind;
 pub const PacketDirection = version.Direction;

@@ -150,11 +150,11 @@ func TestCheckDoesNotOverwriteStaleOutput(t *testing.T) {
 }
 
 func TestCheckedInSchemaGeneratesDeterministically(t *testing.T) {
-	s := loadSchema(filepath.Join("..", "..", "protocol", "schema", "bedrock-"+protocolVersion+".json"))
+	s := loadSchema(filepath.Join("..", "..", "protocol", "schema", "bedrock.json"))
 	if !reflect.DeepEqual(generate(s), generate(s)) {
 		t.Fatal("generation is not deterministic")
 	}
-	hints := loadHints(filepath.Join("..", "..", "protocol", "schema", "sample-hints-"+protocolVersion+".json"))
+	hints := loadHints(filepath.Join("..", "..", "protocol", "schema", "sample-hints.json"))
 	if corpus(s, hints, 1, 2) != corpus(s, hints, 1, 2) {
 		t.Fatal("corpus is not deterministic")
 	}
@@ -210,6 +210,14 @@ func TestIngestFailsClosed(t *testing.T) {
 	}
 	tampered.Manifest.Files["manifest.json"] = "sha256:00"
 	mustPanic(t, "digest", func() { runIngest(t, dir, tampered) })
+
+	crlf := strings.ReplaceAll(tinyManifest, "\n", "\r\n")
+	must(os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(crlf), 0o644))
+	runIngest(t, dir, rec)
+
+	release := rec
+	release.Target.MinecraftVersion = "1.0.1"
+	mustPanic(t, "Minecraft 1.0.0", func() { runIngest(t, dir, release) })
 
 	stale := rec
 	stale.Directions = append(stale.Directions, struct {

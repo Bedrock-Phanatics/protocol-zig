@@ -1,6 +1,6 @@
 const std = @import("std");
 const root = @import("bedrock_protocol");
-const v = root.v2193;
+const v = root.version;
 
 comptime {
     // Every known packet has a semantic codec; none is a raw payload wrapper.

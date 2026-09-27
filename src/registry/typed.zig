@@ -6,7 +6,7 @@ const Limits = @import("../codec/limits.zig").DecodeLimits;
 const DecodeError = @import("../codec/errors.zig").DecodeError;
 const EncodeError = @import("../codec/errors.zig").EncodeError;
 const Header = @import("../packet.zig").Header;
-const version = @import("../v2193/root.zig");
+const version = @import("../generated/root.zig");
 
 pub const Packet = version.Packet;
 /// Every slice and list inside `packet` borrows the decoded input.

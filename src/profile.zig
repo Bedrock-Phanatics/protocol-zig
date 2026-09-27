@@ -7,7 +7,7 @@ const Counter = @import("codec/writer.zig").CountingWriter;
 const Limits = @import("codec/limits.zig").DecodeLimits;
 const DecodeError = @import("codec/errors.zig").DecodeError;
 const EncodeError = @import("codec/errors.zig").EncodeError;
-const version = @import("v2193/root.zig");
+const version = @import("generated/root.zig");
 const Kind = registry.PacketKind;
 const PacketDirection = registry.PacketDirection;
 

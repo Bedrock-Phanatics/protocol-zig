@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit, corpus and generated-codec tests");
     const options = b.addOptions();
-    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus-2193.txt)") orelse b.pathFromRoot("tests/corpus-2193.txt");
+    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus.txt)") orelse b.pathFromRoot("tests/corpus.txt");
     options.addOption([]const u8, "corpus_file", corpus_file);
 
     const suite = b.addTest(.{ .root_module = b.createModule(.{

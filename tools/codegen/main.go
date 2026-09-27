@@ -1,9 +1,9 @@
 // Command codegen turns a pinned protocolgen manifest into the canonical
 // protocol-zig schema and generates Zig codecs from that schema.
 //
-//	codegen ingest   -manifest DIR [-root DIR]   refresh protocol/schema/bedrock-<v>.json
-//	codegen generate [-check] [-root DIR]         write or verify generated Zig
-//	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus-<version>.txt
+//	codegen ingest   -manifest DIR [-root DIR]   refresh protocol/schema/bedrock.json
+//	codegen generate [-check] [-root DIR]         write or verify src/generated
+//	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus.txt
 //	codegen coverage                              report semantic coverage
 //	codegen diff     OLD.json NEW.json            review a schema change
 package main
@@ -18,10 +18,6 @@ import (
 	"strings"
 )
 
-// protocolVersion selects protocol/schema/*-<version>.json and src/v<version>.
-// It is set by the -protocol flag.
-var protocolVersion = "2193"
-
 func must(err error) {
 	if err != nil {
 		panic(err)
@@ -35,20 +31,19 @@ func main() {
 	}
 	flags := flag.NewFlagSet(os.Args[1], flag.ExitOnError)
 	root := flags.String("root", ".", "repository root")
-	manifest := flags.String("manifest", "", "protocolgen generated/<version> directory")
+	manifest := flags.String("manifest", "", "protocolgen checkout at the pinned revision")
 	check := flags.Bool("check", false, "fail instead of writing when output differs")
 	samples := flags.Int("samples", 1, "corpus samples per packet and direction")
-	flags.StringVar(&protocolVersion, "protocol", protocolVersion, "protocol version to work on")
-	out := flags.String("out", "", "corpus output file (default: tests/corpus-<version>.txt under -root)")
+	out := flags.String("out", "", "corpus output file (default: tests/corpus.txt under -root)")
 	must(flags.Parse(os.Args[2:]))
-	schemaPath := filepath.Join(*root, "protocol", "schema", "bedrock-"+protocolVersion+".json")
+	schemaPath := filepath.Join(*root, "protocol", "schema", "bedrock.json")
 	switch os.Args[1] {
 	case "ingest":
 		if *manifest == "" {
 			fmt.Fprintln(os.Stderr, "ingest requires -manifest")
 			os.Exit(2)
 		}
-		schema := ingest(*manifest, filepath.Join(*root, "protocol", "schema", "reconciliation-"+protocolVersion+".json"))
+		schema := ingest(*manifest, filepath.Join(*root, "protocol", "schema", "reconciliation.json"))
 		files := map[string]string{schemaPath: schema.encode()}
 		os.Exit(sync(files, nil, *check))
 	case "generate":
@@ -61,8 +56,8 @@ func main() {
 		os.Exit(sync(out, generatedDirs(*root), *check))
 	case "corpus":
 		schema := loadSchema(schemaPath)
-		hints := loadHints(filepath.Join(*root, "protocol", "schema", "sample-hints-"+protocolVersion+".json"))
-		path := filepath.Join(*root, "tests", "corpus-"+protocolVersion+".txt")
+		hints := loadHints(filepath.Join(*root, "protocol", "schema", "sample-hints.json"))
+		path := filepath.Join(*root, "tests", "corpus.txt")
 		if *out != "" {
 			path = *out
 		}
@@ -89,7 +84,7 @@ func main() {
 // generatedDirs lists directories whose .zig files are owned by the generator,
 // so stale files from removed packets or types are detected and deleted.
 func generatedDirs(root string) []string {
-	return []string{filepath.Join(root, "src", "v"+protocolVersion)}
+	return []string{filepath.Join(root, "src", "generated")}
 }
 
 // sync writes (or with check, verifies) files atomically and removes stale

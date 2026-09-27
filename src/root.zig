@@ -26,11 +26,13 @@ pub const List = @import("codec/list.zig").List;
 pub const Bitset = @import("codec/bitset.zig").Bitset;
 pub const nbt = @import("codec/nbt.zig");
 
-/// Protocol 2193 (Minecraft 1.26.50).
-pub const v2193 = @import("v2193/root.zig");
-pub const PacketId = v2193.Id;
-pub const packets = v2193.packets;
-pub const types = v2193.types;
+/// Generated codecs for the one supported release.
+pub const version = @import("generated/root.zig");
+pub const protocol_version = version.protocol_version;
+pub const minecraft_version = version.minecraft_version;
+pub const PacketId = version.Id;
+pub const packets = version.packets;
+pub const types = version.types;
 
 const vectors = @import("codec/vectors.zig");
 pub const Vec2f = vectors.Vec2f;

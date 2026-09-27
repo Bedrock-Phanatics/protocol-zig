@@ -3,49 +3,49 @@
     "packet": 5,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/DisconnectPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/DisconnectPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
     "packet": 18,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/MoveActorAbsolutePacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/MoveActorAbsolutePacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
     "packet": 32,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/MobArmorEquipmentPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/MobArmorEquipmentPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
     "packet": 39,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetActorDataPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetActorDataPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
     "packet": 40,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetActorMotionPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetActorMotionPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
     "packet": 48,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/PlayerHotbarPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/PlayerHotbarPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
     "packet": 60,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetDifficultyPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetDifficultyPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
@@ -59,7 +59,7 @@
     "packet": 66,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SpawnExperienceOrbPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SpawnExperienceOrbPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
@@ -80,7 +80,7 @@
     "packet": 182,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/ChangeMobPropertyPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/ChangeMobPropertyPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {
@@ -101,7 +101,7 @@
     "packet": 194,
     "direction": "client",
     "kind": "unregistered",
-    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/GameTestRequestPacket.php (ServerboundPacket) and protocol/schema/reconciliation-2193.json directions",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/GameTestRequestPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
     "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
   },
   {

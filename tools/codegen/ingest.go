@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -193,6 +194,8 @@ type ingester struct {
 func readVerified(dir, name, digest string, value any) {
 	data, err := os.ReadFile(filepath.Join(dir, name))
 	must(err)
+	// Digests are of the committed LF bytes; a CRLF checkout hashes the same.
+	data = bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
 	sum := sha256.Sum256(data)
 	if got := "sha256:" + hex.EncodeToString(sum[:]); got != digest {
 		panic(fmt.Errorf("%s digest %s does not match the pinned %s", name, got, digest))
@@ -200,11 +203,13 @@ func readVerified(dir, name, digest string, value any) {
 	must(json.Unmarshal(data, value))
 }
 
-func ingest(sourceDir, reconciliationPath string) Schema {
+// ingest reads the pinned manifest from a protocolgen checkout.
+func ingest(checkout, reconciliationPath string) Schema {
 	var rec Reconciliation
 	data, err := os.ReadFile(reconciliationPath)
 	must(err)
 	must(json.Unmarshal(data, &rec))
+	sourceDir := filepath.Join(checkout, filepath.FromSlash(rec.Manifest.Path))
 	var manifest mManifest
 	readVerified(sourceDir, "manifest.json", rec.Manifest.Files["manifest.json"], &manifest)
 	var naming, layout, domains overlayNames
@@ -213,6 +218,10 @@ func ingest(sourceDir, reconciliationPath string) Schema {
 	readVerified(sourceDir, "domains.json", rec.Manifest.Files["domains.json"], &domains)
 	if manifest.SchemaVersion != 2 || manifest.Target.ProtocolVersion != rec.Target.ProtocolVersion {
 		panic(fmt.Errorf("manifest targets protocol %d schema %d, reconciliation targets %d", manifest.Target.ProtocolVersion, manifest.SchemaVersion, rec.Target.ProtocolVersion))
+	}
+	// Releases can share a protocol number, so the game version must match too.
+	if manifest.Target.MinecraftVersion != rec.Target.MinecraftVersion {
+		panic(fmt.Errorf("manifest targets Minecraft %s, reconciliation targets %s", manifest.Target.MinecraftVersion, rec.Target.MinecraftVersion))
 	}
 
 	g := &ingester{rec: rec, names: map[string]string{}, domains: map[string]string{}, types: map[string]*TypeDef{},

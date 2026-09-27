@@ -1,8 +1,12 @@
 # protocol-zig
 
 Minecraft: Bedrock Edition packet codecs for Zig: every packet of protocol
-**2193** (Minecraft **1.26.50 / 1.26.51**), decoded into typed fields and
-encoded back byte for byte.
+**2193** (Minecraft **1.26.51**), decoded into typed fields and encoded back
+byte for byte.
+
+protocol-zig supports **only the latest stable release**. When a new stable
+protocol ships, the library moves to it and the old one is dropped; there is
+no multi-version support.
 
 - **Complete:** all 231 packets have generated codecs; none are opaque payloads.
 - **Zero-copy:** decoding never allocates. Strings, byte arrays, NBT and lists
@@ -124,7 +128,7 @@ which must match its tag.
 | `protocol.packets.<name>.Packet` | One struct per packet, plus its packet-specific types |
 | `protocol.types` | Types shared between packets |
 | `protocol.registry` | `packetKind(id)`, `packetId(kind)`, `packetDirection(kind)` |
-| `protocol.v2193` | The version namespace everything above points at |
+| `protocol.version` | The generated codecs; `protocol.protocol_version` and `protocol.minecraft_version` name the release |
 
 Directions are the union of every independent source that accepts a packet
 from a side, so a packet any vanilla peer sends is never rejected.
@@ -139,22 +143,22 @@ profile, so version selection stays outside this library.
 
 ## How the codecs are made
 
-`src/v2193` is generated. Nothing in it is edited by hand.
+`src/generated` is generated. Nothing in it is edited by hand.
 
 1. **Schema.** [protocolgen](https://github.com/bedrock-mc/protocolgen)
    reconciles Mojang's protocol docs with a dump of the dedicated server
    (Endstone). Its manifest is pinned by revision and checksum.
-2. **Reviewed decisions.** `protocol/schema/reconciliation-2193.json` records
+2. **Reviewed decisions.** `protocol/schema/reconciliation.json` records
    every change made on top of it: packet names, directions, removed deprecated
    IDs, enum values tied to union tags, cross-field checks, one hand-written
    codec, and documented source conflicts. Each one cites evidence and stops
    ingest if the manifest it was written against changes.
 3. **Canonical schema.** `tools/codegen ingest` produces
-   `protocol/schema/bedrock-2193.json`, which `tools/codegen generate` turns
+   `protocol/schema/bedrock.json`, which `tools/codegen generate` turns
    into Zig.
 
-See [protocol/README.md](protocol/README.md) for the update workflow and
-`tools/codegen diff` for reviewing a new protocol version at the schema level.
+See [protocol/README.md](protocol/README.md) for moving to the next stable
+release.
 
 ### Known conflicts
 
@@ -191,10 +195,13 @@ Two narrower cases:
 | `zig build test-bedwire -Dbedwire-path=...` | Run Bedwire sessions over this library |
 | `go -C tools/differential run .` | Compare the corpus with gophertunnel |
 
-`tests/corpus-2193.txt` holds one schema-valid sample of every packet from
+`tests/corpus.txt` holds one schema-valid sample of every packet from
 every side that may send it (`<sender> <id> <hex>` per line). CI also
 generates a larger corpus on every run and compares it with gophertunnel and
 the Zig codecs.
+
+The Zig package ships only `src`, `build.zig`, `build.zig.zon`, `README.md`
+and `LICENSE`. Tests, tools and the schema live in the repository.
 
 ## License
 
