@@ -1,6 +1,6 @@
 //! Microbenchmarks: `zig build bench`.
 //!
-//! Packet cases replay one sample per packet from tests/corpus-2193.txt. Samples
+//! Packet cases replay one sample per packet from tests/corpus.txt. Samples
 //! are schema-valid but synthetic, so sizes differ from live traffic; use the
 //! numbers to compare changes, not as absolute throughput. Decoding takes no
 //! allocator, so every case performs zero heap allocations.
@@ -89,6 +89,7 @@ fn primitives() !void {
 
 const Case = struct {
     input: []const u8,
+    decoded: p.typed.Envelope,
     output: []u8,
 
     fn decode(self: *const Case) !void {
@@ -102,6 +103,15 @@ const Case = struct {
         const decoded = try p.typed.decode(self.input, .{});
         var w = p.Writer.init(self.output);
         try p.typed.encode(&w, decoded);
+        std.mem.doNotOptimizeAway(w.cursor);
+    }
+    /// The validation and sizing pass that `encode` runs before writing.
+    fn measureOnly(self: *const Case) !void {
+        std.mem.doNotOptimizeAway(try p.typed.encodedSize(self.decoded));
+    }
+    fn encodeOnly(self: *const Case) !void {
+        var w = p.Writer.init(self.output);
+        try p.typed.encode(&w, self.decoded);
         std.mem.doNotOptimizeAway(w.cursor);
     }
 };
@@ -129,10 +139,10 @@ fn walk(value: anytype) p.DecodeError!void {
 }
 
 const hot_packets = [_]p.PacketKind{
-    .move_player,           .player_auth_input,  .text,                           .set_actor_data,
-    .inventory_transaction, .item_stack_request, .item_stack_response,            .inventory_content,
-    .level_chunk,           .sub_chunk,          .network_chunk_publisher_update, .add_actor,
-    .available_commands,    .crafting_data,      .creative_content,               .start_game,
+    .request_network_settings, .move_player,                    .player_auth_input,   .text,               .set_actor_data,
+    .inventory_transaction,    .item_stack_request,             .item_stack_response, .inventory_content,  .level_chunk,
+    .sub_chunk,                .network_chunk_publisher_update, .add_actor,           .available_commands, .crafting_data,
+    .creative_content,         .start_game,
 };
 
 fn packets(corpus: []const u8) !void {
@@ -140,10 +150,12 @@ fn packets(corpus: []const u8) !void {
     var output: [64 * 1024]u8 = undefined;
     for (hot_packets) |kind| {
         const input = findSample(corpus, kind, &bytes) orelse continue;
-        const case: Case = .{ .input = input, .output = &output };
+        const case: Case = .{ .input = input, .decoded = try p.typed.decode(input, .{}), .output = &output };
         var name: [64]u8 = undefined;
         try measure(try std.fmt.bufPrint(&name, "{s} decode ({d} B)", .{ @tagName(kind), input.len }), input.len, &case, Case.decode);
         try measure(try std.fmt.bufPrint(&name, "{s} decode + walk lists", .{@tagName(kind)}), input.len, &case, Case.decodeAndWalk);
+        try measure(try std.fmt.bufPrint(&name, "{s} encode", .{@tagName(kind)}), input.len, &case, Case.encodeOnly);
+        try measure(try std.fmt.bufPrint(&name, "{s} encodedSize", .{@tagName(kind)}), input.len, &case, Case.measureOnly);
         try measure(try std.fmt.bufPrint(&name, "{s} decode + encode (proxy)", .{@tagName(kind)}), input.len, &case, Case.encode);
     }
 }

@@ -4,7 +4,7 @@
 //! by an aux value. That is byte-identical to this codec for empty, item-name
 //! and item-tag descriptors; a molang descriptor instead carries an i16 version
 //! and no aux value, as gophertunnel and CloudburstMC read it. See the
-//! `custom_types` decision in protocol/schema/reconciliation-2193.json.
+//! `custom_types` decision in protocol/schema/reconciliation.json.
 const std = @import("std");
 const codec = @import("../codec/support.zig");
 const Reader = codec.Reader;
@@ -107,6 +107,12 @@ test "recipe ingredient descriptors round trip and match the schema map bytes" {
         try value.encode(&w);
         try std.testing.expectEqualSlices(u8, bytes, w.written());
     }
+    var molang: Reader = .{ .input = cases[3], .limits = .{} };
+    const m = (try RecipeIngredient.decode(&molang)).descriptor.molang;
+    try std.testing.expectEqualStrings("q", m.expression);
+    try std.testing.expectEqual(@as(i16, 12), m.version);
+    var tag: Reader = .{ .input = cases[2], .limits = .{} };
+    try std.testing.expectEqual(@as(i32, 32767), (try RecipeIngredient.decode(&tag)).descriptor.item_tag.aux);
     var unknown: Reader = .{ .input = &([_]u8{ 1, 3 } ++ "tag".* ++ [_]u8{ 0, 0 }), .limits = .{} };
     try std.testing.expectError(error.InvalidEnum, RecipeIngredient.decode(&unknown));
     var many: Reader = .{ .input = &.{ 2, 0 }, .limits = .{} };
