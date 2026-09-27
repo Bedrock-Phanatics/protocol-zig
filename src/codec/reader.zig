@@ -1,42 +1,41 @@
 const std = @import("std");
 const DecodeLimits = @import("limits.zig").DecodeLimits;
 const DecodeError = @import("errors.zig").DecodeError;
-const vector = @import("../types/vector.zig");
-const BlockPosition = @import("../types/block_position.zig").BlockPosition;
-const position = @import("../types/position.zig");
-const colour = @import("../types/colour.zig");
+const vectors = @import("vectors.zig");
+const nbt = @import("nbt.zig");
+
+pub const CountPrefix = enum { var_u32, u32le };
 
 pub const Reader = struct {
     input: []const u8,
     cursor: usize = 0,
     limits: DecodeLimits,
+    depth: usize = 0,
 
     pub fn init(input: []const u8, limits: DecodeLimits) DecodeError!Reader {
-        return initWithInputLimit(input, limits, limits.max_packet_bytes);
-    }
-    pub fn initWithInputLimit(input: []const u8, limits: DecodeLimits, max_input_bytes: usize) DecodeError!Reader {
-        if (!limits.valid() or input.len > max_input_bytes) return error.LimitExceeded;
+        if (!limits.valid() or input.len > limits.max_packet_bytes) return error.LimitExceeded;
         return .{ .input = input, .limits = limits };
     }
+
     pub inline fn remaining(self: *const Reader) usize {
         return self.input.len - self.cursor;
     }
+
     pub inline fn end(self: *const Reader) bool {
         return self.cursor == self.input.len;
     }
-    pub inline fn checkpoint(self: *const Reader) usize {
-        return self.cursor;
+
+    pub fn finish(self: *const Reader) DecodeError!void {
+        if (!self.end()) return error.TrailingData;
     }
-    pub fn restore(self: *Reader, mark: usize) DecodeError!void {
-        if (mark > self.input.len) return error.InvalidCheckpoint;
-        self.cursor = mark;
-    }
+
     pub fn take(self: *Reader, count: usize) DecodeError![]const u8 {
         if (count > self.remaining()) return error.EndOfStream;
         const start = self.cursor;
         self.cursor += count;
         return self.input[start..self.cursor];
     }
+
     pub inline fn readU8(self: *Reader) DecodeError!u8 {
         return (try self.take(1))[0];
     }
@@ -50,9 +49,10 @@ pub const Reader = struct {
             else => error.InvalidBoolean,
         };
     }
+
     fn readInt(self: *Reader, comptime T: type, endian: std.builtin.Endian) DecodeError!T {
         const bytes = try self.take(@sizeOf(T));
-        return std.mem.readInt(T, @ptrCast(bytes.ptr), endian);
+        return std.mem.readInt(T, bytes[0..@sizeOf(T)], endian);
     }
     pub inline fn readU16(self: *Reader) DecodeError!u16 {
         return self.readInt(u16, .little);
@@ -133,31 +133,41 @@ pub const Reader = struct {
         const v = try self.readVarU64();
         return @bitCast((v >> 1) ^ (0 -% (v & 1)));
     }
-    fn boundedLength(self: *Reader, maximum: usize) DecodeError!usize {
-        const v: usize = try self.readVarU32();
-        if (v > maximum) return error.LimitExceeded;
-        return v;
+
+    fn readLength(self: *Reader, maximum: usize) DecodeError!usize {
+        const length: usize = try self.readVarU32();
+        if (length > maximum) return error.LimitExceeded;
+        return length;
     }
     pub fn readString(self: *Reader) DecodeError![]const u8 {
-        const bytes = try self.take(try self.boundedLength(self.limits.max_string_bytes));
+        const bytes = try self.take(try self.readLength(self.limits.max_string_bytes));
         if (!std.unicode.utf8ValidateSlice(bytes)) return error.InvalidUtf8;
         return bytes;
     }
     pub fn readByteArray(self: *Reader) DecodeError![]const u8 {
-        return self.take(try self.boundedLength(self.limits.max_byte_array_bytes));
+        return self.take(try self.readLength(self.limits.max_byte_array_bytes));
     }
-    pub fn readCollectionLength(self: *Reader) DecodeError!usize {
-        return self.boundedLength(self.limits.max_array_elements);
+    pub fn readCount(self: *Reader, comptime prefix: CountPrefix) DecodeError!usize {
+        const count: usize = switch (prefix) {
+            .var_u32 => try self.readVarU32(),
+            .u32le => try self.readU32(),
+        };
+        if (count > self.limits.max_array_elements) return error.LimitExceeded;
+        return count;
     }
-    pub fn readVec2f(self: *Reader) DecodeError!vector.Vec2f {
-        return .{ .x = try self.readF32(), .y = try self.readF32() };
+    pub fn readNbt(self: *Reader) DecodeError![]const u8 {
+        return nbt.readDocument(self);
     }
-    pub fn readVec3f(self: *Reader) DecodeError!vector.Vec3f {
-        return .{ .x = try self.readF32(), .y = try self.readF32(), .z = try self.readF32() };
+
+    pub fn enter(self: *Reader) DecodeError!void {
+        if (self.depth >= self.limits.max_nesting_depth) return error.LimitExceeded;
+        self.depth += 1;
     }
-    pub fn readBlockPosition(self: *Reader) DecodeError!BlockPosition {
-        return .{ .x = try self.readVarI32(), .y = try self.readVarI32(), .z = try self.readVarI32() };
+    pub fn leave(self: *Reader) void {
+        self.depth -= 1;
     }
+
+    /// Bedrock sends a UUID as two little-endian u64 halves.
     pub fn readUuid(self: *Reader) DecodeError![16]u8 {
         const src = try self.take(16);
         var out: [16]u8 = undefined;
@@ -167,32 +177,19 @@ pub const Reader = struct {
         }
         return out;
     }
-    pub fn readRemaining(self: *Reader) []const u8 {
-        const value = self.input[self.cursor..];
-        self.cursor = self.input.len;
-        return value;
+    pub fn readVec2f(self: *Reader) DecodeError!vectors.Vec2f {
+        return .{ .x = try self.readF32(), .y = try self.readF32() };
     }
-    pub fn readChunkPosition(self: *Reader) DecodeError!position.ChunkPosition {
+    pub fn readVec3f(self: *Reader) DecodeError!vectors.Vec3f {
+        return .{ .x = try self.readF32(), .y = try self.readF32(), .z = try self.readF32() };
+    }
+    pub fn readBlockPosition(self: *Reader) DecodeError!vectors.BlockPosition {
+        return .{ .x = try self.readVarI32(), .y = try self.readVarI32(), .z = try self.readVarI32() };
+    }
+    pub fn readChunkPosition(self: *Reader) DecodeError!vectors.ChunkPosition {
         return .{ .x = try self.readVarI32(), .z = try self.readVarI32() };
     }
-    pub fn readSubChunkPosition(self: *Reader) DecodeError!position.SubChunkPosition {
+    pub fn readSubChunkPosition(self: *Reader) DecodeError!vectors.SubChunkPosition {
         return .{ .x = try self.readI32(), .y = try self.readI32(), .z = try self.readI32() };
-    }
-    pub fn readSoundPosition(self: *Reader) DecodeError!vector.Vec3f {
-        const p = try self.readBlockPosition();
-        return .{ .x = @as(f32, @floatFromInt(p.x)) / 8.0, .y = @as(f32, @floatFromInt(p.y)) / 8.0, .z = @as(f32, @floatFromInt(p.z)) / 8.0 };
-    }
-    pub fn readByteFloat(self: *Reader) DecodeError!f32 {
-        return @as(f32, @floatFromInt(try self.readU8())) * (360.0 / 256.0);
-    }
-    pub fn readRgba(self: *Reader) DecodeError!colour.Rgba {
-        return @bitCast(try self.readU32());
-    }
-    pub fn readBeArgb(self: *Reader) DecodeError!colour.Rgba {
-        const value = try self.readU32Be();
-        return .{ .r = @truncate(value >> 8), .g = @truncate(value >> 16), .b = @truncate(value >> 24), .a = @truncate(value) };
-    }
-    pub fn finish(self: *const Reader) DecodeError!void {
-        if (!self.end()) return error.TrailingData;
     }
 };

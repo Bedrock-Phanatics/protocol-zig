@@ -1,0 +1,149 @@
+[
+  {
+    "packet": 5,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/DisconnectPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 18,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/MoveActorAbsolutePacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 32,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/MobArmorEquipmentPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 39,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetActorDataPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 40,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetActorMotionPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 48,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/PlayerHotbarPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 60,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SetDifficultyPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 65,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 65); https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/ (commit 989332f6 fixes event payload widths)",
+    "rationale": "Wire conflict over LegacyTelemetryEvent discriminants and payload fields. The manifest follows Mojang 1.26.51 docs and the Endstone BDS dump; CloudburstMC changed its event payload widths on 2026-09-25, so no implementation is settled. protocol-zig keeps the manifest layout."
+  },
+  {
+    "packet": 66,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/SpawnExperienceOrbPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 133,
+    "direction": "client",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 133); https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/structure_template_data_response.go; https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/StructureTemplateDataResponsePacket.php",
+    "rationale": "Wire conflict: gophertunnel, PocketMine and CloudburstMC (serializer unchanged since v388) write a success bool before optional NBT; Mojang 1.26.51 docs and the Endstone BDS dump write the NBT directly. protocol-zig keeps the manifest layout pending a vanilla capture."
+  },
+  {
+    "packet": 133,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 133); https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/structure_template_data_response.go; https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/StructureTemplateDataResponsePacket.php",
+    "rationale": "Wire conflict: gophertunnel, PocketMine and CloudburstMC (serializer unchanged since v388) write a success bool before optional NBT; Mojang 1.26.51 docs and the Endstone BDS dump write the NBT directly. protocol-zig keeps the manifest layout pending a vanilla capture."
+  },
+  {
+    "packet": 182,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/ChangeMobPropertyPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 184,
+    "direction": "client",
+    "kind": "reencode",
+    "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L536",
+    "rationale": "gophertunnel keeps only the bool or float that the value type selects and re-encodes the other as zero; protocol-zig preserves both wire values."
+  },
+  {
+    "packet": 184,
+    "direction": "server",
+    "kind": "reencode",
+    "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L536",
+    "rationale": "gophertunnel keeps only the bool or float that the value type selects and re-encodes the other as zero; protocol-zig preserves both wire values."
+  },
+  {
+    "packet": 194,
+    "direction": "client",
+    "kind": "unregistered",
+    "evidence": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/GameTestRequestPacket.php (ServerboundPacket) and protocol/schema/reconciliation.json directions",
+    "rationale": "protocol-zig accepts this packet from the client because an independent source shows vanilla clients send it; gophertunnel's client pool omits it. The codec layout is still compared through the server-side constructor."
+  },
+  {
+    "packet": 300,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 300); https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v944/serializer/CameraInstructionSerializer_v944.java#L36",
+    "rationale": "Wire conflict inside the optional spline instruction: the manifest and CloudburstMC write the spline type unconditionally, while gophertunnel wraps it and the spline identifier in optionals. protocol-zig follows the manifest, which CloudburstMC corroborates for the type."
+  },
+  {
+    "packet": 315,
+    "direction": "client",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 315); https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v2193/serializer/ServerboundDiagnosticsSerializer_v2193.java",
+    "rationale": "Wire conflict: the Endstone 1.26.51.1 dump and LeviLamina 26.51 storage make entity Position and Dimension optional; gophertunnel, PocketMine and CloudburstMC write them unconditionally. protocol-zig keeps the reconciled manifest layout."
+  },
+  {
+    "packet": 315,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 315); https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v2193/serializer/ServerboundDiagnosticsSerializer_v2193.java",
+    "rationale": "Wire conflict: the Endstone 1.26.51.1 dump and LeviLamina 26.51 storage make entity Position and Dimension optional; gophertunnel, PocketMine and CloudburstMC write them unconditionally. protocol-zig keeps the reconciled manifest layout."
+  },
+  {
+    "packet": 324,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 324); https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/player_video_capture.go",
+    "rationale": "Wire conflict: Mojang 1.26.51 docs, the Endstone dump and LeviLamina 26.51 order the action union start then stop; gophertunnel, PocketMine and CloudburstMC number stop as 0. protocol-zig keeps the manifest order."
+  },
+  {
+    "packet": 338,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 338); https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go#L638; https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v944/serializer/CameraSplineSerializer_v944.java",
+    "rationale": "Wire conflict with three different layouts: the manifest makes spline_type unconditional and key-frame easing optional; gophertunnel makes spline_type optional and easing unconditional; CloudburstMC also appends instruction fields. protocol-zig keeps the manifest layout."
+  },
+  {
+    "packet": 345,
+    "direction": "server",
+    "kind": "layout",
+    "evidence": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md (divergence 345); https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v2193/serializer/ClientboundAttributeLayerSyncSerializer_v2193.java",
+    "rationale": "Wire conflict: the manifest and CloudburstMC read the attribute operation string unconditionally; gophertunnel wraps the bool operation in an optional. protocol-zig follows the manifest, which CloudburstMC corroborates."
+  }
+]

@@ -4,72 +4,99 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const bench_optimize = b.option(
-        std.builtin.OptimizeMode,
-        "bench-optimize",
-        "Benchmark optimization mode (default: ReleaseFast)",
-    ) orelse .ReleaseFast;
-
-    const module = b.addModule("bedrock_protocol", .{
+    const protocol = b.addModule("bedrock_protocol", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
-
-    const mock_module = b.createModule(.{ .root_source_file = b.path("src/tests/fixtures/mock_profile.zig"), .target = target, .optimize = optimize });
-    module.addImport("mock_profile", mock_module);
-    const bench_dep = b.createModule(.{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-        .optimize = bench_optimize,
+    const mock_profile = b.createModule(.{
+        .root_source_file = b.path("tests/support/mock_profile.zig"),
+        .imports = &.{.{ .name = "bedrock_protocol", .module = protocol }},
     });
 
-    const bench_mod = b.createModule(.{
-        .root_source_file = b.path("benchmarks/main.zig"),
-        .target = target,
-        .optimize = bench_optimize,
-        .imports = &.{.{
-            .name = "bedrock_protocol",
-            .module = bench_dep,
-        }},
-    });
+    const test_step = b.step("test", "Run unit, corpus and generated-codec tests");
+    const options = b.addOptions();
+    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus.txt)") orelse b.pathFromRoot("tests/corpus.txt");
+    options.addOption([]const u8, "corpus_file", corpus_file);
 
-    bench_mod.addImport("mock_profile", mock_module);
-    bench_dep.addImport("mock_profile", mock_module);
-    const tests = b.addTest(.{ .root_module = module });
-    const test_step = b.step("test", "Run protocol tests");
-    test_step.dependOn(&b.addRunArtifact(tests).step);
-
-    const bad_profile = b.addObject(.{ .name = "invalid-profile", .root_module = b.createModule(.{
-        .root_source_file = b.path("integration/invalid_profile.zig"),
+    const suite = b.addTest(.{ .root_module = b.createModule(.{
+        .root_source_file = b.path("tests/root.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{.{ .name = "bedrock_protocol", .module = module }},
+        .imports = &.{
+            .{ .name = "bedrock_protocol", .module = protocol },
+            .{ .name = "mock_profile", .module = mock_profile },
+            .{ .name = "build_options", .module = options.createModule() },
+        },
     }) });
-    bad_profile.expect_errors = .{ .contains = "incompatible profile function parameter" };
-    test_step.dependOn(&bad_profile.step);
-    const bench = b.addExecutable(.{
-        .name = "protocol-bench",
-        .root_module = bench_mod,
-    });
-    const bench_step = b.step("bench", "Run microbenchmarks");
-    bench_step.dependOn(&b.addRunArtifact(bench).step);
+    test_step.dependOn(&b.addRunArtifact(suite).step);
+    const inline_tests = b.addTest(.{ .root_module = protocol });
+    test_step.dependOn(&b.addRunArtifact(inline_tests).step);
+
+    // Profiles with the wrong function signatures must not compile.
+    const invalid_profile = b.addObject(.{ .name = "invalid-profile", .root_module = b.createModule(.{
+        .root_source_file = b.path("tests/integration/invalid_profile.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{.{ .name = "bedrock_protocol", .module = protocol }},
+    }) });
+    invalid_profile.expect_errors = .{ .contains = "incompatible profile function parameter" };
+    test_step.dependOn(&invalid_profile.step);
 
     const fuzz_options = b.addOptions();
-    fuzz_options.addOption(usize, "iterations", b.option(usize, "fuzz-iterations", "Deterministic fuzz cases") orelse 100_000);
-    const fuzz_module = b.createModule(.{ .root_source_file = b.path("src/fuzz_main.zig"), .target = target, .optimize = optimize });
-    fuzz_module.addImport("mock_profile", mock_module);
-    fuzz_module.addOptions("fuzz_options", fuzz_options);
-    const fuzz = b.addExecutable(.{ .name = "protocol-fuzz", .root_module = fuzz_module });
-    b.step("fuzz", "Run bounded deterministic hostile-input campaigns").dependOn(&b.addRunArtifact(fuzz).step);
-    if (b.option([]const u8, "bedwire-path", "Path to pinned Bedwire checkout")) |path| {
-        const bedwire = b.createModule(.{ .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ path, "src/root.zig" }) }, .target = target, .optimize = optimize });
-        bedwire.addImport("bedrock_protocol", module);
-        const integration = b.createModule(.{ .root_source_file = b.path("integration/bedwire.zig"), .target = target, .optimize = optimize });
-        integration.addImport("bedwire", bedwire);
-        integration.addImport("bedrock_protocol", module);
-        integration.addImport("mock_profile", mock_module);
-        const consumer = b.addTest(.{ .root_module = integration });
-        b.step("test-bedwire", "Run real Bedwire profile consumer tests").dependOn(&b.addRunArtifact(consumer).step);
+    fuzz_options.addOption(usize, "iterations", b.option(usize, "fuzz-iterations", "Deterministic fuzz cases (default: 100000)") orelse 100_000);
+    fuzz_options.addOption([]const u8, "corpus_file", corpus_file);
+    const fuzz = b.addExecutable(.{ .name = "protocol-fuzz", .root_module = b.createModule(.{
+        .root_source_file = b.path("tests/fuzz/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "bedrock_protocol", .module = protocol },
+            .{ .name = "mock_profile", .module = mock_profile },
+            .{ .name = "fuzz_options", .module = fuzz_options.createModule() },
+        },
+    }) });
+    b.step("fuzz", "Run a bounded deterministic hostile-input campaign").dependOn(&b.addRunArtifact(fuzz).step);
+
+    const bench_optimize = b.option(std.builtin.OptimizeMode, "bench-optimize", "Benchmark optimization mode (default: ReleaseFast)") orelse .ReleaseFast;
+    const bench_protocol = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = target, .optimize = bench_optimize });
+    const bench_options = b.addOptions();
+    bench_options.addOption([]const u8, "corpus_file", corpus_file);
+    const bench = b.addExecutable(.{ .name = "protocol-bench", .root_module = b.createModule(.{
+        .root_source_file = b.path("tests/bench/main.zig"),
+        .target = target,
+        .optimize = bench_optimize,
+        .imports = &.{
+            .{ .name = "bedrock_protocol", .module = bench_protocol },
+            .{ .name = "mock_profile", .module = b.createModule(.{
+                .root_source_file = b.path("tests/support/mock_profile.zig"),
+                .imports = &.{.{ .name = "bedrock_protocol", .module = bench_protocol }},
+            }) },
+            .{ .name = "bench_options", .module = bench_options.createModule() },
+        },
+    }) });
+    b.step("bench", "Run microbenchmarks").dependOn(&b.addRunArtifact(bench).step);
+
+    const check = b.step("check", "Compile the tests, fuzzer and benchmarks without running them");
+    for ([_]*std.Build.Step{ &suite.step, &inline_tests.step, &fuzz.step, &bench.step, &invalid_profile.step }) |step| check.dependOn(step);
+
+    if (b.option([]const u8, "bedwire-path", "Path to a Bedwire checkout")) |path| {
+        const bedwire = b.createModule(.{
+            .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ path, "src/root.zig" }) },
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "bedrock_protocol", .module = protocol }},
+        });
+        const integration = b.addTest(.{ .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/integration/bedwire.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "bedrock_protocol", .module = protocol },
+                .{ .name = "bedwire", .module = bedwire },
+                .{ .name = "mock_profile", .module = mock_profile },
+            },
+        }) });
+        b.step("test-bedwire", "Run Bedwire sessions over this library").dependOn(&b.addRunArtifact(integration).step);
     }
 }

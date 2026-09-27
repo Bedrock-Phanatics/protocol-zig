@@ -7,8 +7,12 @@ pub const DecodeError = error{
     LimitExceeded,
     InvalidEnum,
     InvalidPacketId,
-    InvalidCheckpoint,
     TrailingData,
+    InvalidValue,
+    InvalidNbt,
 };
 
-pub const EncodeError = error{ NoSpaceLeft, LimitExceeded, InvalidValue };
+pub const EncodeError = error{
+    NoSpaceLeft,
+    InvalidValue,
+};

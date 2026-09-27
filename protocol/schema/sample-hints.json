@@ -1,0 +1,472 @@
+{
+  "schema_version": 1,
+  "comment": "Sampling hints for the differential corpus only. They never change the wire schema or the generated codecs; they keep generated samples inside the oracle's accepted vocabulary so whole packets remain comparable.",
+  "nbt": {
+    "max_entries": 1,
+    "absent": false,
+    "reason": "gophertunnel decodes NBT into Go maps, re-encoding compounds in random key order and absent documents as empty compounds; single-entry compounds keep oracle output byte-comparable. Zig unit tests cover multi-entry and absent documents. Empty lists use the TAG_End element type, which gophertunnel writes for every empty list."
+  },
+  "sites": {
+    "Animate.swing_source/value": {
+      "strings": [
+        "none",
+        "build",
+        "mine",
+        "interact",
+        "attack",
+        "useitem",
+        "throwitem",
+        "dropitem",
+        "event"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/animate.go#L63"
+    },
+    "ClientBoundDebugRenderer.type": {
+      "strings": [
+        "cleardebugmarkers",
+        "adddebugmarkercube"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/client_bound_debug_renderer.go#L69"
+    },
+    "Command.permission_level": {
+      "strings": [
+        "any",
+        "gamedirectors",
+        "admin",
+        "host",
+        "owner",
+        "internal"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/command.go#L496"
+    },
+    "CommandOrigin.type": {
+      "strings": [
+        "player",
+        "commandblock",
+        "minecartcommandblock",
+        "devconsole",
+        "test",
+        "automationplayer",
+        "clientautomation",
+        "dedicatedserver",
+        "entity",
+        "virtual",
+        "gameargument",
+        "entityserver",
+        "precompiled",
+        "gamedirectorentityserver",
+        "scripting",
+        "executecontext"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/command.go#L423"
+    },
+    "CommandOutputData.output_type": {
+      "strings": [
+        "none",
+        "lastoutput",
+        "silent",
+        "alloutput",
+        "dataset"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/command_output.go#L85"
+    },
+    "Downloading.response_type": {
+      "strings": [
+        "downloading"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/resource_pack_client_response.go#L44"
+    },
+    "ResourcePackClientResponseResponse.cancel": {
+      "strings": [
+        "cancel"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/resource_pack_client_response.go#L44"
+    },
+    "ResourcePackClientResponseResponse.downloading_finished": {
+      "strings": [
+        "downloadingfinished"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/resource_pack_client_response.go#L44"
+    },
+    "ResourcePackClientResponseResponse.resource_pack_stack_finished": {
+      "strings": [
+        "resourcepackstackfinished"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/resource_pack_client_response.go#L44"
+    },
+    "RemoveScore.action": {
+      "strings": [
+        "remove"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/scoreboard.go#L44"
+    },
+    "ChangePlayerScore.action": {
+      "strings": [
+        "changeplayer"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/scoreboard.go#L44"
+    },
+    "ChangeEntityScore.action": {
+      "strings": [
+        "changeentity"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/scoreboard.go#L44"
+    },
+    "ChangeFakePlayerScore.action": {
+      "strings": [
+        "changefakeplayer"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/scoreboard.go#L44"
+    },
+    "PlayerUpdateEntityOverridesUpdate.clear": {
+      "strings": [
+        "clearoverrides"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/player_update_entity_overrides.go#L41"
+    },
+    "PlayerUpdateEntityOverridesUpdate.remove": {
+      "strings": [
+        "removeoverride"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/player_update_entity_overrides.go#L41"
+    },
+    "IntOverride.type": {
+      "strings": [
+        "setintoverride"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/player_update_entity_overrides.go#L41"
+    },
+    "FloatOverride.type": {
+      "strings": [
+        "setfloatoverride"
+      ],
+      "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/player_update_entity_overrides.go#L41"
+    },
+    "InventorySlot.container_id": {
+      "min": 0,
+      "max": 127,
+      "reason": "The manifest's fixed u8 and gophertunnel's var_u32 encode identically below 128; the wider range is a recorded divergence.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/inventory_slot.go"
+    },
+    "PlaySound.position": {
+      "min": -8388608,
+      "max": 8388607,
+      "reason": "gophertunnel converts the fixed-point sound position through float32, which is exact only below 2^24.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go"
+    },
+    "RequestAbility.value_type": {
+      "values": [
+        1,
+        2
+      ],
+      "reason": "gophertunnel rejects the unset value type.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L536"
+    },
+    "ItemStackResponseInfo.containers/value": {
+      "min_items": 1,
+      "reason": "gophertunnel encodes an empty container list as absent.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_stack.go#L231"
+    },
+    "CameraInstructionFieldOfView.fov_ease_type": {
+      "strings": [
+        "linear",
+        "spring",
+        "in_quad",
+        "out_quad",
+        "in_out_quad",
+        "in_cubic",
+        "out_cubic",
+        "in_out_cubic",
+        "in_quart",
+        "out_quart",
+        "in_out_quart",
+        "in_quint",
+        "out_quint",
+        "in_out_quint",
+        "in_sine",
+        "out_sine",
+        "in_out_sine",
+        "in_expo",
+        "out_expo",
+        "in_out_expo",
+        "in_circ",
+        "out_circ",
+        "in_out_circ",
+        "in_back",
+        "out_back",
+        "in_out_back",
+        "in_elastic",
+        "out_elastic",
+        "in_out_elastic",
+        "in_bounce",
+        "out_bounce",
+        "in_out_bounce",
+        "inverse_lerp"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go#L56"
+    },
+    "CameraProgressOption.key_frame_easing_func": {
+      "strings": [
+        "linear",
+        "spring",
+        "in_quad",
+        "out_quad",
+        "in_out_quad",
+        "in_cubic",
+        "out_cubic",
+        "in_out_cubic",
+        "in_quart",
+        "out_quart",
+        "in_out_quart",
+        "in_quint",
+        "out_quint",
+        "in_out_quint",
+        "in_sine",
+        "out_sine",
+        "in_out_sine",
+        "in_expo",
+        "out_expo",
+        "in_out_expo",
+        "in_circ",
+        "out_circ",
+        "in_out_circ",
+        "in_back",
+        "out_back",
+        "in_out_back",
+        "in_elastic",
+        "out_elastic",
+        "in_out_elastic",
+        "in_bounce",
+        "out_bounce",
+        "in_out_bounce",
+        "inverse_lerp"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go#L56"
+    },
+    "CameraRotationOption.key_frame_easing_func": {
+      "strings": [
+        "linear",
+        "spring",
+        "in_quad",
+        "out_quad",
+        "in_out_quad",
+        "in_cubic",
+        "out_cubic",
+        "in_out_cubic",
+        "in_quart",
+        "out_quart",
+        "in_out_quart",
+        "in_quint",
+        "out_quint",
+        "in_out_quint",
+        "in_sine",
+        "out_sine",
+        "in_out_sine",
+        "in_expo",
+        "out_expo",
+        "in_out_expo",
+        "in_circ",
+        "out_circ",
+        "in_out_circ",
+        "in_back",
+        "out_back",
+        "in_out_back",
+        "in_elastic",
+        "out_elastic",
+        "in_out_elastic",
+        "in_bounce",
+        "out_bounce",
+        "in_out_bounce",
+        "inverse_lerp"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go#L56"
+    },
+    "CameraSplineProgressKeyFrame.easing/value": {
+      "strings": [
+        "linear",
+        "spring",
+        "in_quad",
+        "out_quad",
+        "in_out_quad",
+        "in_cubic",
+        "out_cubic",
+        "in_out_cubic",
+        "in_quart",
+        "out_quart",
+        "in_out_quart",
+        "in_quint",
+        "out_quint",
+        "in_out_quint",
+        "in_sine",
+        "out_sine",
+        "in_out_sine",
+        "in_expo",
+        "out_expo",
+        "in_out_expo",
+        "in_circ",
+        "out_circ",
+        "in_out_circ",
+        "in_back",
+        "out_back",
+        "in_out_back",
+        "in_elastic",
+        "out_elastic",
+        "in_out_elastic",
+        "in_bounce",
+        "out_bounce",
+        "in_out_bounce",
+        "inverse_lerp"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go#L56"
+    },
+    "CameraSplineRotationKeyFrame.easing/value": {
+      "strings": [
+        "linear",
+        "spring",
+        "in_quad",
+        "out_quad",
+        "in_out_quad",
+        "in_cubic",
+        "out_cubic",
+        "in_out_cubic",
+        "in_quart",
+        "out_quart",
+        "in_out_quart",
+        "in_quint",
+        "out_quint",
+        "in_out_quint",
+        "in_sine",
+        "out_sine",
+        "in_out_sine",
+        "in_expo",
+        "out_expo",
+        "in_out_expo",
+        "in_circ",
+        "out_circ",
+        "in_out_circ",
+        "in_back",
+        "out_back",
+        "in_out_back",
+        "in_elastic",
+        "out_elastic",
+        "in_out_elastic",
+        "in_bounce",
+        "out_bounce",
+        "in_out_bounce",
+        "inverse_lerp"
+      ],
+      "reason": "gophertunnel maps this string to an enum and rejects other values; the schema types it as free text, so protocol-zig keeps it open and the corpus stays within the oracle's vocabulary.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go#L56"
+    },
+    "ItemInstance.user_data_buffer": {
+      "generator": "item_user_data",
+      "reason": "Item user data is a nested buffer (marker, version, little-endian NBT, can-place-on and can-break lists) that gophertunnel parses; the corpus writes well-formed buffers.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L445"
+    },
+    "NetworkItemInstanceDescriptor.user_data_buffer": {
+      "generator": "item_user_data",
+      "reason": "Item user data is a nested buffer (marker, version, little-endian NBT, can-place-on and can-break lists) that gophertunnel parses; the corpus writes well-formed buffers.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L445"
+    },
+    "NetworkItemStackDescriptor.user_data_buffer": {
+      "generator": "item_user_data",
+      "reason": "Item user data is a nested buffer (marker, version, little-endian NBT, can-place-on and can-break lists) that gophertunnel parses; the corpus writes well-formed buffers.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L445"
+    },
+    "SerializedSkinRef.trusted_skin_flag": {
+      "strings": [
+        "true",
+        "false"
+      ],
+      "reason": "gophertunnel parses the trust flag text as a boolean and re-encodes it as true or false.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/skin.go#L113"
+    },
+    "InventoryTransaction.legacy_request_id": {
+      "generator": "legacy_request_id",
+      "reason": "gophertunnel derives the legacy-slot presence flag from the request ID (present only for even IDs below -1).",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/inventory_transaction.go"
+    },
+    "list:DataItemEntry": {
+      "max_items": 1,
+      "reason": "gophertunnel decodes actor metadata into a Go map, so re-encoding reorders entries and drops duplicate keys.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go#L303"
+    },
+    "type:ItemInstance": {
+      "generator": "stack_request_item",
+      "reason": "gophertunnel reads deprecated craft-result items with only empty or item-name descriptors, and writes an empty user-data buffer for an empty item.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/writer.go#L341"
+    },
+    "CameraFadeColor.red": {
+      "floats": [
+        0,
+        1
+      ],
+      "reason": "gophertunnel converts fade colour components to 8-bit channels, so only exact channel values survive its re-encode.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go"
+    },
+    "CameraFadeColor.green": {
+      "floats": [
+        0,
+        1
+      ],
+      "reason": "gophertunnel converts fade colour components to 8-bit channels, so only exact channel values survive its re-encode.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go"
+    },
+    "CameraFadeColor.blue": {
+      "floats": [
+        0,
+        1
+      ],
+      "reason": "gophertunnel converts fade colour components to 8-bit channels, so only exact channel values survive its re-encode.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/camera.go"
+    },
+    "RecipeUnlockRequirementSerializedData.unlocking_context": {
+      "controls": "unlocking_ingredients",
+      "present_values": [
+        0
+      ],
+      "reason": "gophertunnel writes unlocking ingredients exactly when the context is none.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/recipe.go#L76"
+    },
+    "MaterialReducerDataEntry.from_item_key": {
+      "min": 0,
+      "max": 32767,
+      "reason": "gophertunnel shifts the item network ID left instead of right when reading the combined key, so its re-encode keeps only the low 15 bits; that oracle defect does not affect protocol-zig, which keeps the raw key.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/writer.go#L405"
+    },
+    "MapTrackedObject.type": {
+      "values": [
+        0,
+        1
+      ],
+      "reason": "gophertunnel rejects the documented other (2) tracked object type.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/map.go#L57"
+    },
+    "PlayerAuthInput.input_data": {
+      "unique": true,
+      "reason": "gophertunnel stores input flags as a set and rejects repeated flags; vanilla sends each flag once.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/input_flags.go#L79"
+    }
+  }
+}

@@ -1,16 +1,10 @@
-pub const current = @import("generated_registry.zig");
-pub const PacketKind = current.PacketKind;
-pub const PacketDirection = current.PacketDirection;
-pub const packetId = current.packetId;
-pub const packetKind = current.packetKind;
-pub const packetDirection = current.packetDirection;
-pub const Coverage = enum { scalar, borrowed_collection, known_opaque };
-pub fn coverage(kind: PacketKind) Coverage {
-    return switch (kind) {
-        .resource_packs_info, .resource_pack_stack, .resource_pack_client_response => .borrowed_collection,
-        else => if (@import("bindings.zig").hasCodec(kind)) .scalar else .known_opaque,
-    };
-}
-pub fn hasCodec(kind: PacketKind) bool {
-    return coverage(kind) != .known_opaque;
+const version = @import("../generated/root.zig");
+
+pub const PacketKind = version.Kind;
+pub const PacketDirection = version.Direction;
+pub const packetKind = version.packetKind;
+pub const packetDirection = version.packetDirection;
+
+pub fn packetId(kind: PacketKind) ?u10 {
+    return version.packetId(kind);
 }
