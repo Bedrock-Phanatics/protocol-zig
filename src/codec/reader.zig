@@ -4,7 +4,6 @@ const DecodeError = @import("errors.zig").DecodeError;
 const vectors = @import("vectors.zig");
 const nbt = @import("nbt.zig");
 
-/// Wire encodings of collection element counts.
 pub const CountPrefix = enum { var_u32, u32le };
 
 /// Bounds-checked cursor over one packet. Slices it returns borrow `input`.
@@ -173,7 +172,6 @@ pub const Reader = struct {
         return nbt.readDocument(self);
     }
 
-    /// Enters one level of a recursive value.
     pub fn enter(self: *Reader) DecodeError!void {
         if (self.depth >= self.limits.max_nesting_depth) return error.LimitExceeded;
         self.depth += 1;

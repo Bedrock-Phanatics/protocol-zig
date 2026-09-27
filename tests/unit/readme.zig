@@ -45,7 +45,6 @@ test "README: decode and inspect a packet" {
     }
     try std.testing.expect(seen);
 
-    // Proxy: re-encode the decoded envelope unchanged.
     var out: [256]u8 = undefined;
     var w = protocol.Writer.init(&out);
     try protocol.Current.encode(&w, envelope);

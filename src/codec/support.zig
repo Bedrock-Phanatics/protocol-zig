@@ -98,6 +98,16 @@ pub fn lengthIsProduct(len: usize, factors: anytype, scale: u64) bool {
 pub fn Prim(comptime kind: PrimKind) type {
     const spec = primSpec(kind);
     return struct {
+        /// Byte width when every bit pattern is a valid value, so a list of
+        /// these validates with a single bounds check.
+        pub const fixed_size: ?usize = switch (kind) {
+            .u8, .i8, .u16le, .i16le, .u32le, .i32le, .u64le, .i64le => @sizeOf(spec[0]),
+            .u16be, .i16be, .u32be, .i32be, .u64be, .i64be, .f32le, .f64le => @sizeOf(spec[0]),
+            .uuid => 16,
+            .vec2f => 8,
+            .vec3f, .subChunkPosition => 12,
+            else => null,
+        };
         pub fn decode(r: *Reader) DecodeError!spec[0] {
             return @field(Reader, "read" ++ spec[1])(r);
         }

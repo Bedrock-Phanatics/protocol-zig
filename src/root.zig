@@ -29,9 +29,7 @@ pub const nbt = @import("codec/nbt.zig");
 /// Protocol 2193 (Minecraft 1.26.50).
 pub const v2193 = @import("v2193/root.zig");
 pub const PacketId = v2193.Id;
-/// Packet definitions of the current version, one namespace per packet.
 pub const packets = v2193.packets;
-/// Protocol types shared by more than one packet in the current version.
 pub const types = v2193.types;
 
 const vectors = @import("codec/vectors.zig");
@@ -42,7 +40,6 @@ pub const ChunkPosition = vectors.ChunkPosition;
 pub const SubChunkPosition = vectors.SubChunkPosition;
 
 test {
-    // Inline tests of hand-written codecs; the full suite lives in tests/.
     _ = @import("codec/patterns.zig");
     _ = @import("custom/root.zig");
 }

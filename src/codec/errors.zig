@@ -1,5 +1,4 @@
 pub const DecodeError = error{
-    /// The input ended inside a value.
     EndOfStream,
     VarIntOverflow,
     /// A varint used more bytes than its shortest form.
@@ -11,7 +10,6 @@ pub const DecodeError = error{
     /// An unknown union tag or discriminant.
     InvalidEnum,
     InvalidPacketId,
-    /// Bytes remained after a complete packet.
     TrailingData,
     /// A value violates a bound or invariant the protocol schema publishes.
     InvalidValue,

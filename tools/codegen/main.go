@@ -60,7 +60,6 @@ func main() {
 		}
 		os.Exit(sync(out, generatedDirs(*root), *check))
 	case "corpus":
-		// Deterministic schema-valid packets for round-trip and differential tests.
 		schema := loadSchema(schemaPath)
 		hints := loadHints(filepath.Join(*root, "protocol", "schema", "sample-hints-"+protocolVersion+".json"))
 		path := filepath.Join(*root, "tests", "corpus-"+protocolVersion+".txt")

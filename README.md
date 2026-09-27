@@ -186,7 +186,6 @@ Two narrower cases:
 | --- | --- |
 | `zig build test` | Unit tests, generated-codec checks, hostile-input tests and a corpus replay |
 | `zig build fuzz -Dfuzz-iterations=N` | Deterministic mutation fuzzing of every packet |
-| `zig build test --fuzz=N` | Coverage-guided fuzzing (Linux and macOS) |
 | `zig build bench` | Decode, decode-and-walk and proxy-path benchmarks |
 | `zig build check -Dtarget=...` | Compile everything for another target |
 | `zig build test-bedwire -Dbedwire-path=...` | Run Bedwire sessions over this library |

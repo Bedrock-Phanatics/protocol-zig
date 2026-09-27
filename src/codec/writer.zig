@@ -143,7 +143,6 @@ fn Output(comptime counting: bool) type {
             try self.writeRaw(document);
         }
 
-        /// Enters one level of a recursive value.
         pub fn enter(self: *Self) error{InvalidValue}!void {
             if (self.depth >= max_encode_depth) return error.InvalidValue;
             self.depth += 1;

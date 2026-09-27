@@ -123,15 +123,15 @@ fn mutate(random: std.Random, out: []u8, seed: []const u8, seeds: []const []cons
         const at = random.uintLessThan(usize, len);
         switch (random.int(u3)) {
             0 => len = at + 1, // truncate
-            1 => out[at] ^= @as(u8, 1) << random.int(u3), // flip a bit
-            2 => out[at] = random.int(u8), // overwrite a byte
+            1 => out[at] ^= @as(u8, 1) << random.int(u3),
+            2 => out[at] = random.int(u8),
             3 => out[at] = ([_]u8{ 0x00, 0x01, 0x7f, 0x80, 0xff })[random.uintLessThan(usize, 5)],
-            4 => if (len < out.len) { // insert a byte
+            4 => if (len < out.len) {
                 std.mem.copyBackwards(u8, out[at + 1 .. len + 1], out[at..len]);
                 out[at] = random.int(u8);
                 len += 1;
             },
-            5 => { // delete a byte
+            5 => {
                 std.mem.copyForwards(u8, out[at .. len - 1], out[at + 1 .. len]);
                 len -= 1;
             },

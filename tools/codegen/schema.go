@@ -100,9 +100,9 @@ type Node struct {
 }
 
 type primitiveInfo struct {
-	zig   string // Zig value type
-	read  string // Reader method
-	write string // Writer method
+	zig   string
+	read  string
+	write string
 }
 
 var primitives = map[string]primitiveInfo{

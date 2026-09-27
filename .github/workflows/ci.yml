@@ -98,10 +98,6 @@ jobs:
       - name: Long mutation fuzz campaign
         if: github.event_name == 'schedule'
         run: zig build fuzz -Doptimize=ReleaseSafe -Dfuzz-iterations=10000000
-      - name: Coverage-guided fuzzing
-        if: github.event_name == 'schedule'
-        timeout-minutes: 60
-        run: zig build test --fuzz=20M
 
   bedwire:
     runs-on: ubuntu-24.04

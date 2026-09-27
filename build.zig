@@ -14,7 +14,6 @@ pub fn build(b: *std.Build) void {
         .imports = &.{.{ .name = "bedrock_protocol", .module = protocol }},
     });
 
-    // zig build test
     const test_step = b.step("test", "Run unit, corpus and generated-codec tests");
     const options = b.addOptions();
     const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus-2193.txt)") orelse b.pathFromRoot("tests/corpus-2193.txt");
@@ -44,7 +43,6 @@ pub fn build(b: *std.Build) void {
     invalid_profile.expect_errors = .{ .contains = "incompatible profile function parameter" };
     test_step.dependOn(&invalid_profile.step);
 
-    // zig build fuzz -Dfuzz-iterations=N
     const fuzz_options = b.addOptions();
     fuzz_options.addOption(usize, "iterations", b.option(usize, "fuzz-iterations", "Deterministic fuzz cases (default: 100000)") orelse 100_000);
     fuzz_options.addOption([]const u8, "corpus_file", corpus_file);
@@ -60,7 +58,6 @@ pub fn build(b: *std.Build) void {
     }) });
     b.step("fuzz", "Run a bounded deterministic hostile-input campaign").dependOn(&b.addRunArtifact(fuzz).step);
 
-    // zig build bench (always optimized unless -Dbench-optimize says otherwise)
     const bench_optimize = b.option(std.builtin.OptimizeMode, "bench-optimize", "Benchmark optimization mode (default: ReleaseFast)") orelse .ReleaseFast;
     const bench_protocol = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = target, .optimize = bench_optimize });
     const bench_options = b.addOptions();
@@ -80,11 +77,9 @@ pub fn build(b: *std.Build) void {
     }) });
     b.step("bench", "Run microbenchmarks").dependOn(&b.addRunArtifact(bench).step);
 
-    // zig build check: compile everything without running (for cross targets).
     const check = b.step("check", "Compile the tests, fuzzer and benchmarks without running them");
     for ([_]*std.Build.Step{ &suite.step, &inline_tests.step, &fuzz.step, &bench.step, &invalid_profile.step }) |step| check.dependOn(step);
 
-    // zig build test-bedwire -Dbedwire-path=<checkout>
     if (b.option([]const u8, "bedwire-path", "Path to a Bedwire checkout")) |path| {
         const bedwire = b.createModule(.{
             .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ path, "src/root.zig" }) },

@@ -41,7 +41,6 @@ type emitter struct {
 	recursive map[string]bool
 }
 
-// file accumulates one generated Zig source file.
 type file struct {
 	e       *emitter
 	path    string
@@ -208,7 +207,6 @@ func (f *file) finish() string {
 	return b.String()
 }
 
-// typeRef names a schema type from this file.
 func (f *file) typeRef(name string) string {
 	if b, ok := builtins[name]; ok {
 		return b.zig
@@ -220,7 +218,6 @@ func (f *file) typeRef(name string) string {
 	return "types." + name
 }
 
-// zigType is the Zig value type of a node.
 func (f *file) zigType(n Node, hint string) string {
 	switch n.Kind {
 	case "string", "bytes", "nbt":

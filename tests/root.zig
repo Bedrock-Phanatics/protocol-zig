@@ -1,4 +1,3 @@
-//! Test entry point: `zig build test`.
 const std = @import("std");
 
 test {

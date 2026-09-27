@@ -21,7 +21,6 @@ pub const Tag = enum(u8) {
     long_array = 12,
 };
 
-/// NBT strings carry at most this many bytes.
 const max_string_bytes = 32767;
 
 /// Validates one complete document and returns its exact bytes, borrowed

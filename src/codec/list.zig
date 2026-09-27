@@ -29,6 +29,10 @@ pub fn List(comptime T: type, comptime C: type) type {
         };
         pub const empty: Self = .{};
 
+        fn fixedSize() ?usize {
+            return if (@hasDecl(C, "fixed_size")) C.fixed_size else null;
+        }
+
         pub fn init(items: []const T) Self {
             return .{ .len = items.len, .data = .{ .items = items } };
         }
@@ -36,7 +40,10 @@ pub fn List(comptime T: type, comptime C: type) type {
         /// Validates `count` elements and borrows their bytes from the reader input.
         pub fn decode(r: *Reader, count: usize) DecodeError!Self {
             const start = r.cursor;
-            for (0..count) |_| _ = try C.decode(r);
+            if (comptime fixedSize()) |size| {
+                const bytes = std.math.mul(usize, count, size) catch return error.EndOfStream;
+                _ = try r.take(bytes);
+            } else for (0..count) |_| _ = try C.decode(r);
             return .{ .len = count, .data = .{ .wire = r.input[start..r.cursor] } };
         }
 
