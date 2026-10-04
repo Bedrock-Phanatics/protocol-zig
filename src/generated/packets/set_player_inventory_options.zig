@@ -30,11 +30,11 @@ pub const InventoryLayout = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!InventoryLayout {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: InventoryLayout, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -50,11 +50,11 @@ pub const InventoryLeftTabIndex = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!InventoryLeftTabIndex {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: InventoryLeftTabIndex, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -94,10 +94,10 @@ pub const InventoryRightTabIndex = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!InventoryRightTabIndex {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: InventoryRightTabIndex, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

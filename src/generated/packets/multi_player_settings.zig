@@ -29,10 +29,10 @@ pub const MultiplayerSettingsType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MultiplayerSettingsType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: MultiplayerSettingsType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

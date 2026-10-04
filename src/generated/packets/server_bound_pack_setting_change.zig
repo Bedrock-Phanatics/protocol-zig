@@ -53,7 +53,7 @@ pub const ServerBoundPackSettingChangePackSettingValue = union(enum(u32)) {
     }
 
     pub fn encode(self: ServerBoundPackSettingChangePackSettingValue, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .float => |value| {
                 try w.writeF32(value);

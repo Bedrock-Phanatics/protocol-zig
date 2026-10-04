@@ -97,7 +97,7 @@ pub const TextBody = union(enum(u32)) {
     }
 
     pub fn encode(self: TextBody, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .message_only => |value| {
                 try value.encode(w);
@@ -198,10 +198,10 @@ pub const TextPacketType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!TextPacketType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: TextPacketType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

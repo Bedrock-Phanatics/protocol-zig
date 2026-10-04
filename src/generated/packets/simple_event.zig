@@ -30,10 +30,10 @@ pub const SimpleEventSubtype = enum(u16) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SimpleEventSubtype {
-        return @enumFromInt(try r.readU16());
+        return @fromBackingInt(@intCast(try r.readU16()));
     }
 
     pub fn encode(self: SimpleEventSubtype, w: anytype) EncodeError!void {
-        try w.writeU16(@intFromEnum(self));
+        try w.writeU16(@backingInt(self));
     }
 };

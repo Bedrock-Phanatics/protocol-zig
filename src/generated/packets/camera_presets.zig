@@ -68,11 +68,11 @@ pub const CameraAimAssistTargetMode = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CameraAimAssistTargetMode {
-        return @enumFromInt(try r.readI32());
+        return @fromBackingInt(@intCast(try r.readI32()));
     }
 
     pub fn encode(self: CameraAimAssistTargetMode, w: anytype) EncodeError!void {
-        try w.writeI32(@intFromEnum(self));
+        try w.writeI32(@backingInt(self));
     }
 };
 
@@ -230,10 +230,10 @@ pub const CameraPresetAudioListener = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CameraPresetAudioListener {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: CameraPresetAudioListener, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

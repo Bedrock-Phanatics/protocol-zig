@@ -40,10 +40,10 @@ pub const ModalFormCancelReason = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ModalFormCancelReason {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ModalFormCancelReason, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

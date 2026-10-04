@@ -41,11 +41,11 @@ pub const StructureBlockType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!StructureBlockType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: StructureBlockType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -92,10 +92,10 @@ pub const StructureRedstoneSaveMode = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!StructureRedstoneSaveMode {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: StructureRedstoneSaveMode, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

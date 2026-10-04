@@ -37,10 +37,10 @@ pub const SpawnPositionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SpawnPositionType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: SpawnPositionType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

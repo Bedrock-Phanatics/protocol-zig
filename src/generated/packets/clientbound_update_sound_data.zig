@@ -65,7 +65,7 @@ pub const SoundDataEvent = union(enum(u32)) {
     }
 
     pub fn encode(self: SoundDataEvent, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .stop => |value| {
                 try value.encode(w);

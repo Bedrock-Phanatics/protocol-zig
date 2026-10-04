@@ -762,11 +762,11 @@ pub const CoordinateEvaluationOrder = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CoordinateEvaluationOrder {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: CoordinateEvaluationOrder, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -853,11 +853,11 @@ pub const RandomDistributionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!RandomDistributionType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: RandomDistributionType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -871,11 +871,11 @@ pub const VillageType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!VillageType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: VillageType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 

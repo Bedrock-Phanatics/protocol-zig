@@ -87,6 +87,6 @@ pub fn validateProfile(comptime P: type) void {
 fn checkFunction(comptime Actual: type, comptime Expected: type) void {
     const actual = @typeInfo(Actual).@"fn";
     const expected = @typeInfo(Expected).@"fn";
-    if (actual.is_generic or actual.is_var_args or actual.return_type != expected.return_type or actual.params.len != expected.params.len) @compileError("incompatible profile function signature");
-    for (actual.params, expected.params) |a, e| if (a.type != e.type) @compileError("incompatible profile function parameter");
+    if (actual.is_generic or actual.attrs.varargs or actual.return_type != expected.return_type or actual.param_types.len != expected.param_types.len) @compileError("incompatible profile function signature");
+    for (actual.param_types, expected.param_types) |a, e| if (a != e) @compileError("incompatible profile function parameter");
 }

@@ -22,7 +22,7 @@ This library only handles packet data. Sockets, RakNet/NetherNet, batching,
 compression, encryption and login live in
 [Bedwire](https://github.com/Bedrock-Phanatics/bedwire), which builds on it.
 
-Requires **Zig 0.16.0**.
+Requires **Zig 0.17.0**.
 
 ## Install
 

@@ -38,11 +38,11 @@ pub const CodeBuilderExecutionStateCodeStatus = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CodeBuilderExecutionStateCodeStatus {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: CodeBuilderExecutionStateCodeStatus, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -54,11 +54,11 @@ pub const CodeBuilderStorageQueryOptionsCategory = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CodeBuilderStorageQueryOptionsCategory {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: CodeBuilderStorageQueryOptionsCategory, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -71,10 +71,10 @@ pub const CodeBuilderStorageQueryOptionsOperation = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CodeBuilderStorageQueryOptionsOperation {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: CodeBuilderStorageQueryOptionsOperation, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

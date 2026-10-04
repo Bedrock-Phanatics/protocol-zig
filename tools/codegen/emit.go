@@ -605,11 +605,11 @@ func (f *file) enumDef(t *TypeDef) {
 	}
 	f.line("")
 	f.line("    pub fn decode(r: *Reader) DecodeError!%s {", t.Name)
-	f.line("        return @enumFromInt(try r.%s());", info.read)
+	f.line("        return @fromBackingInt(@intCast(try r.%s()));", info.read)
 	f.line("    }")
 	f.line("")
 	f.line("    pub fn encode(self: %s, w: anytype) EncodeError!void {", t.Name)
-	f.line("        try w.%s(@intFromEnum(self));", info.write)
+	f.line("        try w.%s(@backingInt(self));", info.write)
 	f.line("    }")
 	f.line("};")
 }
@@ -673,7 +673,7 @@ func (f *file) unionDef(t *TypeDef) {
 		f.line("        try w.enter();")
 		f.line("        defer w.leave();")
 	}
-	f.line("        try w.%s(@intFromEnum(self));", info.write)
+	f.line("        try w.%s(@backingInt(self));", info.write)
 	f.line("        switch (self) {")
 	for _, v := range t.Variants {
 		if v.Type == nil {

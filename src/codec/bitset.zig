@@ -8,9 +8,9 @@ pub fn Bitset(comptime bits: u16) type {
     return struct {
         const Self = @This();
         pub const len = bits;
-        const Int = std.meta.Int(.unsigned, bits);
+        const Int = @Int(.unsigned, bits);
         const max_bytes = (bits + 6) / 7;
-        const Wide = std.meta.Int(.unsigned, max_bytes * 7);
+        const Wide = @Int(.unsigned, max_bytes * 7);
 
         value: Int = 0,
 

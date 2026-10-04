@@ -96,7 +96,7 @@ pub const PlayerListEntriesItem = union(enum(u32)) {
     }
 
     pub fn encode(self: PlayerListEntriesItem, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .remove => |value| {
                 try value.encode(w);
@@ -115,11 +115,11 @@ pub const PlayerListPacketType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PlayerListPacketType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: PlayerListPacketType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 

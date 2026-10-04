@@ -18,7 +18,7 @@ test "disconnect message presence is a strict union tag" {
 }
 
 test "move player teleport data is independent of the position mode" {
-    const wire = [_]u8{ 19, 1 } ++ [_]u8{0} ** 24 ++ [_]u8{ 0, 1, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0, 1 };
+    const wire = [_]u8{ 19, 1 } ++ @as([24]u8, @splat(0)) ++ [_]u8{ 0, 1, 0, 1, 2, 0, 0, 0, 3, 0, 0, 0, 1 };
     const decoded = try root.typed.decode(&wire, .{});
     const teleport = decoded.packet.move_player.teleport_data.?;
     try std.testing.expectEqual(@as(i32, 2), teleport.teleportation_cause);
@@ -31,9 +31,9 @@ test "move player teleport data is independent of the position mode" {
 
 test "scalar typed fixtures round trip and reject truncation trailing data and short output" {
     const fixtures = [_][]const u8{
-        &.{ 1, 0, 0, 8, 0x91, 1, 'x' }, &.{ 2, 0, 0, 0, 3 },  &.{ 3, 1, 'x' },                                               &.{4},                                &.{ 5, 0, 1 },
-        &.{ 10, 2 },                    &.{ 14, 2 },          &([_]u8{ 19, 1 } ++ [_]u8{0} ** 24 ++ [_]u8{ 0, 1, 0, 0, 1 }), &.{ 42, 40 },                         &.{ 59, 1 },
-        &.{ 60, 3 },                    &.{ 69, 2, 4 },       &.{ 70, 2 },                                                   &.{ 115, 1, 0, 0, 0, 0, 0, 0, 0, 1 }, &.{ 0x8f, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+        &.{ 1, 0, 0, 8, 0x91, 1, 'x' }, &.{ 2, 0, 0, 0, 3 },  &.{ 3, 1, 'x' },                                                       &.{4},                                &.{ 5, 0, 1 },
+        &.{ 10, 2 },                    &.{ 14, 2 },          &([_]u8{ 19, 1 } ++ @as([24]u8, @splat(0)) ++ [_]u8{ 0, 1, 0, 0, 1 }), &.{ 42, 40 },                         &.{ 59, 1 },
+        &.{ 60, 3 },                    &.{ 69, 2, 4 },       &.{ 70, 2 },                                                           &.{ 115, 1, 0, 0, 0, 0, 0, 0, 0, 1 }, &.{ 0x8f, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
         &.{ 0xc1, 1, 0, 0, 8, 0x91 },   &.{ 10, 0xdf, 0x5d },
     };
     for (fixtures) |wire| {
@@ -48,7 +48,7 @@ test "scalar typed fixtures round trip and reject truncation trailing data and s
             @memset(&storage, 0xa5);
             var short = root.Writer.init(storage[0..length]);
             try std.testing.expectError(error.NoSpaceLeft, root.typed.encode(&short, decoded));
-            try std.testing.expectEqualSlices(u8, &([_]u8{0xa5} ** 128), &storage);
+            try std.testing.expectEqualSlices(u8, &@as([128]u8, @splat(0xa5)), &storage);
         }
         @memcpy(storage[0..wire.len], wire);
         storage[wire.len] = 0;

@@ -13,11 +13,11 @@ pub const HandSlot = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!HandSlot {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: HandSlot, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -79,11 +79,11 @@ pub const InventorySourceFlags = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!InventorySourceFlags {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: InventorySourceFlags, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };
 
@@ -97,10 +97,10 @@ pub const InventorySourceType = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!InventorySourceType {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: InventorySourceType, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };

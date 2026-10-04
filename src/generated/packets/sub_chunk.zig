@@ -79,11 +79,11 @@ pub const SubChunkHeightMapDataType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SubChunkHeightMapDataType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: SubChunkHeightMapDataType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -162,10 +162,10 @@ pub const SubChunkRequestResult = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SubChunkRequestResult {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: SubChunkRequestResult, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

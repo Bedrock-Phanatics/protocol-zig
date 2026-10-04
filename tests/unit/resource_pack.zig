@@ -2,7 +2,7 @@ const std = @import("std");
 const root = @import("bedrock_protocol");
 const packets = root.packets;
 
-const info_fixture = [_]u8{ 6, 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{ 0, 1 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ [_]u8{0} ** 8 ++ [_]u8{ 0, 0, 0, 0, 0, 0, 0 };
+const info_fixture = [_]u8{ 6, 0, 0, 0, 0 } ++ @as([16]u8, @splat(0)) ++ [_]u8{ 0, 1 } ++ @as([16]u8, @splat(0)) ++ [_]u8{0} ++ @as([8]u8, @splat(0)) ++ [_]u8{ 0, 0, 0, 0, 0, 0, 0 };
 const stack_fixture = [_]u8{ 7, 0, 1, 1, 'p', 1, 'v', 0, 0, 1, 0, 0, 0, 1, 'e', 1, 0, 0 };
 const response_fixture = [_]u8{ 8, 1, 11 } ++ "downloading".* ++ [_]u8{ 1, 3, 'a', '_', '1' };
 

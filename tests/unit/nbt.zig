@@ -14,7 +14,7 @@ test "NBT nesting limit is explicit" {
     try std.testing.expectError(error.LimitExceeded, root.nbt.readDocument(&r));
 }
 test "NBT byte budget stops reads at the configured boundary" {
-    const fixture = [_]u8{ 7, 0, 80 } ++ ([_]u8{0xaa} ** 40);
+    const fixture = [_]u8{ 7, 0, 80 } ++ @as([40]u8, @splat(0xaa));
     var r = try root.Reader.init(&fixture, .{ .max_nbt_bytes = 8 });
     try std.testing.expectError(error.LimitExceeded, root.nbt.readDocument(&r));
     try std.testing.expect(r.cursor <= 8);

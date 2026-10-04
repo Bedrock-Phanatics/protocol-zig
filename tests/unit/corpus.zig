@@ -12,7 +12,7 @@ test "corpus packets round trip byte for byte" {
     const output = try gpa.alloc(u8, root.DecodeLimits.defaults.max_packet_bytes);
     defer gpa.free(output);
 
-    var seen = [_][2]bool{.{ false, false }} ** 1024;
+    var seen = @as([1024][2]bool, @splat(.{ false, false }));
     var checked: usize = 0;
     var lines = std.mem.tokenizeAny(u8, text, "\r\n");
     while (lines.next()) |line| {

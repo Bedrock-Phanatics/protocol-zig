@@ -50,10 +50,10 @@ pub const AgentActionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!AgentActionType {
-        return @enumFromInt(try r.readI32());
+        return @fromBackingInt(@intCast(try r.readI32()));
     }
 
     pub fn encode(self: AgentActionType, w: anytype) EncodeError!void {
-        try w.writeI32(@intFromEnum(self));
+        try w.writeI32(@backingInt(self));
     }
 };

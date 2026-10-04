@@ -40,11 +40,11 @@ pub const PersonaPieceType = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PersonaPieceType {
-        return @enumFromInt(try r.readU32());
+        return @fromBackingInt(@intCast(try r.readU32()));
     }
 
     pub fn encode(self: PersonaPieceType, w: anytype) EncodeError!void {
-        try w.writeU32(@intFromEnum(self));
+        try w.writeU32(@backingInt(self));
     }
 };
 

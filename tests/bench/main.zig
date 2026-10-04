@@ -69,7 +69,7 @@ fn primitives() !void {
             std.mem.doNotOptimizeAway((try p.packet.decode(self.input, .{})).payload.len);
         }
     };
-    const raw = [_]u8{ 0xc1, 0x01 } ++ [_]u8{0} ** 64;
+    const raw = [_]u8{ 0xc1, 0x01 } ++ @as([64]u8, @splat(0));
     try measure("header decode (raw forward)", raw.len, &Envelope{ .input = &raw }, Envelope.decode);
 
     const External = struct {
@@ -118,7 +118,7 @@ fn walk(value: anytype) p.DecodeError!void {
                 while (try it.next()) |element| try walk(element);
                 return;
             }
-            inline for (info.fields) |field| try walk(@field(value, field.name));
+            inline for (info.field_names) |name| try walk(@field(value, name));
         },
         .@"union" => |info| if (info.tag_type != null) switch (value) {
             inline else => |payload| try walk(payload),

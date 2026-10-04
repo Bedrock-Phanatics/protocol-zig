@@ -79,7 +79,7 @@ pub const CommandBlockUpdateTarget = union(enum(u32)) {
     }
 
     pub fn encode(self: CommandBlockUpdateTarget, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .entity_command_target => |value| {
                 try w.writeVarU64(value);

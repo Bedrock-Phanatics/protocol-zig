@@ -50,11 +50,11 @@ pub const ItemDescriptorType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemDescriptorType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ItemDescriptorType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 

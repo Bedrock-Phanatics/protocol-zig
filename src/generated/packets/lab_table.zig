@@ -45,11 +45,11 @@ pub const LabTableReactionType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!LabTableReactionType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: LabTableReactionType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -61,10 +61,10 @@ pub const LabTableType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!LabTableType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: LabTableType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

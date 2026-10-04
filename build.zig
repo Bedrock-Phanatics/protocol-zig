@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit, corpus and generated-codec tests");
     const options = b.addOptions();
-    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus.txt)") orelse b.pathFromRoot("tests/corpus.txt");
+    const corpus_file = b.option([]const u8, "corpus", "Packet corpus to replay (default: tests/corpus.txt)") orelse "tests/corpus.txt";
     options.addOption([]const u8, "corpus_file", corpus_file);
 
     const suite = b.addTest(.{ .root_module = b.createModule(.{
@@ -58,7 +58,7 @@ pub fn build(b: *std.Build) void {
     }) });
     b.step("fuzz", "Run a bounded deterministic hostile-input campaign").dependOn(&b.addRunArtifact(fuzz).step);
 
-    const bench_optimize = b.option(std.builtin.OptimizeMode, "bench-optimize", "Benchmark optimization mode (default: ReleaseFast)") orelse .ReleaseFast;
+    const bench_optimize = b.option(std.builtin.OptimizeMode, "bench-optimize", "Benchmark optimization mode (default: ReleaseFast)") orelse .fast;
     const bench_protocol = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = target, .optimize = bench_optimize });
     const bench_options = b.addOptions();
     bench_options.addOption([]const u8, "corpus_file", corpus_file);

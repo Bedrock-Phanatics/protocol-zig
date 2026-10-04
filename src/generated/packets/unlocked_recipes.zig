@@ -38,10 +38,10 @@ pub const UnlockedRecipesPacketType = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!UnlockedRecipesPacketType {
-        return @enumFromInt(try r.readU32());
+        return @fromBackingInt(@intCast(try r.readU32()));
     }
 
     pub fn encode(self: UnlockedRecipesPacketType, w: anytype) EncodeError!void {
-        try w.writeU32(@intFromEnum(self));
+        try w.writeU32(@backingInt(self));
     }
 };

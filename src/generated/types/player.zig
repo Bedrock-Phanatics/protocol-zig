@@ -52,11 +52,11 @@ pub const PlayerActionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PlayerActionType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: PlayerActionType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -69,10 +69,10 @@ pub const PlayerPermissionLevel = enum(i8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PlayerPermissionLevel {
-        return @enumFromInt(try r.readI8());
+        return @fromBackingInt(@intCast(try r.readI8()));
     }
 
     pub fn encode(self: PlayerPermissionLevel, w: anytype) EncodeError!void {
-        try w.writeI8(@intFromEnum(self));
+        try w.writeI8(@backingInt(self));
     }
 };

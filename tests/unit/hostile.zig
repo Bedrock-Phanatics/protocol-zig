@@ -45,7 +45,7 @@ test "encoding a value nested deeper than any decoder accepts fails without writ
             .the_new_property_value = values[values.len - 1],
         } }}) },
     } };
-    var output = [_]u8{0xa5} ** 4096;
+    var output = @as([4096]u8, @splat(0xa5));
     var w = p.Writer.init(&output);
     try std.testing.expectError(error.InvalidValue, p.typed.encode(&w, packet));
     try std.testing.expectEqual(@as(usize, 0), w.cursor);

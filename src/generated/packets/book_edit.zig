@@ -138,7 +138,7 @@ pub const BookEditOperation = union(enum(u32)) {
     }
 
     pub fn encode(self: BookEditOperation, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .replace_page => |value| {
                 try value.encode(w);

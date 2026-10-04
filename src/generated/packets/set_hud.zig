@@ -46,11 +46,11 @@ pub const HudElement = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!HudElement {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: HudElement, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -61,10 +61,10 @@ pub const HudVisibility = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!HudVisibility {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: HudVisibility, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

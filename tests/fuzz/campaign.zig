@@ -67,7 +67,7 @@ pub fn visit(value: anytype) p.DecodeError!void {
                 if (count != value.len) return error.InvalidValue;
                 return;
             }
-            inline for (info.fields) |field| try visit(@field(value, field.name));
+            inline for (info.field_names) |name| try visit(@field(value, name));
         },
         .@"union" => |info| if (info.tag_type != null) switch (value) {
             inline else => |payload| try visit(payload),
@@ -142,7 +142,7 @@ fn mutate(random: std.Random, out: []u8, seed: []const u8, seeds: []const []cons
 }
 
 fn structuredCases() !void {
-    const nested = [_]u8{ 10, 0 } ** 80 ++ [_]u8{0} ** 80;
+    const nested = @as([160]u8, @bitCast(@as([80][2]u8, @splat(.{ 10, 0 })))) ++ @as([80]u8, @splat(0));
     var r = try p.Reader.init(&nested, .{});
     if (p.nbt.readDocument(&r)) |_| return error.AcceptedDeepNbt else |err| if (err != error.LimitExceeded) return err;
 
@@ -150,7 +150,7 @@ fn structuredCases() !void {
     for ([_][]const u8{
         &([_]u8{ 7, 0 } ++ huge_count),
         &([_]u8{ 7, 0, 0xfe, 0xff, 0x3f }),
-        &([_]u8{ 6, 0, 0, 0, 0 } ++ [_]u8{0} ** 16 ++ [_]u8{0} ++ huge_count),
+        &([_]u8{ 6, 0, 0, 0, 0 } ++ @as([16]u8, @splat(0)) ++ [_]u8{0} ++ huge_count),
     }) |input| {
         if (p.typed.decode(input, .{})) |_| return error.AcceptedHugeCollection else |_| {}
     }

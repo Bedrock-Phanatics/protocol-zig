@@ -41,10 +41,10 @@ pub const PacketCompressionAlgorithm = enum(u16) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PacketCompressionAlgorithm {
-        return @enumFromInt(try r.readU16());
+        return @fromBackingInt(@intCast(try r.readU16()));
     }
 
     pub fn encode(self: PacketCompressionAlgorithm, w: anytype) EncodeError!void {
-        try w.writeU16(@intFromEnum(self));
+        try w.writeU16(@backingInt(self));
     }
 };

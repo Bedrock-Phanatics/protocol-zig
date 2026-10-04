@@ -32,11 +32,11 @@ pub const FurnaceLayout = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!FurnaceLayout {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: FurnaceLayout, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -51,11 +51,11 @@ pub const FurnaceLeftTabIndex = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!FurnaceLeftTabIndex {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: FurnaceLeftTabIndex, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -89,10 +89,10 @@ pub const SetPlayerFurnaceOptionsFurnaceType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SetPlayerFurnaceOptionsFurnaceType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: SetPlayerFurnaceOptionsFurnaceType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

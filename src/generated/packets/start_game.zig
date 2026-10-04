@@ -108,11 +108,11 @@ pub const ChatRestrictionLevel = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ChatRestrictionLevel {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ChatRestrictionLevel, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -125,11 +125,11 @@ pub const EditorWorldType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!EditorWorldType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: EditorWorldType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -141,11 +141,11 @@ pub const EducationEditionOffer = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!EducationEditionOffer {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: EducationEditionOffer, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };
 
@@ -184,11 +184,11 @@ pub const LegacyDifficulty = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!LegacyDifficulty {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: LegacyDifficulty, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -451,11 +451,11 @@ pub const ServerEditorConnectionPolicy = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ServerEditorConnectionPolicy {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: ServerEditorConnectionPolicy, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -469,11 +469,11 @@ pub const SocialGamePublishSetting = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SocialGamePublishSetting {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: SocialGamePublishSetting, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -484,11 +484,11 @@ pub const SpawnBiomeType = enum(i16) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!SpawnBiomeType {
-        return @enumFromInt(try r.readI16());
+        return @fromBackingInt(@intCast(try r.readI16()));
     }
 
     pub fn encode(self: SpawnBiomeType, w: anytype) EncodeError!void {
-        try w.writeI16(@intFromEnum(self));
+        try w.writeI16(@backingInt(self));
     }
 };
 

@@ -36,10 +36,10 @@ pub const PlayStatusType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PlayStatusType {
-        return @enumFromInt(try r.readI32Be());
+        return @fromBackingInt(@intCast(try r.readI32Be()));
     }
 
     pub fn encode(self: PlayStatusType, w: anytype) EncodeError!void {
-        try w.writeI32Be(@intFromEnum(self));
+        try w.writeI32Be(@backingInt(self));
     }
 };

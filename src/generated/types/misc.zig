@@ -66,11 +66,11 @@ pub const AnimationMode = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!AnimationMode {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: AnimationMode, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -94,11 +94,11 @@ pub const BuildPlatform = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!BuildPlatform {
-        return @enumFromInt(try r.readI32());
+        return @fromBackingInt(@intCast(try r.readI32()));
     }
 
     pub fn encode(self: BuildPlatform, w: anytype) EncodeError!void {
-        try w.writeI32(@intFromEnum(self));
+        try w.writeI32(@backingInt(self));
     }
 };
 
@@ -112,11 +112,11 @@ pub const ControlSchemeScheme = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ControlSchemeScheme {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ControlSchemeScheme, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -284,7 +284,7 @@ pub const DataItemEntryPayload = union(enum(u32)) {
     }
 
     pub fn encode(self: DataItemEntryPayload, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .byte => |value| {
                 try value.encode(w);
@@ -487,11 +487,11 @@ pub const DataItemType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!DataItemType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: DataItemType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -585,7 +585,7 @@ pub const DduiDataStoreUpdateData = union(enum(u32)) {
     }
 
     pub fn encode(self: DduiDataStoreUpdateData, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .double => |value| {
                 try w.writeF64(value);
@@ -658,7 +658,7 @@ pub const GameRuleRuleValue = union(enum(u32)) {
     }
 
     pub fn encode(self: GameRuleRuleValue, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .empty => {},
             .bool => |value| {
@@ -685,11 +685,11 @@ pub const GameType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!GameType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: GameType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -791,11 +791,11 @@ pub const GeneratorType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!GeneratorType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: GeneratorType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -824,7 +824,7 @@ pub const ItemDescriptor = union(enum(u32)) {
     }
 
     pub fn encode(self: ItemDescriptor, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .empty_item => |value| {
                 switch (value) {
@@ -873,11 +873,11 @@ pub const Mirror = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!Mirror {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: Mirror, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -902,11 +902,11 @@ pub const MolangVersion = enum(i16) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MolangVersion {
-        return @enumFromInt(try r.readI16());
+        return @fromBackingInt(@intCast(try r.readI16()));
     }
 
     pub fn encode(self: MolangVersion, w: anytype) EncodeError!void {
-        try w.writeI16(@intFromEnum(self));
+        try w.writeI16(@backingInt(self));
     }
 };
 
@@ -987,11 +987,11 @@ pub const PersonaAnimatedTextureType = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PersonaAnimatedTextureType {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: PersonaAnimatedTextureType, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };
 
@@ -1002,11 +1002,11 @@ pub const PersonaAnimationExpression = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PersonaAnimationExpression {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: PersonaAnimationExpression, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };
 
@@ -1017,11 +1017,11 @@ pub const PersonaArmSizeType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PersonaArmSizeType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: PersonaArmSizeType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -1123,11 +1123,11 @@ pub const Rotation = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!Rotation {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: Rotation, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -1312,7 +1312,7 @@ pub const StackRequestAction = union(enum(u32)) {
     }
 
     pub fn encode(self: StackRequestAction, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .take => |value| {
                 try value.encode(w);

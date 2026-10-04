@@ -56,10 +56,10 @@ pub const ClientboundTextureShiftAction = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ClientboundTextureShiftAction {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ClientboundTextureShiftAction, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

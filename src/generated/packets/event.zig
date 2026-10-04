@@ -191,7 +191,7 @@ pub const EventEventData = union(enum(u32)) {
     }
 
     pub fn encode(self: EventEventData, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .achievement => |value| {
                 try value.encode(w);
@@ -394,11 +394,11 @@ pub const LegacyTelemetryType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!LegacyTelemetryType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: LegacyTelemetryType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -489,11 +489,11 @@ pub const MinecraftEventingAchievementIds = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MinecraftEventingAchievementIds {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: MinecraftEventingAchievementIds, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -519,11 +519,11 @@ pub const MinecraftEventingInteractionType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MinecraftEventingInteractionType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: MinecraftEventingInteractionType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -558,11 +558,11 @@ pub const MinecraftEventingPoiBlockInteractionType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MinecraftEventingPoiBlockInteractionType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: MinecraftEventingPoiBlockInteractionType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 

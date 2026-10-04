@@ -80,7 +80,7 @@ pub const PlayerUpdateEntityOverridesUpdate = union(enum(u32)) {
     }
 
     pub fn encode(self: PlayerUpdateEntityOverridesUpdate, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .clear => |value| {
                 try w.writeString(value);

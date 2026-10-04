@@ -120,11 +120,11 @@ pub const ClientPlayMode = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ClientPlayMode {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: ClientPlayMode, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };
 
@@ -139,11 +139,11 @@ pub const InputMode = enum(u32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!InputMode {
-        return @enumFromInt(try r.readVarU32());
+        return @fromBackingInt(@intCast(try r.readVarU32()));
     }
 
     pub fn encode(self: InputMode, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
     }
 };
 
@@ -192,11 +192,11 @@ pub const NewInteractionModel = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!NewInteractionModel {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: NewInteractionModel, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -304,11 +304,11 @@ pub const PlayerAuthInputInputData = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PlayerAuthInputInputData {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: PlayerAuthInputInputData, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 

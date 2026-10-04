@@ -3,20 +3,20 @@ const root = @import("bedrock_protocol");
 const v = root.version;
 
 comptime {
-    const kinds = @typeInfo(v.Kind).@"enum".fields;
+    const kinds = @typeInfo(v.Kind).@"enum".field_names;
     if (kinds.len != 231) @compileError("protocol 2193 defines 231 packets");
     for (kinds) |kind| {
-        const P = @field(v.packets, kind.name).Packet;
-        if (!@hasDecl(P, "decode") or !@hasDecl(P, "encode")) @compileError(kind.name ++ " has no codec");
-        const fields = @typeInfo(P).@"struct".fields;
-        if (fields.len == 1 and std.mem.eql(u8, fields[0].name, "payload")) @compileError(kind.name ++ " is an opaque payload");
+        const P = @field(v.packets, kind).Packet;
+        if (!@hasDecl(P, "decode") or !@hasDecl(P, "encode")) @compileError(kind ++ " has no codec");
+        const fields = @typeInfo(P).@"struct".field_names;
+        if (fields.len == 1 and std.mem.eql(u8, fields[0], "payload")) @compileError(kind ++ " is an opaque payload");
     }
 }
 
 test "every generated packet codec is instantiated for both writers" {
     var storage: [64]u8 = undefined;
-    inline for (@typeInfo(v.Kind).@"enum".fields) |field| {
-        const kind: v.Kind = @enumFromInt(field.value);
+    inline for (@typeInfo(v.Kind).@"enum".field_values) |tag| {
+        const kind: v.Kind = @fromBackingInt(@intCast(tag));
         var r = try root.Reader.init(&.{}, .{});
         if (v.decodePayload(&r, kind)) |value| {
             var w = root.Writer.init(&storage);

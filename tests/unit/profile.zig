@@ -37,7 +37,7 @@ test "encoding rejects envelopes whose kind, ID and value disagree without writi
         .{ .header = .{ .packet_id = 1023 }, .kind = null, .payload = "", .value = .{ .typed = typed_value } },
     };
     for (invalid) |envelope| {
-        var bytes = [_]u8{0xa5} ** 32;
+        var bytes = @as([32]u8, @splat(0xa5));
         const before = bytes;
         var writer = p.Writer.init(&bytes);
         writer.cursor = 3;

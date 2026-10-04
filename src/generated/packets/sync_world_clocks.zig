@@ -99,7 +99,7 @@ pub const SyncWorldClocksData = union(enum(u32)) {
     }
 
     pub fn encode(self: SyncWorldClocksData, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .sync_state => |value| {
                 if (value.len > 256) return error.InvalidValue;

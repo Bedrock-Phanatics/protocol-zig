@@ -71,7 +71,7 @@ pub const PlayerLocationLocation = union(enum(u32)) {
     }
 
     pub fn encode(self: PlayerLocationLocation, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .coordinates => |value| {
                 try value.encode(w);
@@ -94,10 +94,10 @@ pub const PlayerLocationType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PlayerLocationType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: PlayerLocationType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

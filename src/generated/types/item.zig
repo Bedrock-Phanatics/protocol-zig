@@ -98,11 +98,11 @@ pub const ItemUseInventoryTransactionActionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemUseInventoryTransactionActionType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: ItemUseInventoryTransactionActionType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -113,11 +113,11 @@ pub const ItemUseInventoryTransactionClientCooldownState = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemUseInventoryTransactionClientCooldownState {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ItemUseInventoryTransactionClientCooldownState, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -128,11 +128,11 @@ pub const ItemUseInventoryTransactionPredictedResult = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemUseInventoryTransactionPredictedResult {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ItemUseInventoryTransactionPredictedResult, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -144,10 +144,10 @@ pub const ItemUseInventoryTransactionTriggerType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemUseInventoryTransactionTriggerType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ItemUseInventoryTransactionTriggerType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

@@ -194,11 +194,11 @@ pub const MapDecorationType = enum(i8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MapDecorationType {
-        return @enumFromInt(try r.readI8());
+        return @fromBackingInt(@intCast(try r.readI8()));
     }
 
     pub fn encode(self: MapDecorationType, w: anytype) EncodeError!void {
-        try w.writeI8(@intFromEnum(self));
+        try w.writeI8(@backingInt(self));
     }
 };
 
@@ -210,11 +210,11 @@ pub const MapItemTrackedActorType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!MapItemTrackedActorType {
-        return @enumFromInt(try r.readI32());
+        return @fromBackingInt(@intCast(try r.readI32()));
     }
 
     pub fn encode(self: MapItemTrackedActorType, w: anytype) EncodeError!void {
-        try w.writeI32(@intFromEnum(self));
+        try w.writeI32(@backingInt(self));
     }
 };
 

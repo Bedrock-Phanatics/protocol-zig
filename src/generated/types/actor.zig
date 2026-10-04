@@ -14,11 +14,11 @@ pub const ActorLinkType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ActorLinkType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: ActorLinkType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -186,10 +186,10 @@ pub const ActorType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ActorType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: ActorType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

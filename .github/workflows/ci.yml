@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  ZIG_VERSION: 0.16.0
+  ZIG_VERSION: 0.17.0
   GO_VERSION: '1.25'
   # Bedwire revision the integration test runs against.
   BEDWIRE_REVISION: 2b29460947c45395114a6b6c4484714923c6451c

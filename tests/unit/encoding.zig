@@ -1,7 +1,7 @@
 const std = @import("std");
 const p = @import("bedrock_protocol");
 test "packet failure preserves destination and cursor" {
-    var bytes = [_]u8{0xa5} ** 3;
+    var bytes = @as([3]u8, @splat(0xa5));
     const before = bytes;
     var w = p.Writer.init(&bytes);
     w.cursor = 1;
@@ -10,7 +10,7 @@ test "packet failure preserves destination and cursor" {
     try std.testing.expectEqual(@as(usize, 1), w.cursor);
 }
 test "typed preflight rejects late invalid string without writes" {
-    var bytes = [_]u8{0xa5} ** 128;
+    var bytes = @as([128]u8, @splat(0xa5));
     const before = bytes;
     var w = p.Writer.init(&bytes);
     w.cursor = 3;
@@ -22,7 +22,7 @@ test "typed preflight rejects late invalid string without writes" {
 test "typed capacity failure never partially writes" {
     const e: p.typed.Envelope = .{ .header = .{ .packet_id = 193 }, .packet = .{ .request_network_settings = .{ .client_network_version = 2193 } } };
     for (0..6) |capacity| {
-        var bytes = [_]u8{0xa5} ** 6;
+        var bytes = @as([6]u8, @splat(0xa5));
         const before = bytes;
         var w = p.Writer.init(bytes[0..capacity]);
         try std.testing.expectError(error.NoSpaceLeft, p.typed.encode(&w, e));

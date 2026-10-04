@@ -39,11 +39,11 @@ pub const PacketViolationSeverity = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PacketViolationSeverity {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: PacketViolationSeverity, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -54,10 +54,10 @@ pub const PacketViolationType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!PacketViolationType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: PacketViolationType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

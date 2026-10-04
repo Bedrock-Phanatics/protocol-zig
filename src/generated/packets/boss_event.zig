@@ -56,11 +56,11 @@ pub const BossBarColor = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!BossBarColor {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: BossBarColor, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -74,11 +74,11 @@ pub const BossBarOverlay = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!BossBarOverlay {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: BossBarOverlay, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -96,10 +96,10 @@ pub const BossEventUpdateType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!BossEventUpdateType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: BossEventUpdateType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

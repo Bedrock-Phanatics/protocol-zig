@@ -62,7 +62,7 @@ pub const ResourcePackClientResponseResponse = union(enum(u32)) {
     }
 
     pub fn encode(self: ResourcePackClientResponseResponse, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .cancel => |value| {
                 try w.writeString(value);

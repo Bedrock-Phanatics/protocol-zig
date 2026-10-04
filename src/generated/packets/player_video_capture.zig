@@ -34,7 +34,7 @@ pub const PlayerVideoCaptureAction = union(enum(u32)) {
     }
 
     pub fn encode(self: PlayerVideoCaptureAction, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .start => |value| {
                 try value.encode(w);

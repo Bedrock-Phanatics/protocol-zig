@@ -47,11 +47,11 @@ pub const CameraAimAssistAction = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CameraAimAssistAction {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: CameraAimAssistAction, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -62,10 +62,10 @@ pub const CameraAimAssistPacketTargetMode = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!CameraAimAssistPacketTargetMode {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: CameraAimAssistPacketTargetMode, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };

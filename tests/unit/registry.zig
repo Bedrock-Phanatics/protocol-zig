@@ -7,15 +7,15 @@ test "registry IDs, kinds and directions are a bijection" {
     try std.testing.expectEqual(p.PacketKind.login, p.registry.packetKind(1).?);
     try std.testing.expectEqual(@as(?u10, 193), p.registry.packetId(.request_network_settings));
     try std.testing.expect(p.registry.packetKind(1023) == null);
-    var seen = [_]bool{false} ** 1024;
+    var seen = @as([1024]bool, @splat(false));
     for (std.enums.values(p.PacketKind)) |kind| {
         const id = p.registry.packetId(kind).?;
         try std.testing.expect(!seen[id]);
         seen[id] = true;
         try std.testing.expectEqual(kind, p.registry.packetKind(id).?);
     }
-    inline for (@typeInfo(p.PacketKind).@"enum".fields) |field| {
-        try std.testing.expectEqual(p.registry.packetId(@field(p.PacketKind, field.name)).?, @intFromEnum(@field(p.PacketId, field.name)));
+    inline for (@typeInfo(p.PacketKind).@"enum".field_names) |name| {
+        try std.testing.expectEqual(p.registry.packetId(@field(p.PacketKind, name)).?, @backingInt(@field(p.PacketId, name)));
     }
     for (0..1024) |id| if (p.registry.packetKind(@intCast(id))) |kind| {
         try std.testing.expectEqual(@as(u10, @intCast(id)), p.registry.packetId(kind).?);

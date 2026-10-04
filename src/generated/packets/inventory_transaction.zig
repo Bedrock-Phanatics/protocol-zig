@@ -72,7 +72,7 @@ pub const InventoryTransactionTransaction = union(enum(u32)) {
     }
 
     pub fn encode(self: InventoryTransactionTransaction, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .normal_transaction_data => |value| {
                 try w.writeCount(.var_u32, value.len);
@@ -133,11 +133,11 @@ pub const ItemReleaseInventoryTransactionActionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemReleaseInventoryTransactionActionType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: ItemReleaseInventoryTransactionActionType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -186,10 +186,10 @@ pub const ItemUseOnActorInventoryTransactionActionType = enum(i32) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemUseOnActorInventoryTransactionActionType {
-        return @enumFromInt(try r.readVarI32());
+        return @fromBackingInt(@intCast(try r.readVarI32()));
     }
 
     pub fn encode(self: ItemUseOnActorInventoryTransactionActionType, w: anytype) EncodeError!void {
-        try w.writeVarI32(@intFromEnum(self));
+        try w.writeVarI32(@backingInt(self));
     }
 };

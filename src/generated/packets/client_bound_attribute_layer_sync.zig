@@ -69,7 +69,7 @@ pub const ClientBoundAttributeLayerSyncData = union(enum(u32)) {
     }
 
     pub fn encode(self: ClientBoundAttributeLayerSyncData, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .update_attribute_layers => |value| {
                 if (value.len > 512) return error.InvalidValue;
@@ -284,11 +284,11 @@ pub const EasNoiseAlignmentType = enum(u8) {
     _,
 
     pub fn decode(r: *Reader) DecodeError!EasNoiseAlignmentType {
-        return @enumFromInt(try r.readU8());
+        return @fromBackingInt(@intCast(try r.readU8()));
     }
 
     pub fn encode(self: EasNoiseAlignmentType, w: anytype) EncodeError!void {
-        try w.writeU8(@intFromEnum(self));
+        try w.writeU8(@backingInt(self));
     }
 };
 
@@ -336,7 +336,7 @@ pub const EnvironmentAttributeValue = union(enum(u32)) {
     }
 
     pub fn encode(self: EnvironmentAttributeValue, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .bool => |value| {
                 try value.encode(w);

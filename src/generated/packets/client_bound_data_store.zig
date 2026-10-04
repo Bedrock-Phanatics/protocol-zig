@@ -48,7 +48,7 @@ pub const ClientBoundDataStoreUpdatesItem = union(enum(u32)) {
     }
 
     pub fn encode(self: ClientBoundDataStoreUpdatesItem, w: anytype) EncodeError!void {
-        try w.writeVarU32(@intFromEnum(self));
+        try w.writeVarU32(@backingInt(self));
         switch (self) {
             .update => |value| {
                 try value.encode(w);
@@ -141,7 +141,7 @@ pub const DynamicValue = union(enum(i32)) {
     pub fn encode(self: DynamicValue, w: anytype) EncodeError!void {
         try w.enter();
         defer w.leave();
-        try w.writeI32(@intFromEnum(self));
+        try w.writeI32(@backingInt(self));
         switch (self) {
             .none => {},
             .bool => |value| {
