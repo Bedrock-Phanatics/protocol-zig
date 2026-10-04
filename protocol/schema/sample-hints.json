@@ -103,6 +103,14 @@
       "reason": "gophertunnel derives this string from the variant on encode; vanilla writes the same name, so the corpus uses it to keep the rest of the packet comparable.",
       "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/packet/resource_pack_client_response.go#L44"
     },
+    "RemoveScore.objective_name/value": {
+      "strings": [
+        "",
+        "objective"
+      ],
+      "reason": "Exercise present-but-empty objective names in the extended corpus: gophertunnel re-encodes them as absent, as documented in accepted-divergences.json.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/scoreboard.go#L58-L66"
+    },
     "RemoveScore.action": {
       "strings": [
         "remove"

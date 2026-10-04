@@ -23,7 +23,7 @@ const limits: b.Limits = .{ .max_frame_bytes = 4096, .max_batch_bytes = 4096, .m
 test "external implicit deflate profile initializes without a descriptor" {
     var pool = try b.BufferPool.init(std.testing.allocator, limits, .{ .rx_slots = 1, .tx_slots = 1 });
     defer pool.deinit();
-    var session = try b.SessionWithProfile(ImplicitDeflate).init(std.testing.allocator, .server, .{ .pool = &pool });
+    var session = try b.SessionWithProfile(ImplicitDeflate).init(.server, .{ .pool = &pool });
     defer session.deinit();
     try std.testing.expectEqual(b.State.authenticating, session.state);
     try std.testing.expectEqual(b.compression.Algorithm.deflate, session.compression.algorithm);
@@ -33,9 +33,9 @@ test "current and external profiles drive real Bedwire sessions" {
     inline for (.{ p.Current, Mock }) |Profile| {
         var pool = try b.BufferPool.init(std.testing.allocator, limits, .{ .rx_slots = 2, .tx_slots = 2 });
         defer pool.deinit();
-        var server = try b.SessionWithProfile(Profile).init(std.testing.allocator, .server, .{ .pool = &pool });
+        var server = try b.SessionWithProfile(Profile).init(.server, .{ .pool = &pool });
         defer server.deinit();
-        var client = try b.SessionWithProfile(Profile).init(std.testing.allocator, .client, .{ .pool = &pool });
+        var client = try b.SessionWithProfile(Profile).init(.client, .{ .pool = &pool });
         defer client.deinit();
 
         var storage: [128]u8 = undefined;
