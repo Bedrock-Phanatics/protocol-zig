@@ -4,9 +4,15 @@ Minecraft: Bedrock Edition packet codecs for Zig: every packet of protocol
 **2193** (Minecraft **1.26.51**), decoded into typed fields and encoded back
 byte for byte.
 
-protocol-zig supports **only the latest stable release**. When a new stable
+protocol-zig supports **one stable protocol at a time**. When a new stable
 protocol ships, the library moves to it and the old one is dropped; there is
 no multi-version support.
+
+The version constants identify the pinned schema release. Mojang released
+[26.52](https://feedback.minecraft.net/hc/en-us/articles/49175370527501-Minecraft-Bedrock-Edition-26-52-Hotfix-Changelog)
+on September 25, 2026, but the current protocolgen manifest still targets
+1.26.51. Compatibility with 26.52 has not been verified against a matching
+manifest or vanilla packet capture.
 
 - **Complete:** all 231 packets have generated codecs; none are opaque payloads.
 - **Zero-copy:** decoding never allocates. Strings, byte arrays, NBT and lists
@@ -100,8 +106,15 @@ above are compiled and run by `tests/unit/readme.zig`.
 
 A decoded packet borrows its input buffer: every string, byte array, NBT
 document and list points into it. Keep the buffer alive while you use the
-packet, or copy the parts you need. Nothing is freed because nothing is
-allocated.
+packet, or copy the parts you need. Keep that buffer unchanged: lazy lists
+re-read validated bytes, and encoding trusts those bytes. Nothing is freed
+because nothing is allocated. `List.toOwnedSlice` owns only the element array;
+strings, NBT and nested lists inside its elements still borrow the original
+buffer. Free the array with the allocator you passed.
+
+Encode into a destination that does not overlap any borrowed source slices.
+Encoding retains no pointers after it returns. Zig does not track these
+lifetimes; the consumer must keep the input alive and unchanged.
 
 ### Limits and errors
 
@@ -132,6 +145,28 @@ which must match its tag.
 
 Directions are the union of every independent source that accepts a packet
 from a side, so a packet any vanilla peer sends is never rejected.
+
+### External Zig consumers
+
+`Current.encodedSize(envelope)` validates and measures both typed and unknown
+packets before you allocate a destination. `typed.encodedSize(envelope)` does
+the same for typed envelopes. Both include the header and all sub-client bits.
+After changing a typed field, encoding uses that field rather than the
+envelope's original `payload`. Replace a list with `.init(items)` to change its
+elements; decoded wire lists and their counts must remain unchanged.
+`.init(items)` borrows the item slice and its nested data until encoding ends.
+
+Adapters can be generated at comptime from `typed.Packet`, a `union(PacketKind)`.
+For each name in `@typeInfo(typed.Packet).@"union".field_names`, use
+`@FieldType(typed.Packet, name)` for the packet type, `@field(PacketKind, name)`
+for its kind, and the registry functions for its ID and direction. Struct
+`field_names` and `@FieldType` expose packet fields recursively. Lists expose
+`Element` and `iterator()`; optional and tagged-union fields retain their Zig
+types. No runtime metadata or second packet registry is needed.
+
+Reflection exposes Zig value types, not wire semantics: strings, byte arrays
+and NBT are all `[]const u8`, and an integer's type does not identify its wire
+encoding. Keep any integration-specific conversion policy downstream.
 
 ### Profiles
 

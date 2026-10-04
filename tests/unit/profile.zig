@@ -53,11 +53,32 @@ test "profile checks trailing bytes and all subclient combinations" {
         var w = p.Writer.init(&bytes);
         try p.packet.encode(&w, .{ .header = .{ .packet_id = 1023, .sender_subclient = @intCast(sender), .target_subclient = @intCast(target) }, .payload = "xyz" });
         const borrowed = try p.Current.decodeBorrowed(w.written(), .{});
+        try std.testing.expectEqual(w.cursor, try p.Current.encodedSize(borrowed));
         var out: [16]u8 = undefined;
         var encoded = p.Writer.init(&out);
         try p.Current.encode(&encoded, borrowed);
         try std.testing.expectEqualSlices(u8, w.written(), encoded.written());
     };
+}
+
+test "borrowed envelope size follows modified typed fields and checks capacity" {
+    var envelope = try p.Current.decodeBorrowed(&.{ 3, 1, 'x' }, .{});
+    envelope.value.typed.server_to_client_handshake.handshake_web_token = "longer";
+    const size = try p.Current.encodedSize(envelope);
+    try std.testing.expectEqual(@as(usize, 8), size);
+    const output = try std.testing.allocator.alloc(u8, size);
+    defer std.testing.allocator.free(output);
+    @memset(output, 0xa5);
+    var short = p.Writer.init(output[0 .. size - 1]);
+    try std.testing.expectError(error.NoSpaceLeft, p.Current.encode(&short, envelope));
+    try std.testing.expectEqual(@as(usize, 0), short.cursor);
+    for (output) |byte| try std.testing.expectEqual(@as(u8, 0xa5), byte);
+    var writer = p.Writer.init(output);
+    try p.Current.encode(&writer, envelope);
+    try std.testing.expectEqual(size, writer.cursor);
+    try std.testing.expectEqualStrings("longer", (try p.Current.decodeBorrowed(output, .{})).value.typed.server_to_client_handshake.handshake_web_token);
+    envelope.value.typed.server_to_client_handshake.handshake_web_token = &.{0xff};
+    try std.testing.expectError(error.InvalidValue, p.Current.encodedSize(envelope));
 }
 
 test "external layout translates semantic values independently of current" {

@@ -5,7 +5,7 @@ const EncodeError = @import("errors.zig").EncodeError;
 const DecodeLimits = @import("limits.zig").DecodeLimits;
 
 /// The `wire` form is produced only by `decode`; its bytes are trusted when
-/// encoding, so never construct it by hand.
+/// encoding, so never construct it by hand or change its bytes or count.
 pub fn List(comptime T: type, comptime C: type) type {
     return struct {
         const Self = @This();
@@ -29,6 +29,7 @@ pub fn List(comptime T: type, comptime C: type) type {
         }
 
         pub fn decode(r: *Reader, count: usize) DecodeError!Self {
+            if (count > r.limits.max_array_elements) return error.LimitExceeded;
             const start = r.cursor;
             if (comptime fixedSize()) |size| {
                 const bytes = std.math.mul(usize, count, size) catch return error.EndOfStream;
@@ -40,7 +41,10 @@ pub fn List(comptime T: type, comptime C: type) type {
         pub fn encode(self: Self, w: anytype) EncodeError!void {
             switch (self.data) {
                 .wire => |bytes| try w.writeRaw(bytes),
-                .items => |items| for (items) |item| try C.encode(item, w),
+                .items => |items| {
+                    if (self.len != items.len) return error.InvalidValue;
+                    for (items) |item| try C.encode(item, w);
+                },
             }
         }
 
@@ -51,6 +55,8 @@ pub fn List(comptime T: type, comptime C: type) type {
             };
         }
 
+        /// Copies elements only; nested slices and lists still borrow their input.
+        /// The caller frees the returned slice with the same allocator.
         pub fn toOwnedSlice(self: Self, allocator: std.mem.Allocator) (DecodeError || std.mem.Allocator.Error)![]T {
             const out = try allocator.alloc(T, self.len);
             errdefer allocator.free(out);

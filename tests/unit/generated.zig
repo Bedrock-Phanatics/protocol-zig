@@ -3,12 +3,18 @@ const root = @import("bedrock_protocol");
 const v = root.version;
 
 comptime {
+    @setEvalBranchQuota(10_000);
     const kinds = @typeInfo(v.Kind).@"enum".field_names;
     if (kinds.len != 231) @compileError("protocol 2193 defines 231 packets");
     for (kinds) |kind| {
         const P = @field(v.packets, kind).Packet;
+        if (@FieldType(root.typed.Packet, kind) != P) @compileError(kind ++ " has an inconsistent union type");
+        const tag = @field(root.PacketKind, kind);
+        if (root.registry.packetKind(root.registry.packetId(tag).?) != tag) @compileError(kind ++ " has an inconsistent packet ID");
+        _ = root.registry.packetDirection(tag);
         if (!@hasDecl(P, "decode") or !@hasDecl(P, "encode")) @compileError(kind ++ " has no codec");
         const fields = @typeInfo(P).@"struct".field_names;
+        for (fields) |name| _ = @FieldType(P, name);
         if (fields.len == 1 and std.mem.eql(u8, fields[0], "payload")) @compileError(kind ++ " is an opaque payload");
     }
 }

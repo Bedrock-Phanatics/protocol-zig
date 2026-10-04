@@ -30,16 +30,19 @@ pub fn readDocument(r: *Reader) DecodeError![]const u8 {
     r.input = original[0 .. start + allowed];
     defer r.input = original;
 
-    const tag = std.enums.fromInt(Tag, try r.readU8()) orelse return error.InvalidNbt;
-    if (tag != .end) {
-        _ = try readString(r);
-        skipPayload(r, tag, 0) catch |err| {
-            // Running out of the budget is a limit, not a truncated document.
-            if (err == error.EndOfStream and allowed < available) return error.LimitExceeded;
-            return err;
-        };
-    }
+    readRoot(r) catch |err| {
+        // Running out of the budget is a limit, not a truncated document.
+        if (err == error.EndOfStream and allowed < available) return error.LimitExceeded;
+        return err;
+    };
     return r.input[start..r.cursor];
+}
+
+fn readRoot(r: *Reader) DecodeError!void {
+    const tag = std.enums.fromInt(Tag, try r.readU8()) orelse return error.InvalidNbt;
+    if (tag == .end) return;
+    _ = try readString(r);
+    try skipPayload(r, tag, 0);
 }
 
 pub fn isDocument(bytes: []const u8) bool {

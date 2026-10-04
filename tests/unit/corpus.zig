@@ -31,7 +31,12 @@ test "corpus packets round trip byte for byte" {
         var w = root.Writer.init(output);
         try root.typed.encode(&w, decoded);
         try std.testing.expectEqualSlices(u8, packet, w.written());
-        try std.testing.expect((try root.Current.decodeBorrowed(packet, .{})).value == .typed);
+        const borrowed = try root.Current.decodeBorrowed(packet, .{});
+        try std.testing.expect(borrowed.value == .typed);
+        try std.testing.expectEqual(packet.len, try root.Current.encodedSize(borrowed));
+        w.cursor = 0;
+        try root.Current.encode(&w, borrowed);
+        try std.testing.expectEqualSlices(u8, packet, w.written());
         seen[decoded.header.packet_id][@intFromBool(from_server)] = true;
         checked += 1;
     }

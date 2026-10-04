@@ -74,8 +74,26 @@ test "owned list copies unwind every allocation failure" {
             const owned = try value.toOwnedSlice(allocator);
             defer allocator.free(owned);
             try std.testing.expectEqualSlices(u8, "p", owned[0].pack_id);
+            try std.testing.expect(owned[0].pack_id.ptr == stack_fixture[4..].ptr);
         }
     }.run, .{list});
+}
+
+test "public list decoding enforces limits and encoding rejects a mismatched count" {
+    const Packs = @FieldType(packets.resource_pack_stack.Packet, "texture_pack_list");
+    var reader = try root.Reader.init(&.{}, .{ .max_array_elements = 1 });
+    try std.testing.expectError(error.LimitExceeded, Packs.decode(&reader, 2));
+    try std.testing.expectEqual(@as(usize, 0), reader.cursor);
+
+    var envelope = try root.typed.decode(&stack_fixture, .{});
+    const items = [_]Packs.Element{.{ .pack_id = "p", .version = "v", .sub_pack_name = "" }};
+    envelope.packet.resource_pack_stack.texture_pack_list = .init(&items);
+    envelope.packet.resource_pack_stack.texture_pack_list.len = 0;
+    var output = @as([64]u8, @splat(0xa5));
+    var writer = root.Writer.init(&output);
+    try std.testing.expectError(error.InvalidValue, root.typed.encode(&writer, envelope));
+    try std.testing.expectEqual(@as(usize, 0), writer.cursor);
+    for (output) |byte| try std.testing.expectEqual(@as(u8, 0xa5), byte);
 }
 
 test "caller-built lists encode their items and match decoded wire lists" {

@@ -29,6 +29,7 @@ pub const SessionFeatures = struct {
     }
 };
 pub const CompressionAlgorithm = enum { none, deflate, snappy };
+/// All slices, including nested typed fields, borrow the decode input.
 pub const BorrowedEnvelope = struct {
     header: packet.Header,
     kind: ?Kind,
@@ -54,10 +55,13 @@ pub const Current = struct {
         try r.finish();
         return .{ .header = raw.header, .kind = kind, .payload = raw.payload, .value = .{ .typed = value } };
     }
-    pub fn encode(w: *Writer, e: BorrowedEnvelope) EncodeError!void {
+    pub fn encodedSize(e: BorrowedEnvelope) EncodeError!usize {
         var counter: Counter = .{};
         try encodeTo(&counter, e);
-        if (counter.cursor > w.remainingCapacity()) return error.NoSpaceLeft;
+        return counter.cursor;
+    }
+    pub fn encode(w: *Writer, e: BorrowedEnvelope) EncodeError!void {
+        if (try encodedSize(e) > w.remainingCapacity()) return error.NoSpaceLeft;
         try encodeTo(w, e);
     }
     fn encodeTo(w: anytype, e: BorrowedEnvelope) EncodeError!void {
