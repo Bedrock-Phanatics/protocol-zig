@@ -42,6 +42,10 @@ pub const PlayerListAddEntry = struct {
     is_sub_client: bool,
     player_color: i32,
 
+    pub const actor_refs = .{
+        .actor_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!PlayerListAddEntry {
         var value: PlayerListAddEntry = undefined;
         value.action = try PlayerListPacketType.decode(r);

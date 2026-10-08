@@ -14,6 +14,10 @@ pub const Packet = struct {
     entity_unique_id: i64,
     data: []const u8,
 
+    pub const actor_refs = .{
+        .entity_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.container_id = try r.readU8();

@@ -151,6 +151,10 @@ pub const ItemUseOnActorInventoryTransaction = struct {
     from_position: codec.Vec3f,
     hit_position: codec.Vec3f,
 
+    pub const actor_refs = .{
+        .runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!ItemUseOnActorInventoryTransaction {
         var value: ItemUseOnActorInventoryTransaction = undefined;
         value.actions = blk: {

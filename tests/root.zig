@@ -13,6 +13,7 @@ test {
     _ = @import("unit/corpus.zig");
     _ = @import("unit/hostile.zig");
     _ = @import("unit/readme.zig");
+    _ = @import("unit/actor_refs.zig");
 }
 
 test "deterministic hostile-input smoke" {

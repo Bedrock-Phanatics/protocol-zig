@@ -15,6 +15,11 @@ pub const EntityLink = struct {
     passenger_initiated: bool,
     vehicle_angular_velocity: f32,
 
+    pub const actor_refs = .{
+        .target_a = codec.ActorRef.unique,
+        .target_b = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!EntityLink {
         var value: EntityLink = undefined;
         value.target_a = try r.readVarI64();

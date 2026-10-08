@@ -12,6 +12,10 @@ pub const Packet = struct {
     m_motion: codec.Vec3f,
     m_on_ground: bool,
 
+    pub const actor_refs = .{
+        .m_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.m_runtime_id = try r.readVarU64();

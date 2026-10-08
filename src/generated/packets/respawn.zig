@@ -12,6 +12,10 @@ pub const Packet = struct {
     state: PlayerRespawnState,
     player_runtime_id: u64,
 
+    pub const actor_refs = .{
+        .player_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.position = try r.readVec3f();

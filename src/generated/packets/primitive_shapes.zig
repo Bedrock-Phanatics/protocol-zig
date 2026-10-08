@@ -140,6 +140,10 @@ pub const PrimitiveShape = struct {
     attached_to_entity_id: ?i64,
     extra_shape_data: PrimitiveShapeExtraShapeData,
 
+    pub const actor_refs = .{
+        .attached_to_entity_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!PrimitiveShape {
         var value: PrimitiveShape = undefined;
         value.network_id = try r.readVarU64();

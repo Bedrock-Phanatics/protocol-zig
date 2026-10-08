@@ -80,7 +80,22 @@ func TestGenerateRejectsUnsatisfiableBounds(t *testing.T) {
 	s := tinySchema()
 	big := json.Number("300")
 	s.Packets[0].Fields[1].Type.Element = &Node{Kind: "u8", Min: &big}
-	mustPanic(t, "cannot be satisfied", func() { generate(s) })
+	mustPanic(t, "cannot be satisfied", func() { generate(s, ActorRefs{}) })
+}
+
+func TestEveryWideIntegerIsClassified(t *testing.T) {
+	s := tinySchema()
+	id := Node{Kind: "var_u64"}
+	s.Packets[0].Fields = append(s.Packets[0].Fields, Field{Name: "who", Type: Node{Kind: "optional", Value: &id}})
+	mustPanic(t, "unclassified 64-bit fields, add them to actor-refs.json: [Ping.who]", func() { generate(s, ActorRefs{}) })
+	mustPanic(t, "lists Ping.items", func() { generate(s, ActorRefs{Runtime: []string{"Ping.who"}, Other: []string{"Ping.items"}}) })
+	mustPanic(t, "twice", func() { generate(s, ActorRefs{Runtime: []string{"Ping.who"}, Other: []string{"Ping.who"}}) })
+	out := generate(s, ActorRefs{Unique: []string{"Ping.who"}})["src/generated/packets/ping.zig"]
+	if !strings.Contains(out, ".who = codec.ActorRef.unique,") {
+		t.Fatalf("actor field is not tagged:\n%s", out)
+	}
+	s.Packets[0].Fields[2].Type = Node{Kind: "map", Prefix: "var_u32", Key: &Node{Kind: "string"}, Value: &id}
+	mustPanic(t, "sits in a map", func() { generate(s, ActorRefs{Runtime: []string{"Ping.who"}}) })
 }
 
 func TestNaming(t *testing.T) {
@@ -151,7 +166,8 @@ func TestCheckDoesNotOverwriteStaleOutput(t *testing.T) {
 
 func TestCheckedInSchemaGeneratesDeterministically(t *testing.T) {
 	s := loadSchema(filepath.Join("..", "..", "protocol", "schema", "bedrock.json"))
-	if !reflect.DeepEqual(generate(s), generate(s)) {
+	actors := loadActorRefs(filepath.Join("..", "..", "protocol", "schema", "actor-refs.json"))
+	if !reflect.DeepEqual(generate(s, actors), generate(s, actors)) {
 		t.Fatal("generation is not deterministic")
 	}
 	hints := loadHints(filepath.Join("..", "..", "protocol", "schema", "sample-hints.json"))

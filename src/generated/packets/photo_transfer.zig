@@ -16,6 +16,10 @@ pub const Packet = struct {
     owner_id: i64,
     new_photo_name: []const u8,
 
+    pub const actor_refs = .{
+        .owner_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.photo_name = try r.readString();

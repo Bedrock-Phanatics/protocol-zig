@@ -168,6 +168,15 @@ Reflection exposes Zig value types, not wire semantics: strings, byte arrays
 and NBT are all `[]const u8`, and an integer's type does not identify its wire
 encoding. Keep any integration-specific conversion policy downstream.
 
+The one exception is actor references. `protocol/schema/actor-refs.json`
+classifies every 64-bit integer field as an actor runtime ID, an actor unique
+ID or neither, and generation fails while any field is unclassified.
+`protocol.actor_refs.packets` is the set of packets that can hold a reference
+anywhere, including nested lists, optionals and unions.
+`protocol.actor_refs.rewrite(arena, &packet, map)` passes each reference to
+`map.runtime(u64) u64` or `map.unique(i64) i64` and reports whether anything
+changed. Lists that hold references are copied into `arena`.
+
 ### Profiles
 
 A profile is a type with `protocol_number`, `features`, `packetKind`,

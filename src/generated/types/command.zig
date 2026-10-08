@@ -13,6 +13,10 @@ pub const CommandOrigin = struct {
     request_id: []const u8,
     player_id: i64,
 
+    pub const actor_refs = .{
+        .player_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!CommandOrigin {
         var value: CommandOrigin = undefined;
         value.type = try r.readString();

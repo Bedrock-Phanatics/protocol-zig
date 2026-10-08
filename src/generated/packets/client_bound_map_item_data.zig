@@ -224,6 +224,10 @@ pub const MapTrackedObject = struct {
     entity_id: ?i64,
     block_position: ?codec.BlockPosition,
 
+    pub const actor_refs = .{
+        .entity_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!MapTrackedObject {
         var value: MapTrackedObject = undefined;
         value.type = try MapItemTrackedActorType.decode(r);

@@ -11,6 +11,10 @@ pub const Packet = struct {
     target_actor_id: i64,
     location: PlayerLocationLocation,
 
+    pub const actor_refs = .{
+        .target_actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.target_actor_id = try r.readVarI64();

@@ -15,6 +15,10 @@ pub const Packet = struct {
     int_component_value: i32,
     float_component_value: f32,
 
+    pub const actor_refs = .{
+        .actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.actor_id = try r.readVarI64();

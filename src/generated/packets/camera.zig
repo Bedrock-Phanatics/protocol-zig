@@ -11,6 +11,11 @@ pub const Packet = struct {
     camera_id: i64,
     target_player_id: i64,
 
+    pub const actor_refs = .{
+        .camera_id = codec.ActorRef.unique,
+        .target_player_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.camera_id = try r.readVarI64();

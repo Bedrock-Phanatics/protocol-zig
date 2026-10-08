@@ -23,6 +23,10 @@ pub const StructureSettings = struct {
     integrity_seed: u32,
     rotation_pivot: codec.Vec3f,
 
+    pub const actor_refs = .{
+        .last_edit_player = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!StructureSettings {
         var value: StructureSettings = undefined;
         value.structure_palette_name = try r.readString();

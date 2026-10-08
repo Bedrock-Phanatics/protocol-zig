@@ -15,6 +15,7 @@ pub const PacketKind = registry.PacketKind;
 pub const PacketDirection = registry.PacketDirection;
 pub const typed = @import("registry/typed.zig");
 pub const packet = @import("packet.zig");
+pub const actor_refs = @import("actor_refs.zig");
 
 pub const DecodeLimits = @import("codec/limits.zig").DecodeLimits;
 pub const DecodeError = @import("codec/errors.zig").DecodeError;

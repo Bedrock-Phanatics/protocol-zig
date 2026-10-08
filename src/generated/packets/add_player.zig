@@ -25,6 +25,10 @@ pub const Packet = struct {
     device_id: []const u8,
     build_platform: types.BuildPlatform,
 
+    pub const actor_refs = .{
+        .target_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.uuid = try r.readUuid();

@@ -33,6 +33,10 @@ pub const ChangeEntityScore = struct {
     score_value: i32,
     actor_id: i64,
 
+    pub const actor_refs = .{
+        .actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!ChangeEntityScore {
         var value: ChangeEntityScore = undefined;
         value.action = try r.readString();
@@ -86,6 +90,10 @@ pub const ChangePlayerScore = struct {
     objective_name: []const u8,
     score_value: i32,
     player_unique_id: i64,
+
+    pub const actor_refs = .{
+        .player_unique_id = codec.ActorRef.unique,
+    };
 
     pub fn decode(r: *Reader) DecodeError!ChangePlayerScore {
         var value: ChangePlayerScore = undefined;

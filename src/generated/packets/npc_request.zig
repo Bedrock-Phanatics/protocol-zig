@@ -14,6 +14,10 @@ pub const Packet = struct {
     action_index: u8,
     scene_name: []const u8,
 
+    pub const actor_refs = .{
+        .npc_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.npc_runtime_id = try r.readVarU64();

@@ -28,6 +28,10 @@ pub const Packet = struct {
     camera_orientation: codec.Vec3f,
     raw_move_vector: codec.Vec2f,
 
+    pub const actor_refs = .{
+        .client_predicted_vehicle = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.player_rotation = try r.readVec2f();

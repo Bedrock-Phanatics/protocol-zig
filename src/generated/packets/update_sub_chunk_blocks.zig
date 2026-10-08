@@ -58,6 +58,10 @@ pub const UpdateSubChunkNetworkBlockInfo = struct {
     sync_message_entity_unique_id: u64,
     sync_message_message: u32,
 
+    pub const actor_refs = .{
+        .sync_message_entity_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!UpdateSubChunkNetworkBlockInfo {
         var value: UpdateSubChunkNetworkBlockInfo = undefined;
         value.pos = try r.readBlockPosition();

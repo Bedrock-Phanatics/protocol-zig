@@ -39,6 +39,7 @@ type emitter struct {
 	s         Schema
 	types     map[string]*TypeDef
 	recursive map[string]bool
+	actors    map[string]string // "Owner.field" -> runtime or unique
 }
 
 type file struct {
@@ -51,8 +52,10 @@ type file struct {
 	memo    map[string]string // site hint -> generated helper name
 }
 
-func generate(s Schema) map[string]string {
-	e := &emitter{s: s, types: s.typeMap(), recursive: map[string]bool{}}
+func generate(s Schema, a ActorRefs) map[string]string {
+	actors, err := a.resolve(s)
+	must(err)
+	e := &emitter{s: s, types: s.typeMap(), recursive: map[string]bool{}, actors: actors}
 	for name, b := range builtins {
 		t := e.types[name]
 		if t == nil {
@@ -89,7 +92,7 @@ func generate(s Schema) map[string]string {
 		f.line("//! %s (ID %d), sent by %s.", p.Wire, p.ID, describeDirections(p.Directions))
 		f.imports("../../codec/support.zig", "../types.zig")
 		f.line("")
-		f.structDef("Packet", p.Fields, false)
+		f.structDef(p.Name, "Packet", p.Fields, false)
 		for _, t := range byOwner[p.Name] {
 			f.typeDef(t)
 		}
@@ -297,7 +300,7 @@ func (f *file) mapEntry(n Node, hint string) string {
 	name := f.helperName(hint + "Entry")
 	f.memo["entry:"+hint] = name
 	sub := &file{e: f.e, domain: f.domain, names: f.names, memo: f.memo}
-	sub.structDef(name, []Field{{Name: "key", Type: *n.Key}, {Name: "value", Type: *n.Value}}, false)
+	sub.structDef("", name, []Field{{Name: "key", Type: *n.Key}, {Name: "value", Type: *n.Value}}, false)
 	f.helpers = append(f.helpers, sub.body.String())
 	f.helpers = append(f.helpers, sub.helpers...)
 	return name
@@ -521,7 +524,7 @@ func (f *file) typeDef(t *TypeDef) {
 	}
 	switch t.Kind {
 	case "struct":
-		f.structDef(t.Name, t.Fields, f.e.recursive[t.Name], t.Checks...)
+		f.structDef(t.Name, t.Name, t.Fields, f.e.recursive[t.Name], t.Checks...)
 	case "enum":
 		f.enumDef(t)
 	case "union":
@@ -529,15 +532,18 @@ func (f *file) typeDef(t *TypeDef) {
 	}
 }
 
-func (f *file) structDef(name string, fields []Field, recursive bool, checks ...Check) {
+func (f *file) structDef(owner, name string, fields []Field, recursive bool, checks ...Check) {
 	f.names[name] = true
 	f.line("pub const %s = struct {", name)
+	var names []string
 	for _, field := range fields {
 		f.line("    %s: %s,", ident(field.Name), f.zigType(field.Type, name+pascal(field.Name)))
+		names = append(names, field.Name)
 	}
 	if len(fields) != 0 {
 		f.line("")
 	}
+	f.actorRefs(owner, names)
 	f.line("    pub fn decode(r: *Reader) DecodeError!%s {", name)
 	if len(fields) == 0 {
 		f.line("        _ = r;")
@@ -576,6 +582,24 @@ func (f *file) structDef(name string, fields []Field, recursive bool, checks ...
 	}
 	f.line("    }")
 	f.line("};")
+}
+
+func (f *file) actorRefs(owner string, names []string) {
+	var refs []string
+	for _, name := range names {
+		if kind, ok := f.e.actors[owner+"."+name]; ok {
+			refs = append(refs, fmt.Sprintf("        .%s = codec.ActorRef.%s,", ident(name), kind))
+		}
+	}
+	if len(refs) == 0 {
+		return
+	}
+	f.line("    pub const actor_refs = .{")
+	for _, r := range refs {
+		f.line("%s", r)
+	}
+	f.line("    };")
+	f.line("")
 }
 
 func (f *file) checks(checks []Check, v string) {
@@ -631,15 +655,18 @@ func (f *file) unionDef(t *TypeDef) {
 		f.line("")
 	}
 	f.line("pub const %s = union(%s) {", t.Name, tag)
+	var names []string
 	for _, v := range t.Variants {
 		if v.Type == nil {
 			f.line("    %s,", ident(v.Name))
 		} else {
 			f.line("    %s: %s,", ident(v.Name), f.zigType(*v.Type, t.Name+pascal(v.Name)))
+			names = append(names, v.Name)
 		}
 	}
 	recursive := f.e.recursive[t.Name]
 	f.line("")
+	f.actorRefs(t.Name, names)
 	f.line("    pub fn decode(r: *Reader) DecodeError!%s {", t.Name)
 	if recursive {
 		f.line("        try r.enter();")

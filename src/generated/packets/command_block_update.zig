@@ -70,6 +70,10 @@ pub const CommandBlockUpdateTarget = union(enum(u32)) {
     entity_command_target: u64,
     block_command_data: CommandBlockUpdateBlockCommandData,
 
+    pub const actor_refs = .{
+        .entity_command_target = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!CommandBlockUpdateTarget {
         switch (try r.readVarU32()) {
             0 => return .{ .entity_command_target = try r.readVarU64() },

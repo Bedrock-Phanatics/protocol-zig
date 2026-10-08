@@ -14,6 +14,10 @@ pub const Packet = struct {
     result_pos: codec.BlockPosition,
     face: i32,
 
+    pub const actor_refs = .{
+        .player_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.player_runtime_id = try r.readVarU64();

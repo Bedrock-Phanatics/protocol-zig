@@ -15,6 +15,10 @@ pub const Packet = struct {
     unique_actor_id: u64,
     actor_sync_message: u64,
 
+    pub const actor_refs = .{
+        .unique_actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.block_position = try r.readBlockPosition();

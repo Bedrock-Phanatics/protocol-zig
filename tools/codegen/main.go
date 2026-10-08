@@ -48,7 +48,7 @@ func main() {
 		os.Exit(sync(files, nil, *check))
 	case "generate":
 		schema := loadSchema(schemaPath)
-		files := generate(schema)
+		files := generate(schema, loadActorRefs(filepath.Join(*root, "protocol", "schema", "actor-refs.json")))
 		out := map[string]string{}
 		for path, contents := range files {
 			out[filepath.Join(*root, filepath.FromSlash(path))] = contents

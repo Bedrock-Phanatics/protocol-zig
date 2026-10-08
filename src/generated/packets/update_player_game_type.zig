@@ -12,6 +12,10 @@ pub const Packet = struct {
     target_player: i64,
     tick: u64,
 
+    pub const actor_refs = .{
+        .target_player = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.player_game_type = try types.GameType.decode(r);

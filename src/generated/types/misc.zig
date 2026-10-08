@@ -13,6 +13,10 @@ pub const AbilityData = struct {
     command_permissions: types.CommandPermissionLevel,
     layers: codec.List(SerializedAbilitiesDataSerializedLayer, SerializedAbilitiesDataSerializedLayer),
 
+    pub const actor_refs = .{
+        .target_player_raw_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!AbilityData {
         var value: AbilityData = undefined;
         value.target_player_raw_id = try r.readI64();

@@ -11,6 +11,10 @@ pub const Packet = struct {
     agent_animation: AgentAnimationType,
     runtime_id: u64,
 
+    pub const actor_refs = .{
+        .runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.agent_animation = try AgentAnimationType.decode(r);

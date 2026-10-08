@@ -12,6 +12,8 @@ pub const BlockPosition = vectors.BlockPosition;
 pub const ChunkPosition = vectors.ChunkPosition;
 pub const SubChunkPosition = vectors.SubChunkPosition;
 
+pub const ActorRef = enum { runtime, unique };
+
 pub const PrimKind = enum {
     bool,
     u8,

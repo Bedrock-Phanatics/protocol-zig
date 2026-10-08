@@ -12,6 +12,10 @@ pub const Packet = struct {
     property_index: u32,
     update: PlayerUpdateEntityOverridesUpdate,
 
+    pub const actor_refs = .{
+        .target_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.target_id = try r.readVarI64();

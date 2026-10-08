@@ -33,6 +33,10 @@ pub const ScoreboardIdentityPacketInfo = struct {
     scoreboard_id: i64,
     player_unique_id: ?i64,
 
+    pub const actor_refs = .{
+        .player_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!ScoreboardIdentityPacketInfo {
         var value: ScoreboardIdentityPacketInfo = undefined;
         value.scoreboard_id = try r.readVarI64();

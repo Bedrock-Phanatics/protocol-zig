@@ -14,6 +14,10 @@ pub const Packet = struct {
     effect_name: []const u8,
     molang_variables: ?[]const u8,
 
+    pub const actor_refs = .{
+        .actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.dimension_id = try r.readU8();

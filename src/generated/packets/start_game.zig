@@ -34,6 +34,11 @@ pub const Packet = struct {
     server_configuration_join_info: ?ServerConfigurationJoinInfo,
     server_telemetry_data: EventsServerTelemetryData,
 
+    pub const actor_refs = .{
+        .entity_id = codec.ActorRef.unique,
+        .runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.entity_id = try r.readVarI64();

@@ -114,6 +114,10 @@ pub const CameraInstructionData = struct {
     attach_to_entity: ?i64,
     detach_from_entity: ?bool,
 
+    pub const actor_refs = .{
+        .attach_to_entity = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!CameraInstructionData {
         var value: CameraInstructionData = undefined;
         value.set = if (try r.readBool()) try CameraInstructionSet.decode(r) else null;
@@ -280,6 +284,10 @@ pub const CameraInstructionSet = struct {
 pub const CameraInstructionTargetData = struct {
     target_center_offset: ?codec.Vec3f,
     target_actor_id: i64,
+
+    pub const actor_refs = .{
+        .target_actor_id = codec.ActorRef.unique,
+    };
 
     pub fn decode(r: *Reader) DecodeError!CameraInstructionTargetData {
         var value: CameraInstructionTargetData = undefined;

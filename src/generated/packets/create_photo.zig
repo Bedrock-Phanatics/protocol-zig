@@ -12,6 +12,10 @@ pub const Packet = struct {
     photo_name: []const u8,
     photo_item_name: []const u8,
 
+    pub const actor_refs = .{
+        .raw_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.raw_id = try r.readU64();

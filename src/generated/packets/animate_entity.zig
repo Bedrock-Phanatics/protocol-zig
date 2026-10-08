@@ -16,6 +16,10 @@ pub const Packet = struct {
     m_blend_out_time: f32,
     m_runtime_ids: codec.List(u64, codec.Prim(.var_u64)),
 
+    pub const actor_refs = .{
+        .m_runtime_ids = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.m_animation = try r.readString();

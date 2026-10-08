@@ -10,6 +10,10 @@ const EncodeError = codec.EncodeError;
 pub const Packet = struct {
     player_id: u64,
 
+    pub const actor_refs = .{
+        .player_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.player_id = try r.readVarU64();

@@ -30,6 +30,10 @@ pub const MoveActorAbsoluteData = struct {
     rotation_y: u8,
     rotation_y_head: u8,
 
+    pub const actor_refs = .{
+        .actor_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!MoveActorAbsoluteData {
         var value: MoveActorAbsoluteData = undefined;
         value.actor_runtime_id = try r.readVarU64();

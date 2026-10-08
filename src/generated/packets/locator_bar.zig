@@ -76,6 +76,10 @@ pub const Waypoint = struct {
     client_position_authority: ?bool,
     actor_unique_id: ?i64,
 
+    pub const actor_refs = .{
+        .actor_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Waypoint {
         var value: Waypoint = undefined;
         value.update_flag = try r.readU32();

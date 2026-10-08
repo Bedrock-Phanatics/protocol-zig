@@ -12,6 +12,10 @@ pub const Packet = struct {
     player_permission_level: i32,
     custom_permission_flags: u16,
 
+    pub const actor_refs = .{
+        .target_player_ids_raw_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.target_player_ids_raw_id = try r.readI64();

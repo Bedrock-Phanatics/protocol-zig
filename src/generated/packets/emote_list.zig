@@ -11,6 +11,10 @@ pub const Packet = struct {
     runtime_id: u64,
     emote_piece_ids: codec.List([16]u8, codec.Prim(.uuid)),
 
+    pub const actor_refs = .{
+        .runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.runtime_id = try r.readVarU64();

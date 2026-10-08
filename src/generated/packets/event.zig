@@ -13,6 +13,10 @@ pub const Packet = struct {
     use_player_id: bool,
     event_data: EventEventData,
 
+    pub const actor_refs = .{
+        .target_actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.target_actor_id = try r.readVarI64();
@@ -35,6 +39,10 @@ pub const BossKilledEvent = struct {
     boss_actor_id: i64,
     party_size: i32,
     boss_type: i32,
+
+    pub const actor_refs = .{
+        .boss_actor_id = codec.ActorRef.unique,
+    };
 
     pub fn decode(r: *Reader) DecodeError!BossKilledEvent {
         var value: BossKilledEvent = undefined;
@@ -309,6 +317,10 @@ pub const LegacyTelemetryEventInteraction = struct {
     interaction_actor_type: i32,
     interaction_actor_variant: i32,
     interaction_actor_color: u8,
+
+    pub const actor_refs = .{
+        .interacted_entity_id = codec.ActorRef.unique,
+    };
 
     pub fn decode(r: *Reader) DecodeError!LegacyTelemetryEventInteraction {
         var value: LegacyTelemetryEventInteraction = undefined;
@@ -595,6 +607,11 @@ pub const MobKilledEvent = struct {
     damage_source: i32,
     trade_tier: i32,
     trader_name: []const u8,
+
+    pub const actor_refs = .{
+        .instigator_actor_id = codec.ActorRef.unique,
+        .target_actor_id = codec.ActorRef.unique,
+    };
 
     pub fn decode(r: *Reader) DecodeError!MobKilledEvent {
         var value: MobKilledEvent = undefined;

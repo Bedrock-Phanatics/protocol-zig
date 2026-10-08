@@ -17,6 +17,10 @@ pub const Packet = struct {
     actor_unique_id: i64,
     fire_at_position: ?codec.Vec3f,
 
+    pub const actor_refs = .{
+        .actor_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.sound_event = try r.readString();

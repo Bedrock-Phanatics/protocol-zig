@@ -16,6 +16,10 @@ pub const Packet = struct {
     color: BossBarColor,
     overlay: BossBarOverlay,
 
+    pub const actor_refs = .{
+        .target_actor_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.target_actor_id = try r.readVarI64();

@@ -14,6 +14,10 @@ pub const Packet = struct {
     actor_unique_id: i64,
     actor_flying_state: bool,
 
+    pub const actor_refs = .{
+        .actor_unique_id = codec.ActorRef.unique,
+    };
+
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.actor_data_flag = try codec.Bitset(131).decode(r);

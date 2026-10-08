@@ -36,6 +36,10 @@ pub const MoveActorDeltaData = struct {
     force_completion: bool,
     ticks: u64,
 
+    pub const actor_refs = .{
+        .actor_runtime_id = codec.ActorRef.runtime,
+    };
+
     pub fn decode(r: *Reader) DecodeError!MoveActorDeltaData {
         var value: MoveActorDeltaData = undefined;
         value.actor_runtime_id = try r.readVarU64();
