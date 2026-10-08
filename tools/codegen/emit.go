@@ -70,7 +70,7 @@ func generate(s Schema, a ActorRefs) map[string]string {
 		}
 	}
 	e.findRecursive()
-	dir := "src/generated/"
+	dir := "src/"
 	out := map[string]string{}
 
 	byOwner := map[string][]*TypeDef{}
@@ -90,7 +90,7 @@ func generate(s Schema, a ActorRefs) map[string]string {
 	for _, p := range s.Packets {
 		f := e.newFile(dir+"packets/"+snake(p.Name)+".zig", "")
 		f.line("//! %s (ID %d), sent by %s.", p.Wire, p.ID, describeDirections(p.Directions))
-		f.imports("../../codec/support.zig", "../types.zig")
+		f.imports("../codec/support.zig", "../types.zig")
 		f.line("")
 		f.structDef(p.Name, "Packet", p.Fields, false)
 		for _, t := range byOwner[p.Name] {
@@ -106,7 +106,7 @@ func generate(s Schema, a ActorRefs) map[string]string {
 	sort.Strings(domains)
 	var index strings.Builder
 	index.WriteString("//! Protocol types shared by more than one packet.\n" + header())
-	index.WriteString("const codec = @import(\"../codec/support.zig\");\n\n")
+	index.WriteString("const codec = @import(\"codec/support.zig\");\n\n")
 	var builtinNames []string
 	for name := range builtins {
 		if e.types[name] != nil {
@@ -119,7 +119,7 @@ func generate(s Schema, a ActorRefs) map[string]string {
 	}
 	for _, d := range domains {
 		f := e.newFile(dir+"types/"+d+".zig", d)
-		f.imports("../../codec/support.zig", "../types.zig")
+		f.imports("../codec/support.zig", "../types.zig")
 		for _, t := range byDomain[d] {
 			f.typeDef(t)
 			fmt.Fprintf(&index, "pub const %s = @import(\"types/%s.zig\").%s;\n", t.Name, d, t.Name)
@@ -127,7 +127,7 @@ func generate(s Schema, a ActorRefs) map[string]string {
 		out[f.path] = f.finish()
 	}
 	out[dir+"types.zig"] = index.String()
-	out[dir+"root.zig"] = e.root()
+	out[dir+"version.zig"] = e.root()
 	return out
 }
 
@@ -740,7 +740,7 @@ func (e *emitter) root() string {
 	p := func(format string, args ...any) { fmt.Fprintf(&b, format+"\n", args...) }
 	p("//! Minecraft %s, protocol %d.", e.s.Target.MinecraftVersion, e.s.Target.ProtocolVersion)
 	b.WriteString(header())
-	p("const codec = @import(\"../codec/support.zig\");")
+	p("const codec = @import(\"codec/support.zig\");")
 	p("")
 	p("pub const protocol_version: u32 = %d;", e.s.Target.ProtocolVersion)
 	p("pub const minecraft_version = %q;", e.s.Target.MinecraftVersion)

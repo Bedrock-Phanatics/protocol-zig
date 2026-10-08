@@ -27,7 +27,7 @@ pub const List = @import("codec/list.zig").List;
 pub const Bitset = @import("codec/bitset.zig").Bitset;
 pub const nbt = @import("codec/nbt.zig");
 
-pub const version = @import("generated/root.zig");
+pub const version = @import("version.zig");
 pub const protocol_version = version.protocol_version;
 pub const minecraft_version = version.minecraft_version;
 pub const PacketId = version.Id;

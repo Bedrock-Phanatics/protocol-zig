@@ -1,4 +1,4 @@
-const version = @import("../generated/root.zig");
+const version = @import("../version.zig");
 
 pub const PacketKind = version.Kind;
 pub const PacketDirection = version.Direction;

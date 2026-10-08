@@ -5,7 +5,7 @@ const Limits = @import("../codec/limits.zig").DecodeLimits;
 const DecodeError = @import("../codec/errors.zig").DecodeError;
 const EncodeError = @import("../codec/errors.zig").EncodeError;
 const Header = @import("../packet.zig").Header;
-const version = @import("../generated/root.zig");
+const version = @import("../version.zig");
 
 pub const Packet = version.Packet;
 pub const Envelope = struct { header: Header, packet: Packet };

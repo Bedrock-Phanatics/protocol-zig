@@ -1,7 +1,7 @@
 //! Finds and rewrites actor IDs in decoded packets.
 
 const std = @import("std");
-const version = @import("generated/root.zig");
+const version = @import("version.zig");
 const DecodeError = @import("codec/errors.zig").DecodeError;
 
 pub const Ref = @import("codec/support.zig").ActorRef;

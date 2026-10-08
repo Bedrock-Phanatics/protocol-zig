@@ -2,7 +2,7 @@
 // protocol-zig schema and generates Zig codecs from that schema.
 //
 //	codegen ingest   -manifest DIR [-root DIR]   refresh protocol/schema/bedrock.json
-//	codegen generate [-check] [-root DIR]         write or verify src/generated
+//	codegen generate [-check] [-root DIR]         write or verify the generated codecs
 //	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus.txt
 //	codegen coverage                              report semantic coverage
 //	codegen diff     OLD.json NEW.json            review a schema change
@@ -84,7 +84,7 @@ func main() {
 // generatedDirs lists directories whose .zig files are owned by the generator,
 // so stale files from removed packets or types are detected and deleted.
 func generatedDirs(root string) []string {
-	return []string{filepath.Join(root, "src", "generated")}
+	return []string{filepath.Join(root, "src", "packets"), filepath.Join(root, "src", "types")}
 }
 
 // sync writes (or with check, verifies) files atomically and removes stale

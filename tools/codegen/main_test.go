@@ -90,7 +90,7 @@ func TestEveryWideIntegerIsClassified(t *testing.T) {
 	mustPanic(t, "unclassified 64-bit fields, add them to actor-refs.json: [Ping.who]", func() { generate(s, ActorRefs{}) })
 	mustPanic(t, "lists Ping.items", func() { generate(s, ActorRefs{Runtime: []string{"Ping.who"}, Other: []string{"Ping.items"}}) })
 	mustPanic(t, "twice", func() { generate(s, ActorRefs{Runtime: []string{"Ping.who"}, Other: []string{"Ping.who"}}) })
-	out := generate(s, ActorRefs{Unique: []string{"Ping.who"}})["src/generated/packets/ping.zig"]
+	out := generate(s, ActorRefs{Unique: []string{"Ping.who"}})["src/packets/ping.zig"]
 	if !strings.Contains(out, ".who = codec.ActorRef.unique,") {
 		t.Fatalf("actor field is not tagged:\n%s", out)
 	}

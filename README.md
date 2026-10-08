@@ -187,7 +187,18 @@ profile, so version selection stays outside this library.
 
 ## How the codecs are made
 
-`src/generated` is generated. Nothing in it is edited by hand.
+| Path | Contents |
+| --- | --- |
+| `src/packets/` | One file per packet (generated) |
+| `src/types/`, `src/types.zig` | Shared protocol types (generated) |
+| `src/version.zig` | Packet IDs, kinds, directions and the `Packet` union (generated) |
+| `src/codec/` | Reader, writer, lists, NBT and other wire primitives |
+| `src/custom/` | Hand-written codecs the schema cannot express |
+| `src/registry/`, `src/profile.zig`, `src/packet.zig` | Typed decode/encode, profiles and packet framing |
+| `src/actor_refs.zig` | Actor ID lookup and rewriting |
+
+Generated files start with a "Do not edit" header and are rewritten by
+`tools/codegen generate`; never edit them by hand.
 
 1. **Schema.** [protocolgen](https://github.com/bedrock-mc/protocolgen)
    reconciles Mojang's protocol docs with a dump of the dedicated server
