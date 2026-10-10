@@ -50,8 +50,7 @@ pub const VoxelCells = struct {
         if (value.y_size > 127) return error.InvalidValue;
         value.z_size = try r.readU8();
         if (value.z_size > 127) return error.InvalidValue;
-        value.storage = try r.readByteArray();
-        if (value.storage.len > 256048) return error.InvalidValue;
+        value.storage = try r.readBoundedByteArray(256048);
         return value;
     }
 

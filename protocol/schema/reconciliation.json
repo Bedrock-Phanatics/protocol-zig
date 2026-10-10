@@ -1071,6 +1071,16 @@
     "ServerBoundPackSettingChangePackSettingValue.Case3": "string_list"
   },
   "constraints": {
+    "LegacySetSlot.slots": {
+      "max_len": 256,
+      "reason": "Slot indices are bytes; retain the complete 256-slot range while bounding repeated entries and downstream processing.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/3b124e3101929beb294b8cbc7e3a964f76724d34/src/types/inventory/InventoryTransactionChangedSlotsHack.php",
+          "summary": "The shared PHP decoder caps changed slot indices at 256 before reading them."
+        }
+      ]
+    },
     "SubChunkHeightmapData.subchunk_height_map/value/element": {
       "min_items": 16,
       "max_items": 16,

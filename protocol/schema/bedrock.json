@@ -20597,7 +20597,8 @@
           "wire": "Slots",
           "type": {
             "kind": "bytes",
-            "prefix": "var_u32"
+            "prefix": "var_u32",
+            "max_len": 256
           }
         }
       ]

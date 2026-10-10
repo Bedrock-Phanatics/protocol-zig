@@ -24,8 +24,7 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.photo_name = try r.readString();
         if (!codec.patterns.uuidJpeg(value.photo_name)) return error.InvalidValue;
-        value.photo_data = try r.readByteArray();
-        if (value.photo_data.len > 20971520) return error.InvalidValue;
+        value.photo_data = try r.readBoundedByteArray(20971520);
         value.book_id = try r.readString();
         value.type = try PhotoType.decode(r);
         value.source_type = try PhotoType.decode(r);

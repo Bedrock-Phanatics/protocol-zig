@@ -147,6 +147,11 @@ pub const Reader = struct {
     pub fn readByteArray(self: *Reader) DecodeError![]const u8 {
         return self.take(try self.readLength(self.limits.max_byte_array_bytes));
     }
+    pub fn readBoundedByteArray(self: *Reader, maximum: usize) DecodeError![]const u8 {
+        const length = try self.readLength(self.limits.max_byte_array_bytes);
+        if (length > maximum) return error.InvalidValue;
+        return self.take(length);
+    }
     pub fn readCount(self: *Reader, comptime prefix: CountPrefix) DecodeError!usize {
         const count: usize = switch (prefix) {
             .var_u32 => try self.readVarU32(),

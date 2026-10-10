@@ -326,7 +326,12 @@ func (f *file) decode(n Node, target, hint string, depth int) []string {
 		add("%s = try r.readString();", target)
 		out = append(out, f.lengthChecks(n, target, depth)...)
 	case "bytes":
-		add("%s = try r.readByteArray();", target)
+		if n.MaxLen != nil {
+			add("%s = try r.readBoundedByteArray(%d);", target, *n.MaxLen)
+			n.MaxLen = nil
+		} else {
+			add("%s = try r.readByteArray();", target)
+		}
 		out = append(out, f.lengthChecks(n, target, depth)...)
 	case "nbt":
 		add("%s = try r.readNbt();", target)

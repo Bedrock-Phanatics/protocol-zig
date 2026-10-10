@@ -858,12 +858,13 @@ pub const LegacySetSlot = struct {
     pub fn decode(r: *Reader) DecodeError!LegacySetSlot {
         var value: LegacySetSlot = undefined;
         value.container_enum = try types.ContainerEnumName.decode(r);
-        value.slots = try r.readByteArray();
+        value.slots = try r.readBoundedByteArray(256);
         return value;
     }
 
     pub fn encode(self: LegacySetSlot, w: anytype) EncodeError!void {
         try self.container_enum.encode(w);
+        if (self.slots.len > 256) return error.InvalidValue;
         try w.writeByteArray(self.slots);
     }
 };

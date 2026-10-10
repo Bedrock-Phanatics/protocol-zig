@@ -151,3 +151,91 @@ test "both item-stack request decoders enforce action bounds before reading acti
         try std.testing.expectError(error.EndOfStream, Request.decode(&r));
     }
 }
+
+test "legacy slot indices are bounded without copying or changing their order" {
+    var buffer: [512]u8 = undefined;
+    var slots: [257]u8 = undefined;
+    for (&slots, 0..) |*slot, i| slot.* = @truncate(i);
+    for ([_]usize{ 0, 1, 255, 256 }) |count| {
+        const value: p.types.LegacySetSlot = .{ .container_enum = .inventorycontainer, .slots = slots[0..count] };
+        var w = p.Writer.init(&buffer);
+        try value.encode(&w);
+        var r = try p.Reader.init(w.written(), .{});
+        const decoded = try p.types.LegacySetSlot.decode(&r);
+        try r.finish();
+        try std.testing.expectEqualSlices(u8, value.slots, decoded.slots);
+        try std.testing.expectEqual(buffer[r.cursor - count ..].ptr, decoded.slots.ptr);
+        var limited = try p.Reader.init(w.written(), .{ .max_byte_array_bytes = 1 });
+        if (count <= 1) {
+            _ = try p.types.LegacySetSlot.decode(&limited);
+        } else {
+            try std.testing.expectError(error.LimitExceeded, p.types.LegacySetSlot.decode(&limited));
+        }
+    }
+    for ([_]u32{ 257, 100_000, std.math.maxInt(u32) }) |count| {
+        var w = p.Writer.init(&buffer);
+        try w.writeU8(29);
+        try w.writeVarU32(count);
+        const prefix_len = w.cursor;
+        var r = try p.Reader.init(w.written(), p.DecodeLimits.revalidated);
+        try std.testing.expectError(error.InvalidValue, p.types.LegacySetSlot.decode(&r));
+        try std.testing.expectEqual(prefix_len, r.cursor);
+        try w.writeU8(0xff);
+        r = try p.Reader.init(w.written(), p.DecodeLimits.revalidated);
+        try std.testing.expectError(error.InvalidValue, p.types.LegacySetSlot.decode(&r));
+        try std.testing.expectEqual(prefix_len, r.cursor);
+    }
+    const oversized: p.types.LegacySetSlot = .{ .container_enum = .inventorycontainer, .slots = &slots };
+    var output = p.Writer.init(&buffer);
+    try std.testing.expectError(error.InvalidValue, oversized.encode(&output));
+    var truncated = try p.Reader.init(&.{ 29, 1 }, .{});
+    try std.testing.expectError(error.EndOfStream, p.types.LegacySetSlot.decode(&truncated));
+    var truncated_prefix = try p.Reader.init(&.{ 29, 0x80 }, .{});
+    try std.testing.expectError(error.EndOfStream, p.types.LegacySetSlot.decode(&truncated_prefix));
+    var overflow = try p.Reader.init(&.{ 29, 0xff, 0xff, 0xff, 0xff, 0x10 }, .{});
+    try std.testing.expectError(error.VarIntOverflow, p.types.LegacySetSlot.decode(&overflow));
+    var noncanonical = try p.Reader.init(&.{ 29, 0x80, 0 }, .{});
+    try std.testing.expectError(error.NonCanonicalVarInt, p.types.LegacySetSlot.decode(&noncanonical));
+    var duplicates = try p.Reader.init(&.{ 29, 3, 7, 7, 2 }, .{});
+    try std.testing.expectEqualSlices(u8, &.{ 7, 7, 2 }, (try p.types.LegacySetSlot.decode(&duplicates)).slots);
+}
+
+test "inventory and movement reject oversized legacy slot lists at their prefixes" {
+    var buffer: [512]u8 = undefined;
+    for ([_]p.PacketKind{ .inventory_transaction, .player_auth_input }) |kind| {
+        for ([_]u32{ 257, 100_000, std.math.maxInt(u32) }) |count| {
+            var w = p.Writer.init(&buffer);
+            try w.writeVarU32(p.Current.packetId(kind).?);
+            if (kind == .player_auth_input) {
+                try w.writeVec2f(.{ .x = 0, .y = 0 });
+                try w.writeVec3f(.{ .x = 0, .y = 0, .z = 0 });
+                try w.writeVec2f(.{ .x = 0, .y = 0 });
+                try w.writeF32(0);
+                try w.writeVarU32(0);
+                try w.writeVarU32(0);
+                try w.writeVarU32(0);
+                try w.writeVarU32(0);
+                try w.writeVec2f(.{ .x = 0, .y = 0 });
+                try w.writeVarU64(1);
+                try w.writeVec3f(.{ .x = 0, .y = 0, .z = 0 });
+                try w.writeBool(true);
+            }
+            try w.writeVarI32(-7);
+            try w.writeBool(true);
+            try w.writeVarU32(1);
+            try w.writeU8(29);
+            try w.writeVarU32(count);
+            try std.testing.expectError(error.InvalidValue, p.typed.decode(w.written(), p.DecodeLimits.revalidated));
+            const prefix_len = w.cursor;
+            try w.writeU8(0xff);
+            var r = try p.Reader.init(w.written(), p.DecodeLimits.revalidated);
+            _ = try r.readVarU32();
+            if (kind == .inventory_transaction) {
+                try std.testing.expectError(error.InvalidValue, p.packets.inventory_transaction.Packet.decode(&r));
+            } else {
+                try std.testing.expectError(error.InvalidValue, p.packets.player_auth_input.Packet.decode(&r));
+            }
+            try std.testing.expectEqual(prefix_len, r.cursor);
+        }
+    }
+}

@@ -60,8 +60,7 @@ pub const SkinImage = struct {
         if (value.width > 4096) return error.InvalidValue;
         value.height = try r.readU32();
         if (value.height > 4096) return error.InvalidValue;
-        value.image_bytes = try r.readByteArray();
-        if (value.image_bytes.len > 67108864) return error.InvalidValue;
+        value.image_bytes = try r.readBoundedByteArray(67108864);
         if (!codec.lengthIsProduct(value.image_bytes.len, .{ value.width, value.height }, 4)) return error.InvalidValue;
         return value;
     }

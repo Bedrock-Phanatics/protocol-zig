@@ -201,8 +201,7 @@ pub const CommandEnumConstraint = struct {
         var value: CommandEnumConstraint = undefined;
         value.enum_value_symbol = try r.readU32();
         value.enum_symbol = try r.readU32();
-        value.constraint_indices = try r.readByteArray();
-        if (value.constraint_indices.len > 250) return error.InvalidValue;
+        value.constraint_indices = try r.readBoundedByteArray(250);
         return value;
     }
 

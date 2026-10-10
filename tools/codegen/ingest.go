@@ -144,6 +144,7 @@ type Reconciliation struct {
 	Constraints map[string]struct {
 		MinItems *uint64 `json:"min_items"`
 		MaxItems *uint64 `json:"max_items"`
+		MaxLen   *uint64 `json:"max_len"`
 		// DropBounds removes published numeric bounds that describe policy
 		// (such as the current protocol number) rather than the wire.
 		DropBounds bool       `json:"drop_bounds"`
@@ -1071,7 +1072,11 @@ func (g *ingester) applyConstraints(s *Schema) {
 			n.Min, n.Max = nil, nil
 			continue
 		}
-		if n == nil || (n.Kind != "list" && n.Kind != "map") || c.Reason == "" || len(c.Evidence) == 0 {
+		if n != nil && n.Kind == "bytes" && c.MaxLen != nil && c.MinItems == nil && c.MaxItems == nil && c.Reason != "" && len(c.Evidence) != 0 {
+			n.MaxLen = c.MaxLen
+			continue
+		}
+		if n == nil || (n.Kind != "list" && n.Kind != "map") || c.MaxLen != nil || c.Reason == "" || len(c.Evidence) == 0 {
 			g.errs = append(g.errs, "constraint decision "+path+" does not name a list or lacks evidence")
 			continue
 		}
