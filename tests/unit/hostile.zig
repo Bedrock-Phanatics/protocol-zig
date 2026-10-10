@@ -97,3 +97,57 @@ fn fuzzPacket(_: void, smith: *std.testing.Smith) !void {
     const len: usize = smith.valueRangeAtMostWithHash(u16, 0, bytes.len, 0x0c0d_ec00);
     _ = try campaign.check(bytes[0..len]);
 }
+
+test "both item-stack request decoders enforce action bounds before reading actions" {
+    var buffer: [512]u8 = undefined;
+    const actions = @as([101]p.types.StackRequestAction, @splat(.{ .lab_table_combine = .screenlabtablecombine }));
+    inline for (.{
+        p.packets.item_stack_request.ItemStackRequestPacketData,
+        p.packets.player_auth_input.ItemStackRequestData,
+    }) |Request| {
+        for ([_]usize{ 1, 60, 61, 100 }) |count| {
+            const request: Request = .{
+                .client_request_id = -7,
+                .actions = .init(actions[0..count]),
+                .strings_to_filter = .empty,
+                .strings_to_filter_origin = .anviltext,
+            };
+            var w = p.Writer.init(&buffer);
+            try request.encode(&w);
+            var r = try p.Reader.init(w.written(), .{});
+            const decoded = try Request.decode(&r);
+            try r.finish();
+            try std.testing.expectEqual(count, decoded.actions.len);
+            try std.testing.expectEqual(request.client_request_id, decoded.client_request_id);
+            var it = decoded.actions.iterator();
+            for (0..count) |_| try std.testing.expectEqualDeep(actions[0], (try it.next()).?);
+            try std.testing.expectEqual(null, try it.next());
+
+            if (count > 1) {
+                var limited = try p.Reader.init(w.written(), .{ .max_array_elements = count - 1 });
+                try std.testing.expectError(error.LimitExceeded, Request.decode(&limited));
+            }
+        }
+        for ([_]u32{ 0, 101, 100_000, std.math.maxInt(u32) }) |count| {
+            var w = p.Writer.init(&buffer);
+            try w.writeVarI32(-7);
+            try w.writeVarU32(count);
+            const prefix_len = w.cursor;
+            try w.writeU8(0xff);
+            var r = try p.Reader.init(w.written(), .{});
+            const expected: p.DecodeError = if (count > p.DecodeLimits.defaults.max_array_elements) error.LimitExceeded else error.InvalidValue;
+            try std.testing.expectError(expected, Request.decode(&r));
+            try std.testing.expectEqual(prefix_len, r.cursor);
+            const request: Request = .{
+                .client_request_id = -7,
+                .actions = .init(actions[0..if (count == 0) 0 else 101]),
+                .strings_to_filter = .empty,
+                .strings_to_filter_origin = .anviltext,
+            };
+            var output = p.Writer.init(&buffer);
+            try std.testing.expectError(error.InvalidValue, request.encode(&output));
+        }
+        var r = try p.Reader.init(&.{ 0, 1 }, .{});
+        try std.testing.expectError(error.EndOfStream, Request.decode(&r));
+    }
+}
