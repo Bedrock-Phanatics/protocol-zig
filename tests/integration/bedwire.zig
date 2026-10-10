@@ -80,3 +80,27 @@ test "current and external profiles drive real Bedwire sessions" {
         try std.testing.expectEqual(b.State.authenticating, server.state);
     }
 }
+
+test "Bedwire sessions inherit inventory action limits from the shared protocol" {
+    var pool = try b.BufferPool.init(std.testing.allocator, limits, .{ .rx_slots = 1, .tx_slots = 1 });
+    defer pool.deinit();
+    var session = try b.Session.init(.server, .{ .pool = &pool });
+    defer session.deinit();
+    var storage: [64]u8 = undefined;
+    const id = p.Current.packetId(.inventory_transaction).?;
+    for ([_]u32{ 101, 1000 }) |count| {
+        for (0..5) |tag| {
+            var writer = p.Writer.init(&storage);
+            try writer.writeVarU32(id);
+            try writer.writeVarI32(-7);
+            try writer.writeBool(false);
+            try writer.writeVarU32(@intCast(tag));
+            try writer.writeVarU32(count);
+            try std.testing.expectError(error.InvalidValue, session.decodePacket(.{
+                .kind = .inventory_transaction,
+                .id = id,
+                .bytes = writer.written(),
+            }));
+        }
+    }
+}

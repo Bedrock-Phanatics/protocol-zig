@@ -19076,7 +19076,8 @@
             "element": {
               "kind": "ref",
               "ref": "InventoryAction"
-            }
+            },
+            "max_items": 100
           }
         },
         {
@@ -19089,7 +19090,8 @@
             "element": {
               "kind": "ref",
               "ref": "InventoryAction"
-            }
+            },
+            "max_items": 100
           }
         },
         {
@@ -19378,7 +19380,8 @@
             "element": {
               "kind": "ref",
               "ref": "InventoryAction"
-            }
+            },
+            "max_items": 100
           }
         },
         {
@@ -20086,7 +20089,8 @@
             "element": {
               "kind": "ref",
               "ref": "InventoryAction"
-            }
+            },
+            "max_items": 100
           }
         },
         {
@@ -20289,7 +20293,8 @@
             "element": {
               "kind": "ref",
               "ref": "InventoryAction"
-            }
+            },
+            "max_items": 100
           }
         },
         {

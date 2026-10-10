@@ -1071,6 +1071,56 @@
     "ServerBoundPackSettingChangePackSettingValue.Case3": "string_list"
   },
   "constraints": {
+    "InventoryTransactionTransaction.normal_transaction_data": {
+      "max_items": 100,
+      "reason": "Match the project PHP decoder's 100-action receive cap to bound validation and subsequent handling.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/TransactionData.php",
+          "summary": "The shared transaction decoder rejects more than 100 actions before reading them."
+        }
+      ]
+    },
+    "InventoryTransactionTransaction.inventory_mismatch_data": {
+      "max_items": 100,
+      "reason": "Match the project PHP decoder's 100-action receive cap to bound validation and subsequent handling.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/TransactionData.php",
+          "summary": "The shared transaction decoder rejects more than 100 actions before reading them."
+        }
+      ]
+    },
+    "ItemUseInventoryTransaction.actions": {
+      "max_items": 100,
+      "reason": "Match the project PHP decoder's 100-action receive cap to bound validation and subsequent handling.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/TransactionData.php",
+          "summary": "The shared transaction decoder rejects more than 100 actions before reading them."
+        }
+      ]
+    },
+    "ItemUseOnActorInventoryTransaction.actions": {
+      "max_items": 100,
+      "reason": "Match the project PHP decoder's 100-action receive cap to bound validation and subsequent handling.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/TransactionData.php",
+          "summary": "The shared transaction decoder rejects more than 100 actions before reading them."
+        }
+      ]
+    },
+    "ItemReleaseInventoryTransaction.actions": {
+      "max_items": 100,
+      "reason": "Match the project PHP decoder's 100-action receive cap to bound validation and subsequent handling.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/TransactionData.php",
+          "summary": "The shared transaction decoder rejects more than 100 actions before reading them."
+        }
+      ]
+    },
     "LegacySetSlot.slots": {
       "max_len": 256,
       "reason": "Slot indices are bytes; retain the complete 256-slot range while bounding repeated entries and downstream processing.",

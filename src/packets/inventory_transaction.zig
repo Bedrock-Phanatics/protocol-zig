@@ -52,6 +52,7 @@ pub const InventoryTransactionTransaction = union(enum(u32)) {
                 var value: codec.List(types.InventoryAction, types.InventoryAction) = undefined;
                 value = blk: {
                     const count = try r.readCount(.var_u32);
+                    if (count > 100) return error.InvalidValue;
                     break :blk try codec.List(types.InventoryAction, types.InventoryAction).decode(r, count);
                 };
                 return .{ .normal_transaction_data = value };
@@ -60,6 +61,7 @@ pub const InventoryTransactionTransaction = union(enum(u32)) {
                 var value: codec.List(types.InventoryAction, types.InventoryAction) = undefined;
                 value = blk: {
                     const count = try r.readCount(.var_u32);
+                    if (count > 100) return error.InvalidValue;
                     break :blk try codec.List(types.InventoryAction, types.InventoryAction).decode(r, count);
                 };
                 return .{ .inventory_mismatch_data = value };
@@ -75,10 +77,12 @@ pub const InventoryTransactionTransaction = union(enum(u32)) {
         try w.writeVarU32(@backingInt(self));
         switch (self) {
             .normal_transaction_data => |value| {
+                if (value.len > 100) return error.InvalidValue;
                 try w.writeCount(.var_u32, value.len);
                 try value.encode(w);
             },
             .inventory_mismatch_data => |value| {
+                if (value.len > 100) return error.InvalidValue;
                 try w.writeCount(.var_u32, value.len);
                 try value.encode(w);
             },
@@ -107,6 +111,7 @@ pub const ItemReleaseInventoryTransaction = struct {
         var value: ItemReleaseInventoryTransaction = undefined;
         value.actions = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 100) return error.InvalidValue;
             break :blk try codec.List(types.InventoryAction, types.InventoryAction).decode(r, count);
         };
         value.action_type = try ItemReleaseInventoryTransactionActionType.decode(r);
@@ -117,6 +122,7 @@ pub const ItemReleaseInventoryTransaction = struct {
     }
 
     pub fn encode(self: ItemReleaseInventoryTransaction, w: anytype) EncodeError!void {
+        if (self.actions.len > 100) return error.InvalidValue;
         try w.writeCount(.var_u32, self.actions.len);
         try self.actions.encode(w);
         try self.action_type.encode(w);
@@ -159,6 +165,7 @@ pub const ItemUseOnActorInventoryTransaction = struct {
         var value: ItemUseOnActorInventoryTransaction = undefined;
         value.actions = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 100) return error.InvalidValue;
             break :blk try codec.List(types.InventoryAction, types.InventoryAction).decode(r, count);
         };
         value.runtime_id = try r.readVarU64();
@@ -171,6 +178,7 @@ pub const ItemUseOnActorInventoryTransaction = struct {
     }
 
     pub fn encode(self: ItemUseOnActorInventoryTransaction, w: anytype) EncodeError!void {
+        if (self.actions.len > 100) return error.InvalidValue;
         try w.writeCount(.var_u32, self.actions.len);
         try self.actions.encode(w);
         try w.writeVarU64(self.runtime_id);

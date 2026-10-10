@@ -239,3 +239,152 @@ test "inventory and movement reject oversized legacy slot lists at their prefixe
         }
     }
 }
+
+test "all inventory transaction action lists preserve boundaries and reject oversized encoding" {
+    const Transaction = p.packets.inventory_transaction.InventoryTransactionTransaction;
+    const item: p.types.NetworkItemStackDescriptor = .{ .id = 0, .stack_size = 0, .aux_value = 0, .net_id_variant = null, .block_runtime_id = 0, .user_data_buffer = &.{} };
+    const zero: p.Vec3f = .{ .x = 0, .y = 0, .z = 0 };
+    const action: p.types.InventoryAction = .{ .source = .{ .source_type = .container_inventory, .container_id = 2, .bit_flags = null }, .slot = 7, .from_item = item, .to_item = item };
+    var actions = @as([101]p.types.InventoryAction, @splat(action));
+    actions[0].slot = 255;
+    var buffer: [8192]u8 = undefined;
+    var output: [8192]u8 = undefined;
+    for ([_]usize{ 0, 1, 50, 51, 99, 100, 101 }) |count| {
+        const list = p.List(p.types.InventoryAction, p.types.InventoryAction).init(actions[0..count]);
+        const transactions = [_]Transaction{
+            .{ .normal_transaction_data = list },
+            .{ .inventory_mismatch_data = list },
+            .{ .item_use_inventory_transaction = .{
+                .actions = list,
+                .action_type = .place,
+                .trigger_type = .player_input,
+                .position = .{ .x = 1, .y = 2, .z = 3 },
+                .face = 2,
+                .slot = 7,
+                .hand = .mainhand,
+                .item = item,
+                .from_position = zero,
+                .click_position = zero,
+                .target_block_id = 4,
+                .client_interact_prediction = .success,
+                .client_cooldown_state = .off,
+            } },
+            .{ .item_use_on_actor_inventory_transaction = .{
+                .actions = list,
+                .runtime_id = 123,
+                .action_type = .attack,
+                .slot = 7,
+                .item = item,
+                .from_position = zero,
+                .hit_position = zero,
+            } },
+            .{ .item_release_inventory_transaction = .{
+                .actions = list,
+                .action_type = .release,
+                .slot = 7,
+                .item = item,
+                .from_position = zero,
+            } },
+        };
+        for (transactions) |transaction| {
+            const envelope: p.typed.Envelope = .{
+                .header = .{ .packet_id = p.Current.packetId(.inventory_transaction).?, .sender_subclient = 2, .target_subclient = 3 },
+                .packet = .{ .inventory_transaction = .{ .legacy_request_id = -7, .legacy_set_item_slots = null, .transaction = transaction } },
+            };
+            var w = p.Writer.init(&buffer);
+            if (count > 100) {
+                @memset(&buffer, 0xa5);
+                try std.testing.expectError(error.InvalidValue, p.typed.encode(&w, envelope));
+                try std.testing.expectEqual(@as(usize, 0), w.cursor);
+                for (buffer) |byte| try std.testing.expectEqual(@as(u8, 0xa5), byte);
+                continue;
+            }
+            try p.typed.encode(&w, envelope);
+            try std.testing.expectEqual(w.cursor, try p.typed.encodedSize(envelope));
+            const decoded = try p.typed.decode(w.written(), .{});
+            try std.testing.expectEqualDeep(envelope.header, decoded.header);
+            try std.testing.expectEqual(@as(i32, -7), decoded.packet.inventory_transaction.legacy_request_id);
+            const decoded_actions = switch (decoded.packet.inventory_transaction.transaction) {
+                inline else => |value| if (comptime @hasField(@TypeOf(value), "actions")) value.actions else value,
+            };
+            try std.testing.expectEqual(count, decoded_actions.len);
+            try std.testing.expectEqual(.wire, std.meta.activeTag(decoded_actions.data));
+            var it = decoded_actions.iterator();
+            for (actions[0..count]) |expected| try std.testing.expectEqualDeep(expected, (try it.next()).?);
+            try std.testing.expectEqual(null, try it.next());
+            var encoded = p.Writer.init(&output);
+            try p.typed.encode(&encoded, decoded);
+            try std.testing.expectEqualSlices(u8, w.written(), encoded.written());
+            if (count > 1) try std.testing.expectError(error.LimitExceeded, p.typed.decode(w.written(), .{ .max_array_elements = count - 1 }));
+            if (std.meta.activeTag(transaction) == .item_use_inventory_transaction) {
+                const nested: p.packets.player_auth_input.PackedItemUseLegacyInventoryTransaction = .{
+                    .legacy_request_id = -7,
+                    .legacy_set_item_slots = null,
+                    .item_use_transaction = transaction.item_use_inventory_transaction,
+                };
+                w.cursor = 0;
+                try nested.encode(&w);
+                var r = try p.Reader.init(w.written(), .{});
+                const nested_decoded = try p.packets.player_auth_input.PackedItemUseLegacyInventoryTransaction.decode(&r);
+                try r.finish();
+                try std.testing.expectEqual(count, nested_decoded.item_use_transaction.actions.len);
+                encoded.cursor = 0;
+                try nested_decoded.encode(&encoded);
+                try std.testing.expectEqualSlices(u8, w.written(), encoded.written());
+            }
+        }
+    }
+}
+
+test "inventory variants and movement reject action counts before reading payloads" {
+    var buffer: [256]u8 = undefined;
+    for ([_]u32{ 101, 100_000, std.math.maxInt(u32) }) |count| {
+        for ([_]p.DecodeLimits{ .defaults, .revalidated }) |limits| {
+            const expected: p.DecodeError = if (count > limits.max_array_elements) error.LimitExceeded else error.InvalidValue;
+            for (0..6) |path| {
+                var w = p.Writer.init(&buffer);
+                const kind: p.PacketKind = if (path == 5) .player_auth_input else .inventory_transaction;
+                try w.writeVarU32(p.Current.packetId(kind).?);
+                if (path == 5) {
+                    try w.writeVec2f(.{ .x = 0, .y = 0 });
+                    try w.writeVec3f(.{ .x = 0, .y = 0, .z = 0 });
+                    try w.writeVec2f(.{ .x = 0, .y = 0 });
+                    try w.writeF32(0);
+                    try w.writeVarU32(0);
+                    try w.writeVarU32(0);
+                    try w.writeVarU32(0);
+                    try w.writeVarU32(0);
+                    try w.writeVec2f(.{ .x = 0, .y = 0 });
+                    try w.writeVarU64(1);
+                    try w.writeVec3f(.{ .x = 0, .y = 0, .z = 0 });
+                    try w.writeBool(true);
+                }
+                try w.writeVarI32(-7);
+                try w.writeBool(false);
+                if (path != 5) try w.writeVarU32(@intCast(path));
+                try w.writeVarU32(count);
+                try std.testing.expectError(expected, p.typed.decode(w.written(), limits));
+                const prefix_len = w.cursor;
+                try w.writeU8(0xff);
+                var r = try p.Reader.init(w.written(), limits);
+                _ = try r.readVarU32();
+                if (path == 5) {
+                    try std.testing.expectError(expected, p.packets.player_auth_input.Packet.decode(&r));
+                } else {
+                    try std.testing.expectError(expected, p.packets.inventory_transaction.Packet.decode(&r));
+                }
+                try std.testing.expectEqual(prefix_len, r.cursor);
+            }
+        }
+    }
+    for (0..5) |tag| {
+        var w = p.Writer.init(&buffer);
+        try w.writeVarU32(@intCast(tag));
+        try w.writeVarU32(1);
+        var r = try p.Reader.init(w.written(), .{});
+        try std.testing.expectError(error.EndOfStream, p.packets.inventory_transaction.InventoryTransactionTransaction.decode(&r));
+        try w.writeU8(0x80);
+        r = try p.Reader.init(w.written(), .{});
+        try std.testing.expectError(error.EndOfStream, p.packets.inventory_transaction.InventoryTransactionTransaction.decode(&r));
+    }
+}
