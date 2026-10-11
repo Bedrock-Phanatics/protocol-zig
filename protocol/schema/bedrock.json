@@ -1355,7 +1355,8 @@
               "element": {
                 "kind": "ref",
                 "ref": "LegacySetSlot"
-              }
+              },
+              "max_items": 10
             }
           }
         },
@@ -10103,7 +10104,8 @@
             "element": {
               "kind": "ref",
               "ref": "RecipeIngredient"
-            }
+            },
+            "max_items": 128
           }
         }
       ]
@@ -15577,7 +15579,8 @@
               "kind": "ref",
               "ref": "ItemInstance"
             },
-            "min_items": 1
+            "min_items": 1,
+            "max_items": 256
           }
         },
         {
@@ -19849,7 +19852,8 @@
               "kind": "string",
               "prefix": "var_u32",
               "max_len": 1000
-            }
+            },
+            "max_items": 256
           }
         },
         {
@@ -19901,7 +19905,8 @@
               "kind": "string",
               "prefix": "var_u32",
               "max_len": 1000
-            }
+            },
+            "max_items": 256
           }
         },
         {
@@ -23605,7 +23610,8 @@
               "element": {
                 "kind": "ref",
                 "ref": "LegacySetSlot"
-              }
+              },
+              "max_items": 10
             }
           }
         },

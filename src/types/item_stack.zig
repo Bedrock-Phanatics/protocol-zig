@@ -25,6 +25,7 @@ pub const AutoCraftRecipeStackRequestAction = struct {
         if (value.number_of_requested_crafts < 1) return error.InvalidValue;
         value.ingredients = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 128) return error.InvalidValue;
             break :blk try codec.List(types.RecipeIngredient, types.RecipeIngredient).decode(r, count);
         };
         return value;
@@ -39,6 +40,7 @@ pub const AutoCraftRecipeStackRequestAction = struct {
         try w.writeVarU32(self.recipe_net_id);
         if (self.number_of_requested_crafts < 1) return error.InvalidValue;
         try w.writeU8(self.number_of_requested_crafts);
+        if (self.ingredients.len > 128) return error.InvalidValue;
         try w.writeCount(.var_u32, self.ingredients.len);
         try self.ingredients.encode(w);
     }
@@ -223,6 +225,7 @@ pub const CraftResultsDeprecatedStackRequestAction = struct {
         value.craft_results = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
+            if (count > 256) return error.InvalidValue;
             break :blk try codec.List(types.ItemInstance, types.ItemInstance).decode(r, count);
         };
         value.num_crafts = try r.readU8();
@@ -237,6 +240,7 @@ pub const CraftResultsDeprecatedStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.craft_results.len < 1) return error.InvalidValue;
+        if (self.craft_results.len > 256) return error.InvalidValue;
         try w.writeCount(.var_u32, self.craft_results.len);
         try self.craft_results.encode(w);
         if (self.num_crafts < 1) return error.InvalidValue;

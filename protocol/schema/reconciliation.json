@@ -1071,6 +1071,66 @@
     "ServerBoundPackSettingChangePackSettingValue.Case3": "string_list"
   },
   "constraints": {
+    "InventoryTransaction.legacy_set_item_slots/value": {
+      "max_items": 10,
+      "reason": "Match Quark's existing ten-container receive policy on both standalone and movement transactions.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/9c05df3cee24a4c6ca5b238e32b6b84ad7eb904d/src/network/mcpe/handler/InGamePacketHandler.php",
+          "summary": "MAX_INVENTORY_SLOT_SYNC_REQUESTS is 10; applying it before decoding also bounds the embedded movement path."
+        }
+      ]
+    },
+    "PackedItemUseLegacyInventoryTransaction.legacy_set_item_slots/value": {
+      "max_items": 10,
+      "reason": "Match Quark's existing ten-container receive policy on both standalone and movement transactions.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/9c05df3cee24a4c6ca5b238e32b6b84ad7eb904d/src/network/mcpe/handler/InGamePacketHandler.php",
+          "summary": "MAX_INVENTORY_SLOT_SYNC_REQUESTS is 10; applying it before decoding also bounds the embedded movement path."
+        }
+      ]
+    },
+    "ItemStackRequestData.strings_to_filter": {
+      "max_items": 256,
+      "reason": "Project resource ceiling for filter strings, with headroom beyond the number of actions in a request; this is not a published Mojang maximum.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/stackrequest/ItemStackRequest.php",
+          "summary": "The project accepts at most 60 actions per request; optional crafting actions refer to this filter list by index."
+        }
+      ]
+    },
+    "ItemStackRequestPacketData.strings_to_filter": {
+      "max_items": 256,
+      "reason": "Project resource ceiling for filter strings, with headroom beyond the number of actions in a request; this is not a published Mojang maximum.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/stackrequest/ItemStackRequest.php",
+          "summary": "The project accepts at most 60 actions per request; optional crafting actions refer to this filter list by index."
+        }
+      ]
+    },
+    "AutoCraftRecipeStackRequestAction.ingredients": {
+      "max_items": 128,
+      "reason": "Project resource ceiling with ample headroom for crafting-grid ingredients, bounding repeated descriptor validation before handling.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/9c05df3cee24a4c6ca5b238e32b6b84ad7eb904d/src/crafting/ShapelessRecipe.php",
+          "summary": "Supported shapeless crafting recipes use no more than nine total ingredient items."
+        }
+      ]
+    },
+    "CraftResultsDeprecatedStackRequestAction.craft_results": {
+      "max_items": 256,
+      "reason": "Retain the complete byte-indexed result range while bounding deprecated result descriptor validation.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/BedrockProtocol/blob/93fef69fea5747fd15f8bc74a4274baef4f532e2/src/types/inventory/stackrequest/CraftingCreateSpecificResultStackRequestAction.php",
+          "summary": "The crafting-result selector is an unsigned byte, covering 256 result indices."
+        }
+      ]
+    },
     "InventoryTransactionTransaction.normal_transaction_data": {
       "max_items": 100,
       "reason": "Match the project PHP decoder's 100-action receive cap to bound validation and subsequent handling.",

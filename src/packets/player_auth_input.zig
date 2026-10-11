@@ -169,6 +169,7 @@ pub const ItemStackRequestData = struct {
         };
         value.strings_to_filter = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 256) return error.InvalidValue;
             break :blk try codec.List([]const u8, ItemStackRequestDataStringsToFilterItemCodec).decode(r, count);
         };
         value.strings_to_filter_origin = try types.TextProcessingEventOrigin.decode(r);
@@ -181,6 +182,7 @@ pub const ItemStackRequestData = struct {
         if (self.actions.len > 100) return error.InvalidValue;
         try w.writeCount(.var_u32, self.actions.len);
         try self.actions.encode(w);
+        if (self.strings_to_filter.len > 256) return error.InvalidValue;
         try w.writeCount(.var_u32, self.strings_to_filter.len);
         try self.strings_to_filter.encode(w);
         try self.strings_to_filter_origin.encode(w);
@@ -218,6 +220,7 @@ pub const PackedItemUseLegacyInventoryTransaction = struct {
             var present: codec.List(types.LegacySetSlot, types.LegacySetSlot) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
+                if (count > 10) return error.InvalidValue;
                 break :blk try codec.List(types.LegacySetSlot, types.LegacySetSlot).decode(r, count);
             };
             value.legacy_set_item_slots = present;
@@ -230,6 +233,7 @@ pub const PackedItemUseLegacyInventoryTransaction = struct {
         try w.writeVarI32(self.legacy_request_id);
         try w.writeBool(self.legacy_set_item_slots != null);
         if (self.legacy_set_item_slots) |present| {
+            if (present.len > 10) return error.InvalidValue;
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }

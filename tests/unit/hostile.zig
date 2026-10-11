@@ -388,3 +388,144 @@ test "inventory variants and movement reject action counts before reading payloa
         try std.testing.expectError(error.EndOfStream, p.packets.inventory_transaction.InventoryTransactionTransaction.decode(&r));
     }
 }
+
+test "nested inventory collections reject at their count prefixes" {
+    inline for (.{
+        .{ p.packets.inventory_transaction.Packet, 10 },
+        .{ p.packets.player_auth_input.PackedItemUseLegacyInventoryTransaction, 10 },
+        .{ p.packets.item_stack_request.ItemStackRequestPacketData, 256 },
+        .{ p.packets.player_auth_input.ItemStackRequestData, 256 },
+        .{ p.types.AutoCraftRecipeStackRequestAction, 128 },
+        .{ p.types.CraftResultsDeprecatedStackRequestAction, 256 },
+    }) |case| {
+        const T = case[0];
+        var buffer: [64]u8 = undefined;
+        var w = p.Writer.init(&buffer);
+        if (T == p.packets.inventory_transaction.Packet or T == p.packets.player_auth_input.PackedItemUseLegacyInventoryTransaction) {
+            try w.writeVarI32(-7);
+            try w.writeBool(true);
+        } else if (T == p.types.AutoCraftRecipeStackRequestAction) {
+            try p.types.ItemStackRequestActionType.craftrecipeauto.encode(&w);
+            try w.writeVarU32(7);
+            try w.writeU8(2);
+        } else if (T == p.types.CraftResultsDeprecatedStackRequestAction) {
+            try p.types.ItemStackRequestActionType.craftresults.encode(&w);
+        } else {
+            try w.writeVarI32(-7);
+            try w.writeVarU32(1);
+            const action: p.types.StackRequestAction = .{ .lab_table_combine = .screenlabtablecombine };
+            try action.encode(&w);
+        }
+        const prefix_len = w.cursor;
+        for ([_]u32{ case[1] + 1, 100_000, std.math.maxInt(u32) }) |count| {
+            w.cursor = prefix_len;
+            try w.writeVarU32(count);
+            const end = w.cursor;
+            try w.writeU8(0xff);
+            for ([_]p.DecodeLimits{ .{}, p.DecodeLimits.revalidated }) |limits| {
+                var r = try p.Reader.init(w.written(), limits);
+                const expected: p.DecodeError = if (count > limits.max_array_elements) error.LimitExceeded else error.InvalidValue;
+                try std.testing.expectError(expected, T.decode(&r));
+                try std.testing.expectEqual(end, r.cursor);
+            }
+        }
+        w.cursor = prefix_len;
+        try w.writeU8(0x80);
+        var r = try p.Reader.init(w.written(), .{});
+        try std.testing.expectError(error.EndOfStream, T.decode(&r));
+        w.cursor = prefix_len;
+        try w.writeVarU32(1);
+        r = try p.Reader.init(w.written(), .{});
+        try std.testing.expectError(error.EndOfStream, T.decode(&r));
+    }
+}
+
+test "nested inventory collection boundaries round trip and borrow their elements" {
+    const item: p.types.NetworkItemStackDescriptor = .{ .id = 0, .stack_size = 0, .aux_value = 0, .net_id_variant = null, .block_runtime_id = 0, .user_data_buffer = &.{} };
+    const zero: p.Vec3f = .{ .x = 0, .y = 0, .z = 0 };
+    const transaction: p.types.ItemUseInventoryTransaction = .{
+        .actions = .empty,
+        .action_type = .place,
+        .trigger_type = .player_input,
+        .position = .{ .x = 1, .y = 2, .z = 3 },
+        .face = 2,
+        .slot = 7,
+        .hand = .mainhand,
+        .item = item,
+        .from_position = zero,
+        .click_position = zero,
+        .target_block_id = 4,
+        .client_interact_prediction = .success,
+        .client_cooldown_state = .off,
+    };
+    const slots = @as([11]p.types.LegacySetSlot, @splat(.{ .container_enum = .inventorycontainer, .slots = &.{ 255, 0, 1 } }));
+    for ([_]usize{ 0, 1, 10, 11 }) |count| {
+        const list = p.List(p.types.LegacySetSlot, p.types.LegacySetSlot).init(slots[0..count]);
+        inline for (.{
+            p.packets.inventory_transaction.Packet{ .legacy_request_id = -7, .legacy_set_item_slots = list, .transaction = .{ .normal_transaction_data = .empty } },
+            p.packets.player_auth_input.PackedItemUseLegacyInventoryTransaction{ .legacy_request_id = -7, .legacy_set_item_slots = list, .item_use_transaction = transaction },
+        }) |value| {
+            var buffer: [4096]u8 = undefined;
+            var w = p.Writer.init(&buffer);
+            if (count > 10) {
+                try std.testing.expectError(error.InvalidValue, value.encode(&w));
+            } else {
+                try value.encode(&w);
+                var r = try p.Reader.init(w.written(), .{});
+                const decoded = try @TypeOf(value).decode(&r);
+                try r.finish();
+                try std.testing.expectEqual(count, decoded.legacy_set_item_slots.?.len);
+                try std.testing.expect(decoded.legacy_set_item_slots.?.data == .wire);
+                var output: [4096]u8 = undefined;
+                var encoded = p.Writer.init(&output);
+                try decoded.encode(&encoded);
+                try std.testing.expectEqualSlices(u8, w.written(), encoded.written());
+                if (count > 1) {
+                    r = try p.Reader.init(w.written(), .{ .max_array_elements = 1 });
+                    try std.testing.expectError(error.LimitExceeded, @TypeOf(value).decode(&r));
+                }
+            }
+        }
+    }
+    const ingredient: p.types.RecipeIngredient = .{ .item_descriptor = .{ .empty_item = .empty }, .stack_size = 1 };
+    const ingredients = @as([129]p.types.RecipeIngredient, @splat(ingredient));
+    const results = @as([257]p.types.ItemInstance, @splat(.{ .item_descriptor = .{ .empty_item = .empty }, .stack_size = 1, .block_runtime_id = 4, .user_data_buffer = &.{} }));
+    const strings = @as([257][]const u8, @splat("filter"));
+    inline for (.{
+        .{ p.types.AutoCraftRecipeStackRequestAction, "ingredients", 128 },
+        .{ p.types.CraftResultsDeprecatedStackRequestAction, "craft_results", 256 },
+        .{ p.packets.item_stack_request.ItemStackRequestPacketData, "strings_to_filter", 256 },
+        .{ p.packets.player_auth_input.ItemStackRequestData, "strings_to_filter", 256 },
+    }) |case| {
+        const T = case[0];
+        for ([_]usize{ 0, 1, case[2], case[2] + 1 }) |count| {
+            const value: T = if (T == p.types.AutoCraftRecipeStackRequestAction)
+                .{ .action_type = .craftrecipeauto, .recipe_net_id = 7, .number_of_requested_crafts = 2, .ingredients = .init(ingredients[0..count]) }
+            else if (T == p.types.CraftResultsDeprecatedStackRequestAction)
+                .{ .action_type = .craftresults, .craft_results = .init(results[0..count]), .num_crafts = 2 }
+            else
+                .{ .client_request_id = -7, .actions = .init(&.{.{ .lab_table_combine = .screenlabtablecombine }}), .strings_to_filter = .init(strings[0..count]), .strings_to_filter_origin = .anviltext };
+            var buffer: [4096]u8 = undefined;
+            var w = p.Writer.init(&buffer);
+            if (count > case[2] or (T == p.types.CraftResultsDeprecatedStackRequestAction and count == 0)) {
+                try std.testing.expectError(error.InvalidValue, value.encode(&w));
+            } else {
+                try value.encode(&w);
+                var r = try p.Reader.init(w.written(), .{});
+                const decoded = try T.decode(&r);
+                try r.finish();
+                const list = @field(decoded, case[1]);
+                try std.testing.expectEqual(count, list.len);
+                try std.testing.expect(list.data == .wire);
+                var output: [4096]u8 = undefined;
+                var encoded = p.Writer.init(&output);
+                try decoded.encode(&encoded);
+                try std.testing.expectEqualSlices(u8, w.written(), encoded.written());
+                if (count > 1) {
+                    r = try p.Reader.init(w.written(), .{ .max_array_elements = 1 });
+                    try std.testing.expectError(error.LimitExceeded, T.decode(&r));
+                }
+            }
+        }
+    }
+}

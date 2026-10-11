@@ -81,7 +81,7 @@ test "current and external profiles drive real Bedwire sessions" {
     }
 }
 
-test "Bedwire sessions inherit inventory action limits from the shared protocol" {
+test "Bedwire sessions inherit nested inventory limits from the shared protocol" {
     var pool = try b.BufferPool.init(std.testing.allocator, limits, .{ .rx_slots = 1, .tx_slots = 1 });
     defer pool.deinit();
     var session = try b.Session.init(.server, .{ .pool = &pool });
@@ -102,5 +102,17 @@ test "Bedwire sessions inherit inventory action limits from the shared protocol"
                 .bytes = writer.written(),
             }));
         }
+    }
+    for ([_]u32{ 11, 1000 }) |count| {
+        var writer = p.Writer.init(&storage);
+        try writer.writeVarU32(id);
+        try writer.writeVarI32(-7);
+        try writer.writeBool(true);
+        try writer.writeVarU32(count);
+        try std.testing.expectError(error.InvalidValue, session.decodePacket(.{
+            .kind = .inventory_transaction,
+            .id = id,
+            .bytes = writer.written(),
+        }));
     }
 }
