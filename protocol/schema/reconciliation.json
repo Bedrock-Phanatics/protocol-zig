@@ -5,11 +5,11 @@
     "protocol_version": 2193
   },
   "manifest": {
-    "repository": "https://github.com/bedrock-mc/protocolgen",
-    "revision": "0b8f17e3b321f7cb89e21dc8563398b9981e632f",
+    "repository": "https://github.com/cinnabar-mc/protocolgen",
+    "revision": "4e9dc032f2e3a1cf9ef4e35393af696988dfbb07",
     "path": "generated/1.26.51",
     "files": {
-      "manifest.json": "sha256:dc97931d683795fefffbe41b3be167b4ff8f820628323d18b42f97fb883c84df",
+      "manifest.json": "sha256:7a0ce6c98c247c0ea12b809b1010e696e5110cd11993fdb9915acb5567f00466",
       "naming.json": "sha256:5dd44b826cddba87abea9d69320c136d8a3bb776e805dd7326f7af9159aaf6a6",
       "gophertunnel-layout.json": "sha256:01ef1ceb32252d4f3e7fc79956b3c3c331ffcf54ff3e78385a89e7b94afc3274",
       "domains.json": "sha256:e54a840a6fa13750e6e8c22033a9ecb3cfa5ec2db81c237c5828be0270a48178"
@@ -43,7 +43,7 @@
       "name": "AdventureSettings",
       "evidence": [
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/manifest.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
           "summary": "Absent from the reconciled Mojang v1.26.51 and Endstone 1.26.51.1 BDS packet sets."
         },
         {
@@ -58,7 +58,7 @@
       "name": "ScriptCustomEvent",
       "evidence": [
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/manifest.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
           "summary": "Absent from the reconciled Mojang v1.26.51 and Endstone 1.26.51.1 BDS packet sets."
         },
         {
@@ -73,7 +73,7 @@
       "name": "FilterText",
       "evidence": [
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/manifest.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
           "summary": "Absent from the reconciled Mojang v1.26.51 and Endstone 1.26.51.1 BDS packet sets."
         },
         {
@@ -88,7 +88,7 @@
       "name": "PhotoInfoRequest",
       "evidence": [
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/manifest.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
           "summary": "Absent from the reconciled Mojang v1.26.51 and Endstone 1.26.51.1 BDS packet sets."
         },
         {
@@ -103,7 +103,7 @@
       "name": "ClientCheatAbility",
       "evidence": [
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/manifest.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
           "summary": "Absent from the reconciled Mojang v1.26.51 and Endstone 1.26.51.1 BDS packet sets."
         },
         {
@@ -362,7 +362,7 @@
           "summary": "DisconnectPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -381,7 +381,7 @@
           "summary": "MoveActorAbsolutePacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -400,7 +400,7 @@
           "summary": "MobArmorEquipmentPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -419,7 +419,7 @@
           "summary": "SetActorDataPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -438,7 +438,7 @@
           "summary": "SetActorMotionPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -457,7 +457,7 @@
           "summary": "PlayerHotbarPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -476,7 +476,7 @@
           "summary": "ChangeMobPropertyPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -495,7 +495,7 @@
           "summary": "GameTestRequestPacket implements ServerboundPacket in PocketMine BedrockProtocol for protocol 2193, so vanilla clients send it."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/directions.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/directions.json",
           "summary": "The HashimTheArab gophertunnel pool registers this ID only as server-originating."
         }
       ],
@@ -1044,8 +1044,7 @@
   "patterns": {
     "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.jpeg$": "keep",
     "^\\w+:\\w+$": "keep",
-    "^(?:catmullrom|linear)$": "keep",
-    "A string in the format of <uuid>_<semver>, where <uuid> is a valid UUID and <semver> is a valid semantic version": "Not enforced: Mojang publishes prose rather than a regular expression, so no exact wire rule can be derived."
+    "^(?:catmullrom|linear)$": "keep"
   },
   "disagreements": [
     {
@@ -1053,7 +1052,7 @@
       "decision": "Keep the manifest layout: each of the seven event fields is a var_u32-tagged SoundDataEvent with no presence flag.",
       "evidence": [
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/generated/1.26.51/manifest.json",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
           "summary": "Mojang v1.26.51 docs and the Endstone 1.26.51.1 BDS dump agree on seven var_u32-tagged unions."
         },
         {
@@ -1201,7 +1200,7 @@
           "summary": "The height map reader requires every row count to be 16."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/docs/automation-readiness.md",
           "summary": "Divergence 174: Endstone and the fork both prefix each row with a var_u32 count; vanilla always writes 16."
         }
       ]
@@ -1216,7 +1215,7 @@
           "summary": "The height map reader requires every row count to be 16."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/docs/automation-readiness.md",
           "summary": "Divergence 174: Endstone and the fork both prefix each row with a var_u32 count; vanilla always writes 16."
         }
       ]
@@ -1296,7 +1295,7 @@
           "summary": "readItemDescriptor reads the same kind name string and payloads, including readShortLE for the molang version, for protocols 2168 and later."
         },
         {
-          "locator": "https://github.com/bedrock-mc/protocolgen/blob/0b8f17e3b321f7cb89e21dc8563398b9981e632f/docs/automation-readiness.md",
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/docs/automation-readiness.md",
           "summary": "Divergence 52: the map is byte-identical for default and invalid descriptors and a string-discriminated descriptor is not expressible in the manifest claim format."
         }
       ]

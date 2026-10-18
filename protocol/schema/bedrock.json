@@ -7,10 +7,10 @@
   "sources": [
     {
       "id": "protocolgen",
-      "repository": "https://github.com/bedrock-mc/protocolgen",
-      "revision": "0b8f17e3b321f7cb89e21dc8563398b9981e632f",
+      "repository": "https://github.com/cinnabar-mc/protocolgen",
+      "revision": "4e9dc032f2e3a1cf9ef4e35393af696988dfbb07",
       "path": "generated/1.26.51/manifest.json",
-      "sha256": "sha256:dc97931d683795fefffbe41b3be167b4ff8f820628323d18b42f97fb883c84df"
+      "sha256": "sha256:7a0ce6c98c247c0ea12b809b1010e696e5110cd11993fdb9915acb5567f00466"
     },
     {
       "id": "gophertunnel",

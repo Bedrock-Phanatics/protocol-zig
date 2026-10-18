@@ -22,10 +22,6 @@ pub const RecipeIngredient = struct {
 
     const names = .{ .item = "name", .molang = "molang", .item_tag = "item_tag" };
 
-    fn checkAux(aux: i32) error{InvalidValue}!void {
-        if (aux < 0 or aux > 32767) return error.InvalidValue;
-    }
-
     pub fn decode(r: *Reader) DecodeError!RecipeIngredient {
         var value: RecipeIngredient = undefined;
         switch (try r.readVarU32()) {
@@ -42,12 +38,6 @@ pub const RecipeIngredient = struct {
             },
             else => return error.InvalidEnum,
         }
-        switch (value.descriptor) {
-            .empty => |d| try checkAux(d.aux),
-            .item => |d| try checkAux(d.aux),
-            .item_tag => |d| try checkAux(d.aux),
-            .molang => {},
-        }
         value.count = try r.readVarI32();
         if (value.count < 0 or value.count > 64) return error.InvalidValue;
         return value;
@@ -57,12 +47,10 @@ pub const RecipeIngredient = struct {
         if (self.count < 0 or self.count > 64) return error.InvalidValue;
         switch (self.descriptor) {
             .empty => |d| {
-                try checkAux(d.aux);
                 try w.writeVarU32(0);
                 try w.writeVarI32(d.aux);
             },
             .item => |d| {
-                try checkAux(d.aux);
                 try w.writeVarU32(1);
                 try w.writeString(names.item);
                 try w.writeString(d.name);
@@ -75,7 +63,6 @@ pub const RecipeIngredient = struct {
                 try w.writeI16(d.version);
             },
             .item_tag => |d| {
-                try checkAux(d.aux);
                 try w.writeVarU32(1);
                 try w.writeString(names.item_tag);
                 try w.writeString(d.tag);
@@ -90,6 +77,7 @@ test "recipe ingredient descriptors round trip and match the schema map bytes" {
     const Writer = @import("../codec/writer.zig").Writer;
     const cases = [_][]const u8{
         &.{ 0, 0xfe, 0xff, 0x03, 2 }, // empty, aux 32767, count 1
+        &.{ 0, 0x80, 0x80, 0x04, 2 }, // empty, aux 32768 (unbounded upstream), count 1
         &([_]u8{ 1, 4 } ++ "name".* ++ [_]u8{3} ++ "abc".* ++ [_]u8{ 0, 4 }), // {"name": "abc"}, aux 0, count 2
         &([_]u8{ 1, 8 } ++ "item_tag".* ++ [_]u8{ 1, 't', 0xfe, 0xff, 0x03, 0 }), // {"item_tag": "t"}, aux 32767, count 0
         &([_]u8{ 1, 6 } ++ "molang".* ++ [_]u8{ 1, 'q', 12, 0, 2 }),
@@ -103,11 +91,11 @@ test "recipe ingredient descriptors round trip and match the schema map bytes" {
         try value.encode(&w);
         try std.testing.expectEqualSlices(u8, bytes, w.written());
     }
-    var molang: Reader = .{ .input = cases[3], .limits = .{} };
+    var molang: Reader = .{ .input = cases[4], .limits = .{} };
     const m = (try RecipeIngredient.decode(&molang)).descriptor.molang;
     try std.testing.expectEqualStrings("q", m.expression);
     try std.testing.expectEqual(@as(i16, 12), m.version);
-    var tag: Reader = .{ .input = cases[2], .limits = .{} };
+    var tag: Reader = .{ .input = cases[3], .limits = .{} };
     try std.testing.expectEqual(@as(i32, 32767), (try RecipeIngredient.decode(&tag)).descriptor.item_tag.aux);
     var unknown: Reader = .{ .input = &([_]u8{ 1, 3 } ++ "tag".* ++ [_]u8{ 0, 0 }), .limits = .{} };
     try std.testing.expectError(error.InvalidEnum, RecipeIngredient.decode(&unknown));

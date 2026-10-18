@@ -71,7 +71,7 @@ jobs:
       - name: Check out the protocolgen revision pinned in reconciliation.json
         if: ${{ !cancelled() }}
         run: |
-          git clone --quiet --filter=blob:none https://github.com/bedrock-mc/protocolgen .protocolgen
+          git clone --quiet --filter=blob:none https://github.com/cinnabar-mc/protocolgen .protocolgen
           git -C .protocolgen checkout --quiet "$(jq -r .manifest.revision protocol/schema/reconciliation.json)"
       - name: Schema matches the pinned manifest and reviewed decisions
         if: ${{ !cancelled() }}

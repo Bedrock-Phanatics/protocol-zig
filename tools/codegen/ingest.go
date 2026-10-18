@@ -311,6 +311,11 @@ func ingest(checkout, reconciliationPath string) Schema {
 			g.errs = append(g.errs, "stale field name decision "+key)
 		}
 	}
+	for pattern := range rec.Patterns {
+		if !g.reviewed["pattern:"+pattern] {
+			g.errs = append(g.errs, fmt.Sprintf("stale pattern decision %q", pattern))
+		}
+	}
 	for site := range rec.EnumRestrictions {
 		if !g.restrict[site] {
 			g.errs = append(g.errs, "stale enum restriction "+site)
@@ -415,6 +420,7 @@ func (g *ingester) node(n mNode, packet, anon string) Node {
 		if c != nil {
 			out.MinLen, out.MaxLen = c.MinLength, c.MaxLength
 			if c.Pattern != "" {
+				g.reviewed["pattern:"+c.Pattern] = true
 				switch decision := g.rec.Patterns[c.Pattern]; decision {
 				case "keep":
 					out.Pattern = c.Pattern

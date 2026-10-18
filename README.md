@@ -200,7 +200,7 @@ profile, so version selection stays outside this library.
 Generated files start with a "Do not edit" header and are rewritten by
 `tools/codegen generate`; never edit them by hand.
 
-1. **Schema.** [protocolgen](https://github.com/bedrock-mc/protocolgen)
+1. **Schema.** [protocolgen](https://github.com/cinnabar-mc/protocolgen)
    reconciles Mojang's protocol docs with a dump of the dedicated server
    (Endstone). Its manifest is pinned by revision and checksum.
 2. **Reviewed decisions.** `protocol/schema/reconciliation.json` records
