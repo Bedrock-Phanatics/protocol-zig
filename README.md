@@ -124,6 +124,11 @@ defaults suit a server; pass tighter limits for untrusted peers. Counts are
 checked before any element is read, and no list element can be zero bytes on
 the wire, so decode time is linear in the input size.
 
+NBT is checked in place by [nbt-zig](https://github.com/Bedrock-Phanatics/nbt-zig)'s
+scanner, which never allocates. Its element counts include compound entries,
+strings are capped at 32767 bytes, and a document that fails to decode leaves
+the reader where it started.
+
 Decoding returns a `protocol.DecodeError`: `EndOfStream`, `VarIntOverflow`,
 `NonCanonicalVarInt`, `InvalidBoolean`, `InvalidUtf8`, `LimitExceeded`,
 `InvalidEnum` (unknown union tag), `InvalidPacketId`, `TrailingData`,

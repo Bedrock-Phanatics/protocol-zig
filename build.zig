@@ -4,10 +4,12 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const nbt = b.dependency("nbt", .{ .target = target, .optimize = optimize }).module("nbt");
     const protocol = b.addModule("bedrock_protocol", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
+        .imports = &.{.{ .name = "nbt", .module = nbt }},
     });
     const mock_profile = b.createModule(.{
         .root_source_file = b.path("tests/support/mock_profile.zig"),
@@ -59,7 +61,13 @@ pub fn build(b: *std.Build) void {
     b.step("fuzz", "Run a bounded deterministic hostile-input campaign").dependOn(&b.addRunArtifact(fuzz).step);
 
     const bench_optimize = b.option(std.builtin.OptimizeMode, "bench-optimize", "Benchmark optimization mode (default: ReleaseFast)") orelse .fast;
-    const bench_protocol = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = target, .optimize = bench_optimize });
+    const bench_nbt = b.dependency("nbt", .{ .target = target, .optimize = bench_optimize }).module("nbt");
+    const bench_protocol = b.createModule(.{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = bench_optimize,
+        .imports = &.{.{ .name = "nbt", .module = bench_nbt }},
+    });
     const bench_options = b.addOptions();
     bench_options.addOption([]const u8, "corpus_file", corpus_file);
     const bench = b.addExecutable(.{ .name = "protocol-bench", .root_module = b.createModule(.{
