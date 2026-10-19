@@ -21,6 +21,7 @@ pub fn main(init: std.process.Init) !void {
 
     try out.print("{s:<44} {s:>10} {s:>10}\n", .{ "case", "ns/op", "MB/s" });
     try primitives();
+    try nbtDocuments();
     try packets(corpus);
 }
 
@@ -79,6 +80,24 @@ fn primitives() !void {
         }
     };
     try measure("external profile dispatch", 6, &External{ .input = &.{ 0xe8, 7, 0x91, 8, 0, 0 } }, External.decode);
+}
+
+fn nbtDocuments() !void {
+    inline for (.{ "item", "entity", "structure" }) |name| {
+        const Document = struct {
+            input: []const u8,
+            fn read(self: *const @This()) !void {
+                var r = try p.Reader.init(self.input, .{});
+                if ((try r.readNbt()).len != self.input.len) return error.WrongNbtLength;
+            }
+            fn validate(self: *const @This()) !void {
+                if (!p.nbt.isDocument(self.input)) return error.RejectedNbt;
+            }
+        };
+        const document: Document = .{ .input = @embedFile("nbt/" ++ name ++ ".nbt") };
+        try measure("nbt " ++ name ++ " readNbt", document.input.len, &document, Document.read);
+        try measure("nbt " ++ name ++ " isDocument", document.input.len, &document, Document.validate);
+    }
 }
 
 const Case = struct {
