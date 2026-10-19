@@ -1,6 +1,3 @@
-//! Bedrock network NBT stays borrowed bytes here. nbt-zig's scanner checks it in place,
-//! so decoding still never allocates.
-
 const std = @import("std");
 const nbt = @import("nbt");
 const Reader = @import("reader.zig").Reader;

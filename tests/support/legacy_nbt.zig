@@ -1,5 +1,3 @@
-//! The hand-written scanner protocol-zig used before nbt-zig, kept as a test oracle.
-
 const std = @import("std");
 const Reader = @import("bedrock_protocol").Reader;
 const DecodeError = @import("bedrock_protocol").DecodeError;
