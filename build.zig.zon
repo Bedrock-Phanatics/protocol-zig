@@ -6,7 +6,7 @@
     .dependencies = .{
         .nbt = .{
             .url = "git+https://github.com/Bedrock-Phanatics/nbt-zig#26d021f59412b9ab366c09471c443a5b69d53570",
-            .hash = "nbt-1.3.0-iJUBvglxBQAahEBY_hXn3_28v42rGOrRQtJkkGIFttQ_",
+            .hash = "nbt-1.3.0-iJUBvsFZBQCnPhYiwhOUQ59w0_TgfGfQbAdd1-uL71YO",
         },
     },
     .paths = .{ "build.zig", "build.zig.zon", "src", "README.md", "LICENSE" },
