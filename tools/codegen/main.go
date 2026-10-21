@@ -110,9 +110,14 @@ func sync(files map[string]string, owned []string, check bool) int {
 			continue
 		}
 		must(os.MkdirAll(filepath.Dir(path), 0o755))
-		temporary := path + ".tmp"
-		must(os.WriteFile(temporary, []byte(files[path]), 0o644))
-		must(os.Rename(temporary, path))
+		temporary, err := os.CreateTemp(filepath.Dir(path), ".codegen-*.tmp")
+		must(err)
+		defer os.Remove(temporary.Name())
+		must(temporary.Chmod(0o644))
+		_, err = temporary.WriteString(files[path])
+		must(err)
+		must(temporary.Close())
+		must(os.Rename(temporary.Name(), path))
 	}
 	for _, dir := range owned {
 		_ = filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {

@@ -164,6 +164,19 @@ func TestCheckDoesNotOverwriteStaleOutput(t *testing.T) {
 	}
 }
 
+func TestSyncDoesNotUsePredictableTemporaryFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "output.zig")
+	temporary := path + ".tmp"
+	must(os.WriteFile(temporary, []byte("keep"), 0o644))
+	if code := sync(map[string]string{path: "fresh"}, nil, false); code != 0 {
+		t.Fatal("write failed")
+	}
+	if data, err := os.ReadFile(temporary); err != nil || string(data) != "keep" {
+		t.Fatal("unrelated temporary file changed")
+	}
+}
+
 func TestCheckedInSchemaGeneratesDeterministically(t *testing.T) {
 	s := loadSchema(filepath.Join("..", "..", "protocol", "schema", "bedrock.json"))
 	actors := loadActorRefs(filepath.Join("..", "..", "protocol", "schema", "actor-refs.json"))
