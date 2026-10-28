@@ -1078,7 +1078,7 @@ func (g *ingester) applyConstraints(s *Schema) {
 			n.Min, n.Max = nil, nil
 			continue
 		}
-		if n != nil && n.Kind == "bytes" && c.MaxLen != nil && c.MinItems == nil && c.MaxItems == nil && c.Reason != "" && len(c.Evidence) != 0 {
+		if n != nil && (n.Kind == "bytes" || n.Kind == "string") && c.MaxLen != nil && c.MinItems == nil && c.MaxItems == nil && c.Reason != "" && len(c.Evidence) != 0 {
 			n.MaxLen = c.MaxLen
 			continue
 		}

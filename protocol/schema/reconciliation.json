@@ -1233,6 +1233,90 @@
           "summary": "PocketMine decodes any protocol version and rejects mismatches at the session layer."
         }
       ]
+    },
+    "PlayerAuthInput.input_data": {
+      "max_items": 128,
+      "reason": "Each input flag is sent at most once, so a list longer than the flag enum is never legitimate; the ceiling leaves headroom for flags added by later releases.",
+      "evidence": [
+        {
+          "locator": "https://github.com/cinnabar-mc/protocolgen/blob/4e9dc032f2e3a1cf9ef4e35393af696988dfbb07/generated/1.26.51/manifest.json",
+          "summary": "PlayerAuthInputPacketPayload::InputData has 66 members in protocol 2193."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/handler/InGamePacketHandler.php",
+          "summary": "Quark builds a flag set from this list on every auth input, twenty times a second per player."
+        }
+      ]
+    },
+    "SerializedSkinRef.animated_image_data": {
+      "max_items": 32,
+      "reason": "Project resource ceiling for skin animations, each of which carries its own image; this is not a published Mojang maximum.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/skin/SkinData.php",
+          "summary": "Skins carry a handful of animation layers (head, body, blink), far below the ceiling."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/protocol/Fields.php",
+          "summary": "Quark converts every animation into a SkinAnimation with its image when a skin arrives."
+        }
+      ]
+    },
+    "SerializedSkinRef.persona_pieces": {
+      "max_items": 64,
+      "reason": "Project resource ceiling for persona pieces, one per equipped body part or item; this is not a published Mojang maximum.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/skin/PersonaSkinPiece.php",
+          "summary": "Persona skins list one piece per persona slot, of which there are a few dozen."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/protocol/Fields.php",
+          "summary": "Quark converts every piece into a PersonaSkinPiece when a skin arrives."
+        }
+      ]
+    },
+    "SerializedSkinRef.piece_tint_colors": {
+      "max_items": 16,
+      "reason": "Tint colours are keyed by persona piece type, which has fewer than sixteen members.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/skin/PersonaPieceTintColor.php",
+          "summary": "Each tint entry names a piece type and its four colours."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/protocol/Fields.php",
+          "summary": "Quark maps every entry onto PersonaSkinPieceType, rejecting unknown types."
+        }
+      ]
+    },
+    "Emote.emote_id": {
+      "max_len": 64,
+      "reason": "Emote IDs are UUID strings of 36 bytes; the ceiling stops one client making the server rebroadcast oversized IDs to every viewer.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/EmotePacket.php",
+          "summary": "The emote ID is the UUID of a marketplace or built-in emote."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/handler/InGamePacketHandler.php",
+          "summary": "Quark rebroadcasts received emotes to every player viewing the sender."
+        }
+      ]
+    },
+    "Login.connection_request": {
+      "max_len": 2097152,
+      "reason": "The connection request holds the identity chain and client data, whose largest part is the skin and cape images; two mebibytes leaves room for the largest skins while bounding what login parsing must hold.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/LoginPacket.php",
+          "summary": "The request is a JSON chain of JWTs followed by the client data JWT carrying base64 skin, cape and animation images."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/handler/LoginPacketHandler.php",
+          "summary": "Quark parses and verifies the whole request before the player is created."
+        }
+      ]
     }
   },
   "checks": {

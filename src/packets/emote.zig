@@ -23,6 +23,7 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.actor_runtime_id = try r.readVarU64();
         value.emote_id = try r.readString();
+        if (value.emote_id.len > 64) return error.InvalidValue;
         value.emote_length_ticks = try r.readVarU32();
         value.xuid = try r.readString();
         value.platform_id = try r.readString();
@@ -32,6 +33,7 @@ pub const Packet = struct {
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeVarU64(self.actor_runtime_id);
+        if (self.emote_id.len > 64) return error.InvalidValue;
         try w.writeString(self.emote_id);
         try w.writeVarU32(self.emote_length_ticks);
         try w.writeString(self.xuid);

@@ -55,7 +55,8 @@
           "wire": "Connection Request",
           "type": {
             "kind": "bytes",
-            "prefix": "var_u32"
+            "prefix": "var_u32",
+            "max_len": 2097152
           }
         }
       ]
@@ -5061,7 +5062,8 @@
           "wire": "Emote Id",
           "type": {
             "kind": "string",
-            "prefix": "var_u32"
+            "prefix": "var_u32",
+            "max_len": 64
           }
         },
         {
@@ -5285,7 +5287,8 @@
             "element": {
               "kind": "ref",
               "ref": "PlayerAuthInputInputData"
-            }
+            },
+            "max_items": 128
           }
         },
         {
@@ -26146,7 +26149,8 @@
             "element": {
               "kind": "ref",
               "ref": "AnimatedImageData"
-            }
+            },
+            "max_items": 32
           }
         },
         {
@@ -26221,7 +26225,8 @@
             "element": {
               "kind": "ref",
               "ref": "PersonaPiece"
-            }
+            },
+            "max_items": 64
           }
         },
         {
@@ -26240,7 +26245,8 @@
                 "kind": "i32le"
               },
               "len": 4
-            }
+            },
+            "max_items": 16
           }
         },
         {

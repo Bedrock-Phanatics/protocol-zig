@@ -1199,6 +1199,7 @@ pub const SerializedSkinRef = struct {
         value.image_data = try types.SkinImage.decode(r);
         value.animated_image_data = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 32) return error.InvalidValue;
             break :blk try codec.List(AnimatedImageData, AnimatedImageData).decode(r, count);
         };
         value.cape_image_data = try types.SkinImage.decode(r);
@@ -1211,10 +1212,12 @@ pub const SerializedSkinRef = struct {
         value.skin_color = try r.readI32();
         value.persona_pieces = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 64) return error.InvalidValue;
             break :blk try codec.List(PersonaPiece, PersonaPiece).decode(r, count);
         };
         value.piece_tint_colors = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 16) return error.InvalidValue;
             break :blk try codec.List(SerializedSkinRefPieceTintColorsEntry, SerializedSkinRefPieceTintColorsEntry).decode(r, count);
         };
         value.is_premium = try r.readBool();
@@ -1232,6 +1235,7 @@ pub const SerializedSkinRef = struct {
         try w.writeString(self.play_fab_id);
         try w.writeString(self.resource_patch);
         try self.image_data.encode(w);
+        if (self.animated_image_data.len > 32) return error.InvalidValue;
         try w.writeCount(.var_u32, self.animated_image_data.len);
         try self.animated_image_data.encode(w);
         try self.cape_image_data.encode(w);
@@ -1242,8 +1246,10 @@ pub const SerializedSkinRef = struct {
         try w.writeString(self.full_id);
         try self.arm_size.encode(w);
         try w.writeI32(self.skin_color);
+        if (self.persona_pieces.len > 64) return error.InvalidValue;
         try w.writeCount(.var_u32, self.persona_pieces.len);
         try self.persona_pieces.encode(w);
+        if (self.piece_tint_colors.len > 16) return error.InvalidValue;
         try w.writeCount(.var_u32, self.piece_tint_colors.len);
         try self.piece_tint_colors.encode(w);
         try w.writeBool(self.is_premium);

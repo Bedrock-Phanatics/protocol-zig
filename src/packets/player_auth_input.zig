@@ -40,6 +40,7 @@ pub const Packet = struct {
         value.player_head_rotation = try r.readF32();
         value.input_data = blk: {
             const count = try r.readCount(.var_u32);
+            if (count > 128) return error.InvalidValue;
             break :blk try codec.List(PlayerAuthInputInputData, PlayerAuthInputInputData).decode(r, count);
         };
         value.input_mode = try InputMode.decode(r);
@@ -73,6 +74,7 @@ pub const Packet = struct {
         try w.writeVec3f(self.position);
         try w.writeVec2f(self.move_vector);
         try w.writeF32(self.player_head_rotation);
+        if (self.input_data.len > 128) return error.InvalidValue;
         try w.writeCount(.var_u32, self.input_data.len);
         try self.input_data.encode(w);
         try self.input_mode.encode(w);
