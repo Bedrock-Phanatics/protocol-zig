@@ -52,7 +52,7 @@ pub const SyncWorldClocksAddTimeMarkerData = struct {
         value.clock_id = try r.readVarU64();
         value.time_markers = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 256) return error.InvalidValue;
+            if (count > 256) return codec.failure.invalid("SyncWorldClocksAddTimeMarkerData.time_markers", count, 256);
             break :blk try codec.List(TimeMarkerData, TimeMarkerData).decode(r, count);
         };
         return value;
@@ -60,7 +60,7 @@ pub const SyncWorldClocksAddTimeMarkerData = struct {
 
     pub fn encode(self: SyncWorldClocksAddTimeMarkerData, w: anytype) EncodeError!void {
         try w.writeVarU64(self.clock_id);
-        if (self.time_markers.len > 256) return error.InvalidValue;
+        if (self.time_markers.len > 256) return codec.failure.invalid("SyncWorldClocksAddTimeMarkerData.time_markers", self.time_markers.len, 256);
         try w.writeCount(.var_u32, self.time_markers.len);
         try self.time_markers.encode(w);
     }
@@ -78,7 +78,7 @@ pub const SyncWorldClocksData = union(enum(u32)) {
                 var value: codec.List(SyncWorldClockStateData, SyncWorldClockStateData) = undefined;
                 value = blk: {
                     const count = try r.readCount(.var_u32);
-                    if (count > 256) return error.InvalidValue;
+                    if (count > 256) return codec.failure.invalid("SyncWorldClocksData.sync_state", count, 256);
                     break :blk try codec.List(SyncWorldClockStateData, SyncWorldClockStateData).decode(r, count);
                 };
                 return .{ .sync_state = value };
@@ -87,7 +87,7 @@ pub const SyncWorldClocksData = union(enum(u32)) {
                 var value: codec.List(WorldClockData, WorldClockData) = undefined;
                 value = blk: {
                     const count = try r.readCount(.var_u32);
-                    if (count > 256) return error.InvalidValue;
+                    if (count > 256) return codec.failure.invalid("SyncWorldClocksData.initialize_registry", count, 256);
                     break :blk try codec.List(WorldClockData, WorldClockData).decode(r, count);
                 };
                 return .{ .initialize_registry = value };
@@ -102,12 +102,12 @@ pub const SyncWorldClocksData = union(enum(u32)) {
         try w.writeVarU32(@backingInt(self));
         switch (self) {
             .sync_state => |value| {
-                if (value.len > 256) return error.InvalidValue;
+                if (value.len > 256) return codec.failure.invalid("SyncWorldClocksData.sync_state", value.len, 256);
                 try w.writeCount(.var_u32, value.len);
                 try value.encode(w);
             },
             .initialize_registry => |value| {
-                if (value.len > 256) return error.InvalidValue;
+                if (value.len > 256) return codec.failure.invalid("SyncWorldClocksData.initialize_registry", value.len, 256);
                 try w.writeCount(.var_u32, value.len);
                 try value.encode(w);
             },
@@ -131,7 +131,7 @@ pub const SyncWorldClocksRemoveTimeMarkerData = struct {
         value.clock_id = try r.readVarU64();
         value.time_marker_ids = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 256) return error.InvalidValue;
+            if (count > 256) return codec.failure.invalid("SyncWorldClocksRemoveTimeMarkerData.time_marker_ids", count, 256);
             break :blk try codec.List(u64, codec.Prim(.var_u64)).decode(r, count);
         };
         return value;
@@ -139,7 +139,7 @@ pub const SyncWorldClocksRemoveTimeMarkerData = struct {
 
     pub fn encode(self: SyncWorldClocksRemoveTimeMarkerData, w: anytype) EncodeError!void {
         try w.writeVarU64(self.clock_id);
-        if (self.time_marker_ids.len > 256) return error.InvalidValue;
+        if (self.time_marker_ids.len > 256) return codec.failure.invalid("SyncWorldClocksRemoveTimeMarkerData.time_marker_ids", self.time_marker_ids.len, 256);
         try w.writeCount(.var_u32, self.time_marker_ids.len);
         try self.time_marker_ids.encode(w);
     }
@@ -156,7 +156,7 @@ pub const TimeMarkerData = struct {
         var value: TimeMarkerData = undefined;
         value.id = try r.readVarU64();
         value.name = try r.readString();
-        if (value.name.len > 128) return error.InvalidValue;
+        if (value.name.len > 128) return codec.failure.invalid("TimeMarkerData.name", value.name.len, 128);
         value.time = try r.readVarI32();
         value.period = if (try r.readBool()) try r.readI32() else null;
         return value;
@@ -164,7 +164,7 @@ pub const TimeMarkerData = struct {
 
     pub fn encode(self: TimeMarkerData, w: anytype) EncodeError!void {
         try w.writeVarU64(self.id);
-        if (self.name.len > 128) return error.InvalidValue;
+        if (self.name.len > 128) return codec.failure.invalid("TimeMarkerData.name", self.name.len, 128);
         try w.writeString(self.name);
         try w.writeVarI32(self.time);
         try w.writeBool(self.period != null);
@@ -186,12 +186,12 @@ pub const WorldClockData = struct {
         var value: WorldClockData = undefined;
         value.id = try r.readVarU64();
         value.name = try r.readString();
-        if (value.name.len > 128) return error.InvalidValue;
+        if (value.name.len > 128) return codec.failure.invalid("WorldClockData.name", value.name.len, 128);
         value.time = try r.readVarI32();
         value.is_paused = try r.readBool();
         value.time_markers = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 256) return error.InvalidValue;
+            if (count > 256) return codec.failure.invalid("WorldClockData.time_markers", count, 256);
             break :blk try codec.List(TimeMarkerData, TimeMarkerData).decode(r, count);
         };
         return value;
@@ -199,11 +199,11 @@ pub const WorldClockData = struct {
 
     pub fn encode(self: WorldClockData, w: anytype) EncodeError!void {
         try w.writeVarU64(self.id);
-        if (self.name.len > 128) return error.InvalidValue;
+        if (self.name.len > 128) return codec.failure.invalid("WorldClockData.name", self.name.len, 128);
         try w.writeString(self.name);
         try w.writeVarI32(self.time);
         try w.writeBool(self.is_paused);
-        if (self.time_markers.len > 256) return error.InvalidValue;
+        if (self.time_markers.len > 256) return codec.failure.invalid("WorldClockData.time_markers", self.time_markers.len, 256);
         try w.writeCount(.var_u32, self.time_markers.len);
         try self.time_markers.encode(w);
     }

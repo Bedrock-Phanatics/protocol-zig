@@ -50,7 +50,7 @@ pub const VoxelCells = struct {
         if (value.y_size > 127) return error.InvalidValue;
         value.z_size = try r.readU8();
         if (value.z_size > 127) return error.InvalidValue;
-        value.storage = try r.readBoundedByteArray(256048);
+        value.storage = try r.readBoundedByteArray("VoxelCells.storage", 256048);
         return value;
     }
 
@@ -61,7 +61,7 @@ pub const VoxelCells = struct {
         try w.writeU8(self.y_size);
         if (self.z_size > 127) return error.InvalidValue;
         try w.writeU8(self.z_size);
-        if (self.storage.len > 256048) return error.InvalidValue;
+        if (self.storage.len > 256048) return codec.failure.invalid("VoxelCells.storage", self.storage.len, 256048);
         try w.writeByteArray(self.storage);
     }
 };
@@ -79,19 +79,19 @@ pub const VoxelShape = struct {
         value.x_coordinates = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
-            if (count > 128) return error.InvalidValue;
+            if (count > 128) return codec.failure.invalid("VoxelShape.x_coordinates", count, 128);
             break :blk try codec.List(f32, codec.Prim(.f32le)).decode(r, count);
         };
         value.y_coordinates = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
-            if (count > 128) return error.InvalidValue;
+            if (count > 128) return codec.failure.invalid("VoxelShape.y_coordinates", count, 128);
             break :blk try codec.List(f32, codec.Prim(.f32le)).decode(r, count);
         };
         value.z_coordinates = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
-            if (count > 128) return error.InvalidValue;
+            if (count > 128) return codec.failure.invalid("VoxelShape.z_coordinates", count, 128);
             break :blk try codec.List(f32, codec.Prim(.f32le)).decode(r, count);
         };
         return value;
@@ -100,15 +100,15 @@ pub const VoxelShape = struct {
     pub fn encode(self: VoxelShape, w: anytype) EncodeError!void {
         try self.cells.encode(w);
         if (self.x_coordinates.len < 1) return error.InvalidValue;
-        if (self.x_coordinates.len > 128) return error.InvalidValue;
+        if (self.x_coordinates.len > 128) return codec.failure.invalid("VoxelShape.x_coordinates", self.x_coordinates.len, 128);
         try w.writeCount(.var_u32, self.x_coordinates.len);
         try self.x_coordinates.encode(w);
         if (self.y_coordinates.len < 1) return error.InvalidValue;
-        if (self.y_coordinates.len > 128) return error.InvalidValue;
+        if (self.y_coordinates.len > 128) return codec.failure.invalid("VoxelShape.y_coordinates", self.y_coordinates.len, 128);
         try w.writeCount(.var_u32, self.y_coordinates.len);
         try self.y_coordinates.encode(w);
         if (self.z_coordinates.len < 1) return error.InvalidValue;
-        if (self.z_coordinates.len > 128) return error.InvalidValue;
+        if (self.z_coordinates.len > 128) return codec.failure.invalid("VoxelShape.z_coordinates", self.z_coordinates.len, 128);
         try w.writeCount(.var_u32, self.z_coordinates.len);
         try self.z_coordinates.encode(w);
     }

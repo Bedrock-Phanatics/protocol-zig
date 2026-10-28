@@ -15,22 +15,22 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.missing_ids = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 4095) return error.InvalidValue;
+            if (count > 4095) return codec.failure.invalid("ClientCacheBlobStatus.missing_ids", count, 4095);
             break :blk try codec.List(u64, codec.Prim(.u64le)).decode(r, count);
         };
         value.found_ids = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 4095) return error.InvalidValue;
+            if (count > 4095) return codec.failure.invalid("ClientCacheBlobStatus.found_ids", count, 4095);
             break :blk try codec.List(u64, codec.Prim(.u64le)).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.missing_ids.len > 4095) return error.InvalidValue;
+        if (self.missing_ids.len > 4095) return codec.failure.invalid("ClientCacheBlobStatus.missing_ids", self.missing_ids.len, 4095);
         try w.writeCount(.var_u32, self.missing_ids.len);
         try self.missing_ids.encode(w);
-        if (self.found_ids.len > 4095) return error.InvalidValue;
+        if (self.found_ids.len > 4095) return codec.failure.invalid("ClientCacheBlobStatus.found_ids", self.found_ids.len, 4095);
         try w.writeCount(.var_u32, self.found_ids.len);
         try self.found_ids.encode(w);
     }

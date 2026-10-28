@@ -32,13 +32,13 @@ pub const PlayerPartyInfo = struct {
     pub fn decode(r: *Reader) DecodeError!PlayerPartyInfo {
         var value: PlayerPartyInfo = undefined;
         value.party_id = try r.readString();
-        if (value.party_id.len > 49) return error.InvalidValue;
+        if (value.party_id.len > 49) return codec.failure.invalid("PlayerPartyInfo.party_id", value.party_id.len, 49);
         value.is_party_leader = try r.readBool();
         return value;
     }
 
     pub fn encode(self: PlayerPartyInfo, w: anytype) EncodeError!void {
-        if (self.party_id.len > 49) return error.InvalidValue;
+        if (self.party_id.len > 49) return codec.failure.invalid("PlayerPartyInfo.party_id", self.party_id.len, 49);
         try w.writeString(self.party_id);
         try w.writeBool(self.is_party_leader);
     }

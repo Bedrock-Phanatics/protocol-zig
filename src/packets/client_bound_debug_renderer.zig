@@ -37,7 +37,7 @@ pub const ClientboundDebugRendererDebugMarkerData = struct {
     pub fn decode(r: *Reader) DecodeError!ClientboundDebugRendererDebugMarkerData {
         var value: ClientboundDebugRendererDebugMarkerData = undefined;
         value.text = try r.readString();
-        if (value.text.len > 4096) return error.InvalidValue;
+        if (value.text.len > 4096) return codec.failure.invalid("ClientboundDebugRendererDebugMarkerData.text", value.text.len, 4096);
         value.position = try r.readVec3f();
         value.color = try r.readI32();
         value.duration = try r.readU64();
@@ -45,7 +45,7 @@ pub const ClientboundDebugRendererDebugMarkerData = struct {
     }
 
     pub fn encode(self: ClientboundDebugRendererDebugMarkerData, w: anytype) EncodeError!void {
-        if (self.text.len > 4096) return error.InvalidValue;
+        if (self.text.len > 4096) return codec.failure.invalid("ClientboundDebugRendererDebugMarkerData.text", self.text.len, 4096);
         try w.writeString(self.text);
         try w.writeVec3f(self.position);
         try w.writeI32(self.color);

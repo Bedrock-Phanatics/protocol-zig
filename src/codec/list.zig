@@ -3,6 +3,7 @@ const Reader = @import("reader.zig").Reader;
 const DecodeError = @import("errors.zig").DecodeError;
 const EncodeError = @import("errors.zig").EncodeError;
 const DecodeLimits = @import("limits.zig").DecodeLimits;
+const failure = @import("failure.zig");
 
 /// The `wire` form is produced only by `decode`; its bytes are trusted when
 /// encoding, so never construct it by hand or change its bytes or count.
@@ -29,7 +30,7 @@ pub fn List(comptime T: type, comptime C: type) type {
         }
 
         pub fn decode(r: *Reader, count: usize) DecodeError!Self {
-            if (count > r.limits.max_array_elements) return error.LimitExceeded;
+            if (count > r.limits.max_array_elements) return failure.limited("max_array_elements", count, r.limits.max_array_elements);
             const start = r.cursor;
             if (comptime fixedSize()) |size| {
                 const bytes = std.math.mul(usize, count, size) catch return error.EndOfStream;

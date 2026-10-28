@@ -26,6 +26,7 @@ pub const CountingWriter = @import("codec/writer.zig").CountingWriter;
 pub const List = @import("codec/list.zig").List;
 pub const Bitset = @import("codec/bitset.zig").Bitset;
 pub const nbt = @import("codec/nbt.zig");
+pub const failure = @import("codec/failure.zig");
 
 pub const version = @import("version.zig");
 pub const protocol_version = version.protocol_version;

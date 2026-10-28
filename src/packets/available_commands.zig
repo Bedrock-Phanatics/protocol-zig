@@ -37,7 +37,7 @@ pub const Packet = struct {
         };
         value.chained_subcommand_data = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 16) return error.InvalidValue;
+            if (count > 16) return codec.failure.invalid("AvailableCommands.chained_subcommand_data", count, 16);
             break :blk try codec.List(ChainedSubcommand, ChainedSubcommand).decode(r, count);
         };
         value.commands = blk: {
@@ -64,7 +64,7 @@ pub const Packet = struct {
         try self.post_fixes.encode(w);
         try w.writeCount(.var_u32, self.enum_data.len);
         try self.enum_data.encode(w);
-        if (self.chained_subcommand_data.len > 16) return error.InvalidValue;
+        if (self.chained_subcommand_data.len > 16) return codec.failure.invalid("AvailableCommands.chained_subcommand_data", self.chained_subcommand_data.len, 16);
         try w.writeCount(.var_u32, self.chained_subcommand_data.len);
         try self.chained_subcommand_data.encode(w);
         try w.writeCount(.var_u32, self.commands.len);
@@ -84,19 +84,19 @@ pub const ChainedSubcommand = struct {
     pub fn decode(r: *Reader) DecodeError!ChainedSubcommand {
         var value: ChainedSubcommand = undefined;
         value.name = try r.readString();
-        if (value.name.len > 512) return error.InvalidValue;
+        if (value.name.len > 512) return codec.failure.invalid("ChainedSubcommand.name", value.name.len, 512);
         value.sub_command_values = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 32) return error.InvalidValue;
+            if (count > 32) return codec.failure.invalid("ChainedSubcommand.sub_command_values", count, 32);
             break :blk try codec.List(ChainedSubcommandValue, ChainedSubcommandValue).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: ChainedSubcommand, w: anytype) EncodeError!void {
-        if (self.name.len > 512) return error.InvalidValue;
+        if (self.name.len > 512) return codec.failure.invalid("ChainedSubcommand.name", self.name.len, 512);
         try w.writeString(self.name);
-        if (self.sub_command_values.len > 32) return error.InvalidValue;
+        if (self.sub_command_values.len > 32) return codec.failure.invalid("ChainedSubcommand.sub_command_values", self.sub_command_values.len, 32);
         try w.writeCount(.var_u32, self.sub_command_values.len);
         try self.sub_command_values.encode(w);
     }
@@ -133,37 +133,37 @@ pub const Command = struct {
     pub fn decode(r: *Reader) DecodeError!Command {
         var value: Command = undefined;
         value.name = try r.readString();
-        if (value.name.len > 1000) return error.InvalidValue;
+        if (value.name.len > 1000) return codec.failure.invalid("Command.name", value.name.len, 1000);
         value.description = try r.readString();
-        if (value.description.len > 1000) return error.InvalidValue;
+        if (value.description.len > 1000) return codec.failure.invalid("Command.description", value.description.len, 1000);
         value.flags = try r.readU16();
         value.permission_level = try r.readString();
         value.alias_enum = try r.readI32();
         value.command_data_chained_subcommand_indexes = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 250) return error.InvalidValue;
+            if (count > 250) return codec.failure.invalid("Command.command_data_chained_subcommand_indexes", count, 250);
             break :blk try codec.List(u32, codec.Prim(.u32le)).decode(r, count);
         };
         value.overloads = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 250) return error.InvalidValue;
+            if (count > 250) return codec.failure.invalid("Command.overloads", count, 250);
             break :blk try codec.List(CommandOverload, CommandOverload).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Command, w: anytype) EncodeError!void {
-        if (self.name.len > 1000) return error.InvalidValue;
+        if (self.name.len > 1000) return codec.failure.invalid("Command.name", self.name.len, 1000);
         try w.writeString(self.name);
-        if (self.description.len > 1000) return error.InvalidValue;
+        if (self.description.len > 1000) return codec.failure.invalid("Command.description", self.description.len, 1000);
         try w.writeString(self.description);
         try w.writeU16(self.flags);
         try w.writeString(self.permission_level);
         try w.writeI32(self.alias_enum);
-        if (self.command_data_chained_subcommand_indexes.len > 250) return error.InvalidValue;
+        if (self.command_data_chained_subcommand_indexes.len > 250) return codec.failure.invalid("Command.command_data_chained_subcommand_indexes", self.command_data_chained_subcommand_indexes.len, 250);
         try w.writeCount(.var_u32, self.command_data_chained_subcommand_indexes.len);
         try self.command_data_chained_subcommand_indexes.encode(w);
-        if (self.overloads.len > 250) return error.InvalidValue;
+        if (self.overloads.len > 250) return codec.failure.invalid("Command.overloads", self.overloads.len, 250);
         try w.writeCount(.var_u32, self.overloads.len);
         try self.overloads.encode(w);
     }
@@ -201,14 +201,14 @@ pub const CommandEnumConstraint = struct {
         var value: CommandEnumConstraint = undefined;
         value.enum_value_symbol = try r.readU32();
         value.enum_symbol = try r.readU32();
-        value.constraint_indices = try r.readBoundedByteArray(250);
+        value.constraint_indices = try r.readBoundedByteArray("CommandEnumConstraint.constraint_indices", 250);
         return value;
     }
 
     pub fn encode(self: CommandEnumConstraint, w: anytype) EncodeError!void {
         try w.writeU32(self.enum_value_symbol);
         try w.writeU32(self.enum_symbol);
-        if (self.constraint_indices.len > 250) return error.InvalidValue;
+        if (self.constraint_indices.len > 250) return codec.failure.invalid("CommandEnumConstraint.constraint_indices", self.constraint_indices.len, 250);
         try w.writeByteArray(self.constraint_indices);
     }
 };
@@ -267,7 +267,7 @@ pub const DynamicEnum = struct {
     pub fn decode(r: *Reader) DecodeError!DynamicEnum {
         var value: DynamicEnum = undefined;
         value.enum_name = try r.readString();
-        if (value.enum_name.len > 512) return error.InvalidValue;
+        if (value.enum_name.len > 512) return codec.failure.invalid("DynamicEnum.enum_name", value.enum_name.len, 512);
         value.enum_options = blk: {
             const count = try r.readCount(.var_u32);
             break :blk try codec.List([]const u8, codec.Prim(.string)).decode(r, count);
@@ -276,7 +276,7 @@ pub const DynamicEnum = struct {
     }
 
     pub fn encode(self: DynamicEnum, w: anytype) EncodeError!void {
-        if (self.enum_name.len > 512) return error.InvalidValue;
+        if (self.enum_name.len > 512) return codec.failure.invalid("DynamicEnum.enum_name", self.enum_name.len, 512);
         try w.writeString(self.enum_name);
         try w.writeCount(.var_u32, self.enum_options.len);
         try self.enum_options.encode(w);

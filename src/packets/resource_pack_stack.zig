@@ -19,7 +19,7 @@ pub const Packet = struct {
         value.texture_pack_required = try r.readBool();
         value.texture_pack_list = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 65535) return error.InvalidValue;
+            if (count > 65535) return codec.failure.invalid("ResourcePackStack.texture_pack_list", count, 65535);
             break :blk try codec.List(StackResourcePack, StackResourcePack).decode(r, count);
         };
         value.base_game_version = try r.readString();
@@ -30,7 +30,7 @@ pub const Packet = struct {
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeBool(self.texture_pack_required);
-        if (self.texture_pack_list.len > 65535) return error.InvalidValue;
+        if (self.texture_pack_list.len > 65535) return codec.failure.invalid("ResourcePackStack.texture_pack_list", self.texture_pack_list.len, 65535);
         try w.writeCount(.var_u32, self.texture_pack_list.len);
         try self.texture_pack_list.encode(w);
         try w.writeString(self.base_game_version);

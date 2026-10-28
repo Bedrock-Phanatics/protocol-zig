@@ -14,13 +14,13 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.cookie = try r.readString();
-        if (value.cookie.len > 2048) return error.InvalidValue;
+        if (value.cookie.len > 2048) return codec.failure.invalid("PartyDestinationCookieResponse.cookie", value.cookie.len, 2048);
         value.accepted = try r.readBool();
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.cookie.len > 2048) return error.InvalidValue;
+        if (self.cookie.len > 2048) return codec.failure.invalid("PartyDestinationCookieResponse.cookie", self.cookie.len, 2048);
         try w.writeString(self.cookie);
         try w.writeBool(self.accepted);
     }

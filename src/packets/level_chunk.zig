@@ -33,7 +33,7 @@ pub const Packet = struct {
         value.cache_enabled = try r.readBool();
         value.cache_metadata = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 65) return error.InvalidValue;
+            if (count > 65) return codec.failure.invalid("LevelChunk.cache_metadata", count, 65);
             break :blk try codec.List(u64, codec.Prim(.u64le)).decode(r, count);
         };
         value.serialized_chunk_data = try r.readByteArray();
@@ -52,7 +52,7 @@ pub const Packet = struct {
             try w.writeVarI32(present);
         }
         try w.writeBool(self.cache_enabled);
-        if (self.cache_metadata.len > 65) return error.InvalidValue;
+        if (self.cache_metadata.len > 65) return codec.failure.invalid("LevelChunk.cache_metadata", self.cache_metadata.len, 65);
         try w.writeCount(.var_u32, self.cache_metadata.len);
         try self.cache_metadata.encode(w);
         try w.writeByteArray(self.serialized_chunk_data);

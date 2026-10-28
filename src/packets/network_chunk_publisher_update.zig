@@ -18,7 +18,7 @@ pub const Packet = struct {
         value.new_radius_for_view = try r.readVarU32();
         value.server_built_chunks_list = blk: {
             const count = try r.readCount(.u32le);
-            if (count > 9216) return error.InvalidValue;
+            if (count > 9216) return codec.failure.invalid("NetworkChunkPublisherUpdate.server_built_chunks_list", count, 9216);
             break :blk try codec.List(codec.ChunkPosition, codec.Prim(.chunkPosition)).decode(r, count);
         };
         return value;
@@ -27,7 +27,7 @@ pub const Packet = struct {
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeBlockPosition(self.new_position_for_view);
         try w.writeVarU32(self.new_radius_for_view);
-        if (self.server_built_chunks_list.len > 9216) return error.InvalidValue;
+        if (self.server_built_chunks_list.len > 9216) return codec.failure.invalid("NetworkChunkPublisherUpdate.server_built_chunks_list", self.server_built_chunks_list.len, 9216);
         try w.writeCount(.u32le, self.server_built_chunks_list.len);
         try self.server_built_chunks_list.encode(w);
     }

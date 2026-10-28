@@ -24,7 +24,7 @@ pub const Packet = struct {
         value.world_template_id_and_version = try PackIDVersionData.decode(r);
         value.resource_packs = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 65535) return error.InvalidValue;
+            if (count > 65535) return codec.failure.invalid("ResourcePacksInfo.resource_packs", count, 65535);
             break :blk try codec.List(PackInfoData, PackInfoData).decode(r, count);
         };
         return value;
@@ -36,7 +36,7 @@ pub const Packet = struct {
         try w.writeBool(self.has_scripts);
         try w.writeBool(self.force_disable_vibrant_visuals);
         try self.world_template_id_and_version.encode(w);
-        if (self.resource_packs.len > 65535) return error.InvalidValue;
+        if (self.resource_packs.len > 65535) return codec.failure.invalid("ResourcePacksInfo.resource_packs", self.resource_packs.len, 65535);
         try w.writeCount(.var_u32, self.resource_packs.len);
         try self.resource_packs.encode(w);
     }

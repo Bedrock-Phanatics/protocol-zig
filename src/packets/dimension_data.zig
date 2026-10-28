@@ -42,7 +42,7 @@ pub const DimensionDefinitionGroupDimensionDefinition = struct {
         value.dimension_type = try r.readVarI32();
         value.pack_id = try r.readUuid();
         value.default_biome = try r.readString();
-        if (value.default_biome.len > 256) return error.InvalidValue;
+        if (value.default_biome.len > 256) return codec.failure.invalid("DimensionDefinitionGroupDimensionDefinition.default_biome", value.default_biome.len, 256);
         return value;
     }
 
@@ -52,7 +52,7 @@ pub const DimensionDefinitionGroupDimensionDefinition = struct {
         try self.generator_type.encode(w);
         try w.writeVarI32(self.dimension_type);
         try w.writeUuid(self.pack_id);
-        if (self.default_biome.len > 256) return error.InvalidValue;
+        if (self.default_biome.len > 256) return codec.failure.invalid("DimensionDefinitionGroupDimensionDefinition.default_biome", self.default_biome.len, 256);
         try w.writeString(self.default_biome);
     }
 };
@@ -64,13 +64,13 @@ pub const PacketDefinitionsEntry = struct {
     pub fn decode(r: *Reader) DecodeError!PacketDefinitionsEntry {
         var value: PacketDefinitionsEntry = undefined;
         value.key = try r.readString();
-        if (value.key.len > 256) return error.InvalidValue;
+        if (value.key.len > 256) return codec.failure.invalid("PacketDefinitionsEntry.key", value.key.len, 256);
         value.value = try DimensionDefinitionGroupDimensionDefinition.decode(r);
         return value;
     }
 
     pub fn encode(self: PacketDefinitionsEntry, w: anytype) EncodeError!void {
-        if (self.key.len > 256) return error.InvalidValue;
+        if (self.key.len > 256) return codec.failure.invalid("PacketDefinitionsEntry.key", self.key.len, 256);
         try w.writeString(self.key);
         try self.value.encode(w);
     }

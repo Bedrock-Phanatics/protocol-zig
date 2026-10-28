@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.requests = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 100) return error.InvalidValue;
+            if (count > 100) return codec.failure.invalid("ItemStackRequest.requests", count, 100);
             break :blk try codec.List(ItemStackRequestPacketData, ItemStackRequestPacketData).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.requests.len > 100) return error.InvalidValue;
+        if (self.requests.len > 100) return codec.failure.invalid("ItemStackRequest.requests", self.requests.len, 100);
         try w.writeCount(.var_u32, self.requests.len);
         try self.requests.encode(w);
     }
@@ -40,12 +40,12 @@ pub const ItemStackRequestPacketData = struct {
         value.actions = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
-            if (count > 100) return error.InvalidValue;
+            if (count > 100) return codec.failure.invalid("ItemStackRequestPacketData.actions", count, 100);
             break :blk try codec.List(types.StackRequestAction, types.StackRequestAction).decode(r, count);
         };
         value.strings_to_filter = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 256) return error.InvalidValue;
+            if (count > 256) return codec.failure.invalid("ItemStackRequestPacketData.strings_to_filter", count, 256);
             break :blk try codec.List([]const u8, ItemStackRequestPacketDataStringsToFilterItemCodec).decode(r, count);
         };
         value.strings_to_filter_origin = try types.TextProcessingEventOrigin.decode(r);
@@ -55,10 +55,10 @@ pub const ItemStackRequestPacketData = struct {
     pub fn encode(self: ItemStackRequestPacketData, w: anytype) EncodeError!void {
         try w.writeVarI32(self.client_request_id);
         if (self.actions.len < 1) return error.InvalidValue;
-        if (self.actions.len > 100) return error.InvalidValue;
+        if (self.actions.len > 100) return codec.failure.invalid("ItemStackRequestPacketData.actions", self.actions.len, 100);
         try w.writeCount(.var_u32, self.actions.len);
         try self.actions.encode(w);
-        if (self.strings_to_filter.len > 256) return error.InvalidValue;
+        if (self.strings_to_filter.len > 256) return codec.failure.invalid("ItemStackRequestPacketData.strings_to_filter", self.strings_to_filter.len, 256);
         try w.writeCount(.var_u32, self.strings_to_filter.len);
         try self.strings_to_filter.encode(w);
         try self.strings_to_filter_origin.encode(w);
@@ -69,12 +69,12 @@ const ItemStackRequestPacketDataStringsToFilterItemCodec = struct {
     pub fn decode(r: *Reader) DecodeError![]const u8 {
         var value: []const u8 = undefined;
         value = try r.readString();
-        if (value.len > 1000) return error.InvalidValue;
+        if (value.len > 1000) return codec.failure.invalid("ItemStackRequest.requests", value.len, 1000);
         return value;
     }
 
     pub fn encode(value: []const u8, w: anytype) EncodeError!void {
-        if (value.len > 1000) return error.InvalidValue;
+        if (value.len > 1000) return codec.failure.invalid("ItemStackRequest.requests", value.len, 1000);
         try w.writeString(value);
     }
 };

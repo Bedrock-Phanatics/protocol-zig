@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.options = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 3) return error.InvalidValue;
+            if (count > 3) return codec.failure.invalid("PlayerEnchantOptions.options", count, 3);
             break :blk try codec.List(ItemEnchantOption, ItemEnchantOption).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.options.len > 3) return error.InvalidValue;
+        if (self.options.len > 3) return codec.failure.invalid("PlayerEnchantOptions.options", self.options.len, 3);
         try w.writeCount(.var_u32, self.options.len);
         try self.options.encode(w);
     }
@@ -115,7 +115,7 @@ pub const ItemEnchantOption = struct {
         value.enchants = try ItemEnchants.decode(r);
         value.enchant_name = try r.readString();
         if (value.enchant_name.len < 1) return error.InvalidValue;
-        if (value.enchant_name.len > 256) return error.InvalidValue;
+        if (value.enchant_name.len > 256) return codec.failure.invalid("ItemEnchantOption.enchant_name", value.enchant_name.len, 256);
         value.enchant_net_id = try r.readVarU32();
         return value;
     }
@@ -124,7 +124,7 @@ pub const ItemEnchantOption = struct {
         try w.writeU8(self.cost);
         try self.enchants.encode(w);
         if (self.enchant_name.len < 1) return error.InvalidValue;
-        if (self.enchant_name.len > 256) return error.InvalidValue;
+        if (self.enchant_name.len > 256) return codec.failure.invalid("ItemEnchantOption.enchant_name", self.enchant_name.len, 256);
         try w.writeString(self.enchant_name);
         try w.writeVarU32(self.enchant_net_id);
     }

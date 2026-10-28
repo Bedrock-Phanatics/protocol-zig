@@ -19,7 +19,7 @@ pub const Packet = struct {
             if (try r.readBool()) {
                 var present1: []const u8 = undefined;
                 present1 = try r.readString();
-                if (present1.len > 50) return error.InvalidValue;
+                if (present1.len > 50) return codec.failure.invalid("ServerPresenceInfo.presence_configuration", present1.len, 50);
                 present = present1;
             }
             value.presence_configuration = present;
@@ -32,7 +32,7 @@ pub const Packet = struct {
         if (self.presence_configuration) |present| {
             try w.writeBool(present != null);
             if (present) |present1| {
-                if (present1.len > 50) return error.InvalidValue;
+                if (present1.len > 50) return codec.failure.invalid("ServerPresenceInfo.presence_configuration", present1.len, 50);
                 try w.writeString(present1);
             }
         }

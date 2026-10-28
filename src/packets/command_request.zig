@@ -16,7 +16,7 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.command = try r.readString();
-        if (value.command.len > 1000) return error.InvalidValue;
+        if (value.command.len > 1000) return codec.failure.invalid("CommandRequest.command", value.command.len, 1000);
         value.origin = try types.CommandOrigin.decode(r);
         value.is_internal = try r.readBool();
         value.version = try r.readString();
@@ -24,7 +24,7 @@ pub const Packet = struct {
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.command.len > 1000) return error.InvalidValue;
+        if (self.command.len > 1000) return codec.failure.invalid("CommandRequest.command", self.command.len, 1000);
         try w.writeString(self.command);
         try self.origin.encode(w);
         try w.writeBool(self.is_internal);

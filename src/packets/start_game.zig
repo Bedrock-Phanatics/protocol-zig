@@ -419,7 +419,7 @@ pub const ServerConfigurationJoinInfo = struct {
             if (try r.readBool()) {
                 var present1: []const u8 = undefined;
                 present1 = try r.readString();
-                if (present1.len > 50) return error.InvalidValue;
+                if (present1.len > 50) return codec.failure.invalid("ServerConfigurationJoinInfo.presence", present1.len, 50);
                 present = present1;
             }
             value.presence = present;
@@ -440,7 +440,7 @@ pub const ServerConfigurationJoinInfo = struct {
         if (self.presence) |present| {
             try w.writeBool(present != null);
             if (present) |present1| {
-                if (present1.len > 50) return error.InvalidValue;
+                if (present1.len > 50) return codec.failure.invalid("ServerConfigurationJoinInfo.presence", present1.len, 50);
                 try w.writeString(present1);
             }
         }

@@ -16,14 +16,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.pack_id = try r.readUuid();
         value.pack_setting_name = try r.readString();
-        if (value.pack_setting_name.len > 128) return error.InvalidValue;
+        if (value.pack_setting_name.len > 128) return codec.failure.invalid("ServerBoundPackSettingChange.pack_setting_name", value.pack_setting_name.len, 128);
         value.pack_setting_value = try ServerBoundPackSettingChangePackSettingValue.decode(r);
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeUuid(self.pack_id);
-        if (self.pack_setting_name.len > 128) return error.InvalidValue;
+        if (self.pack_setting_name.len > 128) return codec.failure.invalid("ServerBoundPackSettingChange.pack_setting_name", self.pack_setting_name.len, 128);
         try w.writeString(self.pack_setting_name);
         try self.pack_setting_value.encode(w);
     }

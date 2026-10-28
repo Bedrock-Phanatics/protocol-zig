@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 1048576) return error.InvalidValue;
+            if (count > 1048576) return codec.failure.invalid("PrimitiveShapes.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed", count, 1048576);
             break :blk try codec.List(PrimitiveShape, PrimitiveShape).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed.len > 1048576) return error.InvalidValue;
+        if (self.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed.len > 1048576) return codec.failure.invalid("PrimitiveShapes.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed", self.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed.len, 1048576);
         try w.writeCount(.var_u32, self.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed.len);
         try self.array_of_primitive_shapes_can_be_a_mix_of_new_updated_or_removed.encode(w);
     }

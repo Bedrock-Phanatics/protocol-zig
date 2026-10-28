@@ -25,9 +25,9 @@ pub const Packet = struct {
         value.target_actor_id = try r.readVarI64();
         value.event_type = try BossEventUpdateType.decode(r);
         value.name = try r.readString();
-        if (value.name.len > 256) return error.InvalidValue;
+        if (value.name.len > 256) return codec.failure.invalid("BossEvent.name", value.name.len, 256);
         value.filtered_name = try r.readString();
-        if (value.filtered_name.len > 256) return error.InvalidValue;
+        if (value.filtered_name.len > 256) return codec.failure.invalid("BossEvent.filtered_name", value.filtered_name.len, 256);
         value.health_percent = try r.readF32();
         value.color = try BossBarColor.decode(r);
         value.overlay = try BossBarOverlay.decode(r);
@@ -37,9 +37,9 @@ pub const Packet = struct {
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeVarI64(self.target_actor_id);
         try self.event_type.encode(w);
-        if (self.name.len > 256) return error.InvalidValue;
+        if (self.name.len > 256) return codec.failure.invalid("BossEvent.name", self.name.len, 256);
         try w.writeString(self.name);
-        if (self.filtered_name.len > 256) return error.InvalidValue;
+        if (self.filtered_name.len > 256) return codec.failure.invalid("BossEvent.filtered_name", self.filtered_name.len, 256);
         try w.writeString(self.filtered_name);
         try w.writeF32(self.health_percent);
         try self.color.encode(w);

@@ -15,14 +15,14 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.screen_id = try r.readString();
-        if (value.screen_id.len > 500) return error.InvalidValue;
+        if (value.screen_id.len > 500) return codec.failure.invalid("ClientBoundDataDrivenUIShowScreen.screen_id", value.screen_id.len, 500);
         value.form_id = try r.readU32();
         value.data_instance_id = if (try r.readBool()) try r.readU32() else null;
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.screen_id.len > 500) return error.InvalidValue;
+        if (self.screen_id.len > 500) return codec.failure.invalid("ClientBoundDataDrivenUIShowScreen.screen_id", self.screen_id.len, 500);
         try w.writeString(self.screen_id);
         try w.writeU32(self.form_id);
         try w.writeBool(self.data_instance_id != null);

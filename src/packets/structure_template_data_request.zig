@@ -16,7 +16,7 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.structure_name = try r.readString();
-        if (value.structure_name.len > 256) return error.InvalidValue;
+        if (value.structure_name.len > 256) return codec.failure.invalid("StructureTemplateDataRequest.structure_name", value.structure_name.len, 256);
         value.structure_position = try r.readBlockPosition();
         value.structure_settings = try types.StructureSettings.decode(r);
         value.requested_operation = try StructureTemplateRequestOperation.decode(r);
@@ -24,7 +24,7 @@ pub const Packet = struct {
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.structure_name.len > 256) return error.InvalidValue;
+        if (self.structure_name.len > 256) return codec.failure.invalid("StructureTemplateDataRequest.structure_name", self.structure_name.len, 256);
         try w.writeString(self.structure_name);
         try w.writeBlockPosition(self.structure_position);
         try self.structure_settings.encode(w);

@@ -19,14 +19,14 @@ pub const Packet = struct {
         value.localize = try r.readBool();
         value.body = try TextBody.decode(r);
         value.senders_xuid = try r.readString();
-        if (value.senders_xuid.len > 64) return error.InvalidValue;
+        if (value.senders_xuid.len > 64) return codec.failure.invalid("Text.senders_xuid", value.senders_xuid.len, 64);
         value.platform_id = try r.readString();
-        if (value.platform_id.len > 256) return error.InvalidValue;
+        if (value.platform_id.len > 256) return codec.failure.invalid("Text.platform_id", value.platform_id.len, 256);
         value.filtered_message = null;
         if (try r.readBool()) {
             var present: []const u8 = undefined;
             present = try r.readString();
-            if (present.len > 65536) return error.InvalidValue;
+            if (present.len > 65536) return codec.failure.invalid("Text.filtered_message", present.len, 65536);
             value.filtered_message = present;
         }
         return value;
@@ -35,13 +35,13 @@ pub const Packet = struct {
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeBool(self.localize);
         try self.body.encode(w);
-        if (self.senders_xuid.len > 64) return error.InvalidValue;
+        if (self.senders_xuid.len > 64) return codec.failure.invalid("Text.senders_xuid", self.senders_xuid.len, 64);
         try w.writeString(self.senders_xuid);
-        if (self.platform_id.len > 256) return error.InvalidValue;
+        if (self.platform_id.len > 256) return codec.failure.invalid("Text.platform_id", self.platform_id.len, 256);
         try w.writeString(self.platform_id);
         try w.writeBool(self.filtered_message != null);
         if (self.filtered_message) |present| {
-            if (present.len > 65536) return error.InvalidValue;
+            if (present.len > 65536) return codec.failure.invalid("Text.filtered_message", present.len, 65536);
             try w.writeString(present);
         }
     }
@@ -61,10 +61,10 @@ pub const TextAuthorAndMessage = struct {
             else => return error.InvalidValue,
         }
         value.player_name = try r.readString();
-        if (value.player_name.len > 256) return error.InvalidValue;
+        if (value.player_name.len > 256) return codec.failure.invalid("TextAuthorAndMessage.player_name", value.player_name.len, 256);
         value.message = try r.readString();
         if (value.message.len < 1) return error.InvalidValue;
-        if (value.message.len > 65536) return error.InvalidValue;
+        if (value.message.len > 65536) return codec.failure.invalid("TextAuthorAndMessage.message", value.message.len, 65536);
         return value;
     }
 
@@ -74,10 +74,10 @@ pub const TextAuthorAndMessage = struct {
             else => return error.InvalidValue,
         }
         try self.message_type.encode(w);
-        if (self.player_name.len > 256) return error.InvalidValue;
+        if (self.player_name.len > 256) return codec.failure.invalid("TextAuthorAndMessage.player_name", self.player_name.len, 256);
         try w.writeString(self.player_name);
         if (self.message.len < 1) return error.InvalidValue;
-        if (self.message.len > 65536) return error.InvalidValue;
+        if (self.message.len > 65536) return codec.failure.invalid("TextAuthorAndMessage.message", self.message.len, 65536);
         try w.writeString(self.message);
     }
 };
@@ -127,10 +127,10 @@ pub const TextMessageAndParams = struct {
         }
         value.message = try r.readString();
         if (value.message.len < 1) return error.InvalidValue;
-        if (value.message.len > 65536) return error.InvalidValue;
+        if (value.message.len > 65536) return codec.failure.invalid("TextMessageAndParams.message", value.message.len, 65536);
         value.parameter_list = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 4) return error.InvalidValue;
+            if (count > 4) return codec.failure.invalid("TextMessageAndParams.parameter_list", count, 4);
             break :blk try codec.List([]const u8, codec.Prim(.string)).decode(r, count);
         };
         return value;
@@ -143,9 +143,9 @@ pub const TextMessageAndParams = struct {
         }
         try self.message_type.encode(w);
         if (self.message.len < 1) return error.InvalidValue;
-        if (self.message.len > 65536) return error.InvalidValue;
+        if (self.message.len > 65536) return codec.failure.invalid("TextMessageAndParams.message", self.message.len, 65536);
         try w.writeString(self.message);
-        if (self.parameter_list.len > 4) return error.InvalidValue;
+        if (self.parameter_list.len > 4) return codec.failure.invalid("TextMessageAndParams.parameter_list", self.parameter_list.len, 4);
         try w.writeCount(.var_u32, self.parameter_list.len);
         try self.parameter_list.encode(w);
     }
@@ -165,7 +165,7 @@ pub const TextMessageOnly = struct {
         }
         value.message = try r.readString();
         if (value.message.len < 1) return error.InvalidValue;
-        if (value.message.len > 65536) return error.InvalidValue;
+        if (value.message.len > 65536) return codec.failure.invalid("TextMessageOnly.message", value.message.len, 65536);
         return value;
     }
 
@@ -176,7 +176,7 @@ pub const TextMessageOnly = struct {
         }
         try self.message_type.encode(w);
         if (self.message.len < 1) return error.InvalidValue;
-        if (self.message.len > 65536) return error.InvalidValue;
+        if (self.message.len > 65536) return codec.failure.invalid("TextMessageOnly.message", self.message.len, 65536);
         try w.writeString(self.message);
     }
 };

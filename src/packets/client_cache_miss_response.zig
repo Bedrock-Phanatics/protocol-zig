@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.missing_blobs = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 4095) return error.InvalidValue;
+            if (count > 4095) return codec.failure.invalid("ClientCacheMissResponse.missing_blobs", count, 4095);
             break :blk try codec.List(MissingBlobData, MissingBlobData).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.missing_blobs.len > 4095) return error.InvalidValue;
+        if (self.missing_blobs.len > 4095) return codec.failure.invalid("ClientCacheMissResponse.missing_blobs", self.missing_blobs.len, 4095);
         try w.writeCount(.var_u32, self.missing_blobs.len);
         try self.missing_blobs.encode(w);
     }

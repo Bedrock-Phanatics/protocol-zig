@@ -20,18 +20,18 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.parameter_keyframe_values = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 255) return error.InvalidValue;
+            if (count > 255) return codec.failure.invalid("GraphicsOverrideParameter.parameter_keyframe_values", count, 255);
             break :blk try codec.List(PacketParameterKeyframeValuesEntry, PacketParameterKeyframeValuesEntry).decode(r, count);
         };
         value.float_value = if (try r.readBool()) try r.readF32() else null;
         value.vec3_value = if (try r.readBool()) try r.readVec3f() else null;
         value.biome_identifier = try r.readString();
-        if (value.biome_identifier.len > 255) return error.InvalidValue;
+        if (value.biome_identifier.len > 255) return codec.failure.invalid("GraphicsOverrideParameter.biome_identifier", value.biome_identifier.len, 255);
         value.player_identifier = null;
         if (try r.readBool()) {
             var present: []const u8 = undefined;
             present = try r.readString();
-            if (present.len > 255) return error.InvalidValue;
+            if (present.len > 255) return codec.failure.invalid("GraphicsOverrideParameter.player_identifier", present.len, 255);
             value.player_identifier = present;
         }
         value.identifier_for_parameter = try GraphicsOverrideParameterType.decode(r);
@@ -40,7 +40,7 @@ pub const Packet = struct {
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.parameter_keyframe_values.len > 255) return error.InvalidValue;
+        if (self.parameter_keyframe_values.len > 255) return codec.failure.invalid("GraphicsOverrideParameter.parameter_keyframe_values", self.parameter_keyframe_values.len, 255);
         try w.writeCount(.var_u32, self.parameter_keyframe_values.len);
         try self.parameter_keyframe_values.encode(w);
         try w.writeBool(self.float_value != null);
@@ -51,11 +51,11 @@ pub const Packet = struct {
         if (self.vec3_value) |present| {
             try w.writeVec3f(present);
         }
-        if (self.biome_identifier.len > 255) return error.InvalidValue;
+        if (self.biome_identifier.len > 255) return codec.failure.invalid("GraphicsOverrideParameter.biome_identifier", self.biome_identifier.len, 255);
         try w.writeString(self.biome_identifier);
         try w.writeBool(self.player_identifier != null);
         if (self.player_identifier) |present| {
-            if (present.len > 255) return error.InvalidValue;
+            if (present.len > 255) return codec.failure.invalid("GraphicsOverrideParameter.player_identifier", present.len, 255);
             try w.writeString(present);
         }
         try self.identifier_for_parameter.encode(w);

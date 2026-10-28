@@ -54,7 +54,7 @@ pub const ItemUseInventoryTransaction = struct {
         var value: ItemUseInventoryTransaction = undefined;
         value.actions = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 100) return error.InvalidValue;
+            if (count > 100) return codec.failure.invalid("ItemUseInventoryTransaction.actions", count, 100);
             break :blk try codec.List(types.InventoryAction, types.InventoryAction).decode(r, count);
         };
         value.action_type = try ItemUseInventoryTransactionActionType.decode(r);
@@ -73,7 +73,7 @@ pub const ItemUseInventoryTransaction = struct {
     }
 
     pub fn encode(self: ItemUseInventoryTransaction, w: anytype) EncodeError!void {
-        if (self.actions.len > 100) return error.InvalidValue;
+        if (self.actions.len > 100) return codec.failure.invalid("ItemUseInventoryTransaction.actions", self.actions.len, 100);
         try w.writeCount(.var_u32, self.actions.len);
         try self.actions.encode(w);
         try self.action_type.encode(w);

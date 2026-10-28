@@ -30,7 +30,7 @@ pub const StructureSettings = struct {
     pub fn decode(r: *Reader) DecodeError!StructureSettings {
         var value: StructureSettings = undefined;
         value.structure_palette_name = try r.readString();
-        if (value.structure_palette_name.len > 256) return error.InvalidValue;
+        if (value.structure_palette_name.len > 256) return codec.failure.invalid("StructureSettings.structure_palette_name", value.structure_palette_name.len, 256);
         value.should_ignore_entities = try r.readBool();
         value.should_ignore_blocks = try r.readBool();
         value.should_allow_non_ticking_player_and_ticking_area_chunks = try r.readBool();
@@ -48,7 +48,7 @@ pub const StructureSettings = struct {
     }
 
     pub fn encode(self: StructureSettings, w: anytype) EncodeError!void {
-        if (self.structure_palette_name.len > 256) return error.InvalidValue;
+        if (self.structure_palette_name.len > 256) return codec.failure.invalid("StructureSettings.structure_palette_name", self.structure_palette_name.len, 256);
         try w.writeString(self.structure_palette_name);
         try w.writeBool(self.should_ignore_entities);
         try w.writeBool(self.should_ignore_blocks);

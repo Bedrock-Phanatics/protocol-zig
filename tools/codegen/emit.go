@@ -50,6 +50,7 @@ type file struct {
 	helpers []string
 	names   map[string]bool
 	memo    map[string]string // site hint -> generated helper name
+	label   string            // schema field the checks being emitted belong to, for failure reports
 }
 
 func generate(s Schema, a ActorRefs) map[string]string {
@@ -299,7 +300,7 @@ func (f *file) mapEntry(n Node, hint string) string {
 	}
 	name := f.helperName(hint + "Entry")
 	f.memo["entry:"+hint] = name
-	sub := &file{e: f.e, domain: f.domain, names: f.names, memo: f.memo}
+	sub := &file{e: f.e, domain: f.domain, names: f.names, memo: f.memo, label: f.label}
 	sub.structDef("", name, []Field{{Name: "key", Type: *n.Key}, {Name: "value", Type: *n.Value}}, false)
 	f.helpers = append(f.helpers, sub.body.String())
 	f.helpers = append(f.helpers, sub.helpers...)
@@ -327,7 +328,7 @@ func (f *file) decode(n Node, target, hint string, depth int) []string {
 		out = append(out, f.lengthChecks(n, target, depth)...)
 	case "bytes":
 		if n.MaxLen != nil {
-			add("%s = try r.readBoundedByteArray(%d);", target, *n.MaxLen)
+			add("%s = try r.readBoundedByteArray(\"%s\", %d);", target, f.label, *n.MaxLen)
 			n.MaxLen = nil
 		} else {
 			add("%s = try r.readByteArray();", target)
@@ -430,7 +431,7 @@ func (f *file) lengthChecks(n Node, value string, depth int) []string {
 		out = append(out, fmt.Sprintf("%sif (%s.len < %d) return error.InvalidValue;\n", in, value, *n.MinLen))
 	}
 	if n.MaxLen != nil {
-		out = append(out, fmt.Sprintf("%sif (%s.len > %d) return error.InvalidValue;\n", in, value, *n.MaxLen))
+		out = append(out, fmt.Sprintf("%sif (%s.len > %d) return codec.failure.invalid(\"%s\", %s.len, %d);\n", in, value, *n.MaxLen, f.label, value, *n.MaxLen))
 	}
 	if n.Pattern != "" {
 		out = append(out, fmt.Sprintf("%sif (!codec.patterns.%s(%s)) return error.InvalidValue;\n", in, patternMatchers[n.Pattern], value))
@@ -445,7 +446,7 @@ func (f *file) itemChecks(n Node, count string, depth int) []string {
 		out = append(out, fmt.Sprintf("%sif (%s < %d) return error.InvalidValue;\n", in, count, *n.MinItems))
 	}
 	if n.MaxItems != nil && *n.MaxItems < 1<<32 {
-		out = append(out, fmt.Sprintf("%sif (%s > %d) return error.InvalidValue;\n", in, count, *n.MaxItems))
+		out = append(out, fmt.Sprintf("%sif (%s > %d) return codec.failure.invalid(\"%s\", %s, %d);\n", in, count, *n.MaxItems, f.label, count, *n.MaxItems))
 	}
 	return out
 }
@@ -537,6 +538,14 @@ func (f *file) typeDef(t *TypeDef) {
 	}
 }
 
+// fieldLabel names a field by the packet or type that declares it, as the schema does.
+func fieldLabel(owner, name, field string) string {
+	if owner == "" {
+		owner = name
+	}
+	return owner + "." + field
+}
+
 func (f *file) structDef(owner, name string, fields []Field, recursive bool, checks ...Check) {
 	f.names[name] = true
 	f.line("pub const %s = struct {", name)
@@ -560,6 +569,7 @@ func (f *file) structDef(owner, name string, fields []Field, recursive bool, che
 		}
 		f.line("        var value: %s = undefined;", name)
 		for _, field := range fields {
+			f.label = fieldLabel(owner, name, field.Name)
 			for _, l := range f.decode(field.Type, "value."+ident(field.Name), name+pascal(field.Name), 2) {
 				f.body.WriteString(l)
 			}
@@ -580,6 +590,7 @@ func (f *file) structDef(owner, name string, fields []Field, recursive bool, che
 		}
 		f.checks(checks, "self")
 		for _, field := range fields {
+			f.label = fieldLabel(owner, name, field.Name)
 			for _, l := range f.encode(field.Type, "self."+ident(field.Name), name+pascal(field.Name), 2) {
 				f.body.WriteString(l)
 			}
@@ -683,6 +694,7 @@ func (f *file) unionDef(t *TypeDef) {
 			f.line("            %d => return .%s,", v.Value, ident(v.Name))
 			continue
 		}
+		f.label = t.Name + "." + v.Name
 		lines := f.decode(*v.Type, "value", t.Name+pascal(v.Name), 4)
 		if single := strings.TrimSpace(lines[0]); len(lines) == 1 && strings.HasPrefix(single, "value = ") {
 			f.line("            %d => return .{ .%s = %s },", v.Value, ident(v.Name), strings.TrimSuffix(strings.TrimPrefix(single, "value = "), ";"))
@@ -713,6 +725,7 @@ func (f *file) unionDef(t *TypeDef) {
 			continue
 		}
 		f.line("            .%s => |value| {", ident(v.Name))
+		f.label = t.Name + "." + v.Name
 		for _, l := range f.encode(*v.Type, "value", t.Name+pascal(v.Name), 4) {
 			f.body.WriteString(l)
 		}

@@ -825,7 +825,7 @@ pub const NoiseDescriptor = struct {
         value.amplitudes = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
-            if (count > 100) return error.InvalidValue;
+            if (count > 100) return codec.failure.invalid("NoiseDescriptor.amplitudes", count, 100);
             break :blk try codec.List(f32, codec.Prim(.f32le)).decode(r, count);
         };
         return value;
@@ -835,7 +835,7 @@ pub const NoiseDescriptor = struct {
         try w.writeString(self.name);
         try w.writeI32(self.first_octave);
         if (self.amplitudes.len < 1) return error.InvalidValue;
-        if (self.amplitudes.len > 100) return error.InvalidValue;
+        if (self.amplitudes.len > 100) return codec.failure.invalid("NoiseDescriptor.amplitudes", self.amplitudes.len, 100);
         try w.writeCount(.var_u32, self.amplitudes.len);
         try self.amplitudes.encode(w);
     }

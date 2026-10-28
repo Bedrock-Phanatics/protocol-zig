@@ -31,7 +31,7 @@ pub const Downloading = struct {
         value.response_type = try r.readString();
         value.downloading_packs = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 65535) return error.InvalidValue;
+            if (count > 65535) return codec.failure.invalid("Downloading.downloading_packs", count, 65535);
             break :blk try codec.List([]const u8, codec.Prim(.string)).decode(r, count);
         };
         return value;
@@ -39,7 +39,7 @@ pub const Downloading = struct {
 
     pub fn encode(self: Downloading, w: anytype) EncodeError!void {
         try w.writeString(self.response_type);
-        if (self.downloading_packs.len > 65535) return error.InvalidValue;
+        if (self.downloading_packs.len > 65535) return codec.failure.invalid("Downloading.downloading_packs", self.downloading_packs.len, 65535);
         try w.writeCount(.var_u32, self.downloading_packs.len);
         try self.downloading_packs.encode(w);
     }

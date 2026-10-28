@@ -15,18 +15,18 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.cookie = try r.readString();
-        if (value.cookie.len > 2048) return error.InvalidValue;
+        if (value.cookie.len > 2048) return codec.failure.invalid("SendPartyDestinationCookie.cookie", value.cookie.len, 2048);
         value.intent = try r.readString();
         value.destination_name = try r.readString();
-        if (value.destination_name.len > 64) return error.InvalidValue;
+        if (value.destination_name.len > 64) return codec.failure.invalid("SendPartyDestinationCookie.destination_name", value.destination_name.len, 64);
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.cookie.len > 2048) return error.InvalidValue;
+        if (self.cookie.len > 2048) return codec.failure.invalid("SendPartyDestinationCookie.cookie", self.cookie.len, 2048);
         try w.writeString(self.cookie);
         try w.writeString(self.intent);
-        if (self.destination_name.len > 64) return error.InvalidValue;
+        if (self.destination_name.len > 64) return codec.failure.invalid("SendPartyDestinationCookie.destination_name", self.destination_name.len, 64);
         try w.writeString(self.destination_name);
     }
 };

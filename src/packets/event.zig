@@ -106,13 +106,13 @@ pub const CodeBuilderScoreboardEvent = struct {
     pub fn decode(r: *Reader) DecodeError!CodeBuilderScoreboardEvent {
         var value: CodeBuilderScoreboardEvent = undefined;
         value.objective_name = try r.readString();
-        if (value.objective_name.len > 256) return error.InvalidValue;
+        if (value.objective_name.len > 256) return codec.failure.invalid("CodeBuilderScoreboardEvent.objective_name", value.objective_name.len, 256);
         value.score = try r.readVarI32();
         return value;
     }
 
     pub fn encode(self: CodeBuilderScoreboardEvent, w: anytype) EncodeError!void {
-        if (self.objective_name.len > 256) return error.InvalidValue;
+        if (self.objective_name.len > 256) return codec.failure.invalid("CodeBuilderScoreboardEvent.objective_name", self.objective_name.len, 256);
         try w.writeString(self.objective_name);
         try w.writeVarI32(self.score);
     }
@@ -178,7 +178,7 @@ pub const EventEventData = union(enum(u32)) {
             13 => {
                 var value: []const u8 = undefined;
                 value = try r.readString();
-                if (value.len > 256) return error.InvalidValue;
+                if (value.len > 256) return codec.failure.invalid("EventEventData.actor_definition", value.len, 256);
                 return .{ .actor_definition = value };
             },
             14 => return .{ .raid_update = try RaidUpdateEvent.decode(r) },
@@ -188,7 +188,7 @@ pub const EventEventData = union(enum(u32)) {
             18 => {
                 var value: []const u8 = undefined;
                 value = try r.readString();
-                if (value.len > 16) return error.InvalidValue;
+                if (value.len > 16) return codec.failure.invalid("EventEventData.code_builder_runtime_action", value.len, 16);
                 return .{ .code_builder_runtime_action = value };
             },
             19 => return .{ .code_builder_scoreboard = try CodeBuilderScoreboardEvent.decode(r) },
@@ -241,7 +241,7 @@ pub const EventEventData = union(enum(u32)) {
                 try w.writeVarI32(value);
             },
             .actor_definition => |value| {
-                if (value.len > 256) return error.InvalidValue;
+                if (value.len > 256) return codec.failure.invalid("EventEventData.actor_definition", value.len, 256);
                 try w.writeString(value);
             },
             .raid_update => |value| {
@@ -257,7 +257,7 @@ pub const EventEventData = union(enum(u32)) {
                 try w.writeVarI32(value);
             },
             .code_builder_runtime_action => |value| {
-                if (value.len > 16) return error.InvalidValue;
+                if (value.len > 16) return codec.failure.invalid("EventEventData.code_builder_runtime_action", value.len, 16);
                 try w.writeString(value);
             },
             .code_builder_scoreboard => |value| {
@@ -353,18 +353,18 @@ pub const LegacyTelemetryEventSlashCommand = struct {
         value.success_count = try r.readVarI32();
         value.error_count = try r.readVarI32();
         value.command_name = try r.readString();
-        if (value.command_name.len > 512) return error.InvalidValue;
+        if (value.command_name.len > 512) return codec.failure.invalid("LegacyTelemetryEventSlashCommand.command_name", value.command_name.len, 512);
         value.error_list = try r.readString();
-        if (value.error_list.len > 2048) return error.InvalidValue;
+        if (value.error_list.len > 2048) return codec.failure.invalid("LegacyTelemetryEventSlashCommand.error_list", value.error_list.len, 2048);
         return value;
     }
 
     pub fn encode(self: LegacyTelemetryEventSlashCommand, w: anytype) EncodeError!void {
         try w.writeVarI32(self.success_count);
         try w.writeVarI32(self.error_count);
-        if (self.command_name.len > 512) return error.InvalidValue;
+        if (self.command_name.len > 512) return codec.failure.invalid("LegacyTelemetryEventSlashCommand.command_name", self.command_name.len, 512);
         try w.writeString(self.command_name);
-        if (self.error_list.len > 2048) return error.InvalidValue;
+        if (self.error_list.len > 2048) return codec.failure.invalid("LegacyTelemetryEventSlashCommand.error_list", self.error_list.len, 2048);
         try w.writeString(self.error_list);
     }
 };
@@ -621,7 +621,7 @@ pub const MobKilledEvent = struct {
         value.damage_source = try r.readVarI32();
         value.trade_tier = try r.readVarI32();
         value.trader_name = try r.readString();
-        if (value.trader_name.len > 128) return error.InvalidValue;
+        if (value.trader_name.len > 128) return codec.failure.invalid("MobKilledEvent.trader_name", value.trader_name.len, 128);
         return value;
     }
 
@@ -631,7 +631,7 @@ pub const MobKilledEvent = struct {
         try self.instigators_child_actor_type.encode(w);
         try w.writeVarI32(self.damage_source);
         try w.writeVarI32(self.trade_tier);
-        if (self.trader_name.len > 128) return error.InvalidValue;
+        if (self.trader_name.len > 128) return codec.failure.invalid("MobKilledEvent.trader_name", self.trader_name.len, 128);
         try w.writeString(self.trader_name);
     }
 };

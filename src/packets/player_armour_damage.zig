@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.armor_slot_and_damage_pairs = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 5) return error.InvalidValue;
+            if (count > 5) return codec.failure.invalid("PlayerArmourDamage.armor_slot_and_damage_pairs", count, 5);
             break :blk try codec.List(PlayerArmourDamageEntry, PlayerArmourDamageEntry).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.armor_slot_and_damage_pairs.len > 5) return error.InvalidValue;
+        if (self.armor_slot_and_damage_pairs.len > 5) return codec.failure.invalid("PlayerArmourDamage.armor_slot_and_damage_pairs", self.armor_slot_and_damage_pairs.len, 5);
         try w.writeCount(.var_u32, self.armor_slot_and_damage_pairs.len);
         try self.armor_slot_and_damage_pairs.encode(w);
     }

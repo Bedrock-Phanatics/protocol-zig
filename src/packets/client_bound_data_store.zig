@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.updates = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 500) return error.InvalidValue;
+            if (count > 500) return codec.failure.invalid("ClientBoundDataStore.updates", count, 500);
             break :blk try codec.List(ClientBoundDataStoreUpdatesItem, ClientBoundDataStoreUpdatesItem).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.updates.len > 500) return error.InvalidValue;
+        if (self.updates.len > 500) return codec.failure.invalid("ClientBoundDataStore.updates", self.updates.len, 500);
         try w.writeCount(.var_u32, self.updates.len);
         try self.updates.encode(w);
     }
@@ -40,7 +40,7 @@ pub const ClientBoundDataStoreUpdatesItem = union(enum(u32)) {
                 var value: []const u8 = undefined;
                 value = try r.readString();
                 if (value.len < 1) return error.InvalidValue;
-                if (value.len > 1000) return error.InvalidValue;
+                if (value.len > 1000) return codec.failure.invalid("ClientBoundDataStoreUpdatesItem.removal", value.len, 1000);
                 return .{ .removal = value };
             },
             else => return error.InvalidEnum,
@@ -58,7 +58,7 @@ pub const ClientBoundDataStoreUpdatesItem = union(enum(u32)) {
             },
             .removal => |value| {
                 if (value.len < 1) return error.InvalidValue;
-                if (value.len > 1000) return error.InvalidValue;
+                if (value.len > 1000) return codec.failure.invalid("ClientBoundDataStoreUpdatesItem.removal", value.len, 1000);
                 try w.writeString(value);
             },
         }
@@ -76,10 +76,10 @@ pub const DataStoreChange = struct {
         var value: DataStoreChange = undefined;
         value.data_store_name = try r.readString();
         if (value.data_store_name.len < 1) return error.InvalidValue;
-        if (value.data_store_name.len > 1000) return error.InvalidValue;
+        if (value.data_store_name.len > 1000) return codec.failure.invalid("DataStoreChange.data_store_name", value.data_store_name.len, 1000);
         value.property = try r.readString();
         if (value.property.len < 1) return error.InvalidValue;
-        if (value.property.len > 1000) return error.InvalidValue;
+        if (value.property.len > 1000) return codec.failure.invalid("DataStoreChange.property", value.property.len, 1000);
         value.update_count = try r.readU32();
         if (value.update_count > 4294967294) return error.InvalidValue;
         value.the_new_property_value = try DynamicValue.decode(r);
@@ -88,10 +88,10 @@ pub const DataStoreChange = struct {
 
     pub fn encode(self: DataStoreChange, w: anytype) EncodeError!void {
         if (self.data_store_name.len < 1) return error.InvalidValue;
-        if (self.data_store_name.len > 1000) return error.InvalidValue;
+        if (self.data_store_name.len > 1000) return codec.failure.invalid("DataStoreChange.data_store_name", self.data_store_name.len, 1000);
         try w.writeString(self.data_store_name);
         if (self.property.len < 1) return error.InvalidValue;
-        if (self.property.len > 1000) return error.InvalidValue;
+        if (self.property.len > 1000) return codec.failure.invalid("DataStoreChange.property", self.property.len, 1000);
         try w.writeString(self.property);
         if (self.update_count > 4294967294) return error.InvalidValue;
         try w.writeU32(self.update_count);

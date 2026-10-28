@@ -220,7 +220,7 @@ pub const RecipeUnlockRequirementSerializedData = struct {
             var present: codec.List(custom.RecipeIngredient, custom.RecipeIngredient) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 128) return error.InvalidValue;
+                if (count > 128) return codec.failure.invalid("RecipeUnlockRequirementSerializedData.unlocking_ingredients", count, 128);
                 break :blk try codec.List(custom.RecipeIngredient, custom.RecipeIngredient).decode(r, count);
             };
             value.unlocking_ingredients = present;
@@ -232,7 +232,7 @@ pub const RecipeUnlockRequirementSerializedData = struct {
         try self.unlocking_context.encode(w);
         try w.writeBool(self.unlocking_ingredients != null);
         if (self.unlocking_ingredients) |present| {
-            if (present.len > 128) return error.InvalidValue;
+            if (present.len > 128) return codec.failure.invalid("RecipeUnlockRequirementSerializedData.unlocking_ingredients", present.len, 128);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }
@@ -277,7 +277,7 @@ pub const ShapedRecipePayload = struct {
         value.height = try r.readVarI32();
         value.ingredients = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 128) return error.InvalidValue;
+            if (count > 128) return codec.failure.invalid("ShapedRecipePayload.ingredients", count, 128);
             break :blk try codec.List(custom.RecipeIngredient, custom.RecipeIngredient).decode(r, count);
         };
         value.results = blk: {
@@ -299,7 +299,7 @@ pub const ShapedRecipePayload = struct {
         try w.writeString(self.recipe_id);
         try w.writeVarI32(self.width);
         try w.writeVarI32(self.height);
-        if (self.ingredients.len > 128) return error.InvalidValue;
+        if (self.ingredients.len > 128) return codec.failure.invalid("ShapedRecipePayload.ingredients", self.ingredients.len, 128);
         try w.writeCount(.var_u32, self.ingredients.len);
         try self.ingredients.encode(w);
         try w.writeCount(.var_u32, self.results.len);
@@ -332,7 +332,7 @@ pub const ShapelessRecipePayload = struct {
         value.recipe_id = try r.readString();
         value.ingredients = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 128) return error.InvalidValue;
+            if (count > 128) return codec.failure.invalid("ShapelessRecipePayload.ingredients", count, 128);
             break :blk try codec.List(custom.RecipeIngredient, custom.RecipeIngredient).decode(r, count);
         };
         value.results = blk: {
@@ -349,7 +349,7 @@ pub const ShapelessRecipePayload = struct {
 
     pub fn encode(self: ShapelessRecipePayload, w: anytype) EncodeError!void {
         try w.writeString(self.recipe_id);
-        if (self.ingredients.len > 128) return error.InvalidValue;
+        if (self.ingredients.len > 128) return codec.failure.invalid("ShapelessRecipePayload.ingredients", self.ingredients.len, 128);
         try w.writeCount(.var_u32, self.ingredients.len);
         try self.ingredients.encode(w);
         try w.writeCount(.var_u32, self.results.len);

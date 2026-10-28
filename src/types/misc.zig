@@ -538,12 +538,12 @@ pub const DduiDataStoreUpdate = struct {
         var value: DduiDataStoreUpdate = undefined;
         value.data_store_name = try r.readString();
         if (value.data_store_name.len < 1) return error.InvalidValue;
-        if (value.data_store_name.len > 1000) return error.InvalidValue;
+        if (value.data_store_name.len > 1000) return codec.failure.invalid("DduiDataStoreUpdate.data_store_name", value.data_store_name.len, 1000);
         value.property = try r.readString();
         if (value.property.len < 1) return error.InvalidValue;
-        if (value.property.len > 1000) return error.InvalidValue;
+        if (value.property.len > 1000) return codec.failure.invalid("DduiDataStoreUpdate.property", value.property.len, 1000);
         value.path = try r.readString();
-        if (value.path.len > 1000) return error.InvalidValue;
+        if (value.path.len > 1000) return codec.failure.invalid("DduiDataStoreUpdate.path", value.path.len, 1000);
         value.data = try DduiDataStoreUpdateData.decode(r);
         value.property_update_count = try r.readU32();
         if (value.property_update_count > 4294967294) return error.InvalidValue;
@@ -554,12 +554,12 @@ pub const DduiDataStoreUpdate = struct {
 
     pub fn encode(self: DduiDataStoreUpdate, w: anytype) EncodeError!void {
         if (self.data_store_name.len < 1) return error.InvalidValue;
-        if (self.data_store_name.len > 1000) return error.InvalidValue;
+        if (self.data_store_name.len > 1000) return codec.failure.invalid("DduiDataStoreUpdate.data_store_name", self.data_store_name.len, 1000);
         try w.writeString(self.data_store_name);
         if (self.property.len < 1) return error.InvalidValue;
-        if (self.property.len > 1000) return error.InvalidValue;
+        if (self.property.len > 1000) return codec.failure.invalid("DduiDataStoreUpdate.property", self.property.len, 1000);
         try w.writeString(self.property);
-        if (self.path.len > 1000) return error.InvalidValue;
+        if (self.path.len > 1000) return codec.failure.invalid("DduiDataStoreUpdate.path", self.path.len, 1000);
         try w.writeString(self.path);
         try self.data.encode(w);
         if (self.property_update_count > 4294967294) return error.InvalidValue;
@@ -581,7 +581,7 @@ pub const DduiDataStoreUpdateData = union(enum(u32)) {
             2 => {
                 var value: []const u8 = undefined;
                 value = try r.readString();
-                if (value.len > 5000) return error.InvalidValue;
+                if (value.len > 5000) return codec.failure.invalid("DduiDataStoreUpdateData.string", value.len, 5000);
                 return .{ .string = value };
             },
             else => return error.InvalidEnum,
@@ -598,7 +598,7 @@ pub const DduiDataStoreUpdateData = union(enum(u32)) {
                 try w.writeBool(value);
             },
             .string => |value| {
-                if (value.len > 5000) return error.InvalidValue;
+                if (value.len > 5000) return codec.failure.invalid("DduiDataStoreUpdateData.string", value.len, 5000);
                 try w.writeString(value);
             },
         }
@@ -713,26 +713,26 @@ pub const GatheringJoinInfo = struct {
         value.experience_id = try r.readUuid();
         value.experience_name = try r.readString();
         if (value.experience_name.len < 1) return error.InvalidValue;
-        if (value.experience_name.len > 29) return error.InvalidValue;
+        if (value.experience_name.len > 29) return codec.failure.invalid("GatheringJoinInfo.experience_name", value.experience_name.len, 29);
         value.world_id = if (try r.readBool()) try r.readUuid() else null;
         value.world_name = null;
         if (try r.readBool()) {
             var present: []const u8 = undefined;
             present = try r.readString();
             if (present.len < 1) return error.InvalidValue;
-            if (present.len > 29) return error.InvalidValue;
+            if (present.len > 29) return codec.failure.invalid("GatheringJoinInfo.world_name", present.len, 29);
             value.world_name = present;
         }
         value.creator_id = try r.readString();
         if (value.creator_id.len < 1) return error.InvalidValue;
-        if (value.creator_id.len > 60) return error.InvalidValue;
+        if (value.creator_id.len > 60) return codec.failure.invalid("GatheringJoinInfo.creator_id", value.creator_id.len, 60);
         value.target_id = if (try r.readBool()) try r.readUuid() else null;
         value.scenario_id = null;
         if (try r.readBool()) {
             var present: []const u8 = undefined;
             present = try r.readString();
             if (present.len < 1) return error.InvalidValue;
-            if (present.len > 100) return error.InvalidValue;
+            if (present.len > 100) return codec.failure.invalid("GatheringJoinInfo.scenario_id", present.len, 100);
             value.scenario_id = present;
         }
         value.server_id = null;
@@ -740,7 +740,7 @@ pub const GatheringJoinInfo = struct {
             var present: []const u8 = undefined;
             present = try r.readString();
             if (present.len < 1) return error.InvalidValue;
-            if (present.len > 100) return error.InvalidValue;
+            if (present.len > 100) return codec.failure.invalid("GatheringJoinInfo.server_id", present.len, 100);
             value.server_id = present;
         }
         return value;
@@ -749,7 +749,7 @@ pub const GatheringJoinInfo = struct {
     pub fn encode(self: GatheringJoinInfo, w: anytype) EncodeError!void {
         try w.writeUuid(self.experience_id);
         if (self.experience_name.len < 1) return error.InvalidValue;
-        if (self.experience_name.len > 29) return error.InvalidValue;
+        if (self.experience_name.len > 29) return codec.failure.invalid("GatheringJoinInfo.experience_name", self.experience_name.len, 29);
         try w.writeString(self.experience_name);
         try w.writeBool(self.world_id != null);
         if (self.world_id) |present| {
@@ -758,11 +758,11 @@ pub const GatheringJoinInfo = struct {
         try w.writeBool(self.world_name != null);
         if (self.world_name) |present| {
             if (present.len < 1) return error.InvalidValue;
-            if (present.len > 29) return error.InvalidValue;
+            if (present.len > 29) return codec.failure.invalid("GatheringJoinInfo.world_name", present.len, 29);
             try w.writeString(present);
         }
         if (self.creator_id.len < 1) return error.InvalidValue;
-        if (self.creator_id.len > 60) return error.InvalidValue;
+        if (self.creator_id.len > 60) return codec.failure.invalid("GatheringJoinInfo.creator_id", self.creator_id.len, 60);
         try w.writeString(self.creator_id);
         try w.writeBool(self.target_id != null);
         if (self.target_id) |present| {
@@ -771,13 +771,13 @@ pub const GatheringJoinInfo = struct {
         try w.writeBool(self.scenario_id != null);
         if (self.scenario_id) |present| {
             if (present.len < 1) return error.InvalidValue;
-            if (present.len > 100) return error.InvalidValue;
+            if (present.len > 100) return codec.failure.invalid("GatheringJoinInfo.scenario_id", present.len, 100);
             try w.writeString(present);
         }
         try w.writeBool(self.server_id != null);
         if (self.server_id) |present| {
             if (present.len < 1) return error.InvalidValue;
-            if (present.len > 100) return error.InvalidValue;
+            if (present.len > 100) return codec.failure.invalid("GatheringJoinInfo.server_id", present.len, 100);
             try w.writeString(present);
         }
     }
@@ -858,13 +858,13 @@ pub const LegacySetSlot = struct {
     pub fn decode(r: *Reader) DecodeError!LegacySetSlot {
         var value: LegacySetSlot = undefined;
         value.container_enum = try types.ContainerEnumName.decode(r);
-        value.slots = try r.readBoundedByteArray(256);
+        value.slots = try r.readBoundedByteArray("LegacySetSlot.slots", 256);
         return value;
     }
 
     pub fn encode(self: LegacySetSlot, w: anytype) EncodeError!void {
         try self.container_enum.encode(w);
-        if (self.slots.len > 256) return error.InvalidValue;
+        if (self.slots.len > 256) return codec.failure.invalid("LegacySetSlot.slots", self.slots.len, 256);
         try w.writeByteArray(self.slots);
     }
 };
@@ -1199,7 +1199,7 @@ pub const SerializedSkinRef = struct {
         value.image_data = try types.SkinImage.decode(r);
         value.animated_image_data = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 32) return error.InvalidValue;
+            if (count > 32) return codec.failure.invalid("SerializedSkinRef.animated_image_data", count, 32);
             break :blk try codec.List(AnimatedImageData, AnimatedImageData).decode(r, count);
         };
         value.cape_image_data = try types.SkinImage.decode(r);
@@ -1212,12 +1212,12 @@ pub const SerializedSkinRef = struct {
         value.skin_color = try r.readI32();
         value.persona_pieces = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 64) return error.InvalidValue;
+            if (count > 64) return codec.failure.invalid("SerializedSkinRef.persona_pieces", count, 64);
             break :blk try codec.List(PersonaPiece, PersonaPiece).decode(r, count);
         };
         value.piece_tint_colors = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 16) return error.InvalidValue;
+            if (count > 16) return codec.failure.invalid("SerializedSkinRef.piece_tint_colors", count, 16);
             break :blk try codec.List(SerializedSkinRefPieceTintColorsEntry, SerializedSkinRefPieceTintColorsEntry).decode(r, count);
         };
         value.is_premium = try r.readBool();
@@ -1235,7 +1235,7 @@ pub const SerializedSkinRef = struct {
         try w.writeString(self.play_fab_id);
         try w.writeString(self.resource_patch);
         try self.image_data.encode(w);
-        if (self.animated_image_data.len > 32) return error.InvalidValue;
+        if (self.animated_image_data.len > 32) return codec.failure.invalid("SerializedSkinRef.animated_image_data", self.animated_image_data.len, 32);
         try w.writeCount(.var_u32, self.animated_image_data.len);
         try self.animated_image_data.encode(w);
         try self.cape_image_data.encode(w);
@@ -1246,10 +1246,10 @@ pub const SerializedSkinRef = struct {
         try w.writeString(self.full_id);
         try self.arm_size.encode(w);
         try w.writeI32(self.skin_color);
-        if (self.persona_pieces.len > 64) return error.InvalidValue;
+        if (self.persona_pieces.len > 64) return codec.failure.invalid("SerializedSkinRef.persona_pieces", self.persona_pieces.len, 64);
         try w.writeCount(.var_u32, self.persona_pieces.len);
         try self.persona_pieces.encode(w);
-        if (self.piece_tint_colors.len > 16) return error.InvalidValue;
+        if (self.piece_tint_colors.len > 16) return codec.failure.invalid("SerializedSkinRef.piece_tint_colors", self.piece_tint_colors.len, 16);
         try w.writeCount(.var_u32, self.piece_tint_colors.len);
         try self.piece_tint_colors.encode(w);
         try w.writeBool(self.is_premium);

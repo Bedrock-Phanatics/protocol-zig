@@ -40,7 +40,7 @@ pub const Packet = struct {
         value.player_head_rotation = try r.readF32();
         value.input_data = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 128) return error.InvalidValue;
+            if (count > 128) return codec.failure.invalid("PlayerAuthInput.input_data", count, 128);
             break :blk try codec.List(PlayerAuthInputInputData, PlayerAuthInputInputData).decode(r, count);
         };
         value.input_mode = try InputMode.decode(r);
@@ -56,7 +56,7 @@ pub const Packet = struct {
             var present: codec.List(PlayerBlockAction, PlayerBlockAction) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 100) return error.InvalidValue;
+                if (count > 100) return codec.failure.invalid("PlayerAuthInput.player_block_actions", count, 100);
                 break :blk try codec.List(PlayerBlockAction, PlayerBlockAction).decode(r, count);
             };
             value.player_block_actions = present;
@@ -74,7 +74,7 @@ pub const Packet = struct {
         try w.writeVec3f(self.position);
         try w.writeVec2f(self.move_vector);
         try w.writeF32(self.player_head_rotation);
-        if (self.input_data.len > 128) return error.InvalidValue;
+        if (self.input_data.len > 128) return codec.failure.invalid("PlayerAuthInput.input_data", self.input_data.len, 128);
         try w.writeCount(.var_u32, self.input_data.len);
         try self.input_data.encode(w);
         try self.input_mode.encode(w);
@@ -93,7 +93,7 @@ pub const Packet = struct {
         }
         try w.writeBool(self.player_block_actions != null);
         if (self.player_block_actions) |present| {
-            if (present.len > 100) return error.InvalidValue;
+            if (present.len > 100) return codec.failure.invalid("PlayerAuthInput.player_block_actions", present.len, 100);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }
@@ -166,12 +166,12 @@ pub const ItemStackRequestData = struct {
         value.actions = blk: {
             const count = try r.readCount(.var_u32);
             if (count < 1) return error.InvalidValue;
-            if (count > 100) return error.InvalidValue;
+            if (count > 100) return codec.failure.invalid("ItemStackRequestData.actions", count, 100);
             break :blk try codec.List(types.StackRequestAction, types.StackRequestAction).decode(r, count);
         };
         value.strings_to_filter = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 256) return error.InvalidValue;
+            if (count > 256) return codec.failure.invalid("ItemStackRequestData.strings_to_filter", count, 256);
             break :blk try codec.List([]const u8, ItemStackRequestDataStringsToFilterItemCodec).decode(r, count);
         };
         value.strings_to_filter_origin = try types.TextProcessingEventOrigin.decode(r);
@@ -181,10 +181,10 @@ pub const ItemStackRequestData = struct {
     pub fn encode(self: ItemStackRequestData, w: anytype) EncodeError!void {
         try w.writeVarI32(self.client_request_id);
         if (self.actions.len < 1) return error.InvalidValue;
-        if (self.actions.len > 100) return error.InvalidValue;
+        if (self.actions.len > 100) return codec.failure.invalid("ItemStackRequestData.actions", self.actions.len, 100);
         try w.writeCount(.var_u32, self.actions.len);
         try self.actions.encode(w);
-        if (self.strings_to_filter.len > 256) return error.InvalidValue;
+        if (self.strings_to_filter.len > 256) return codec.failure.invalid("ItemStackRequestData.strings_to_filter", self.strings_to_filter.len, 256);
         try w.writeCount(.var_u32, self.strings_to_filter.len);
         try self.strings_to_filter.encode(w);
         try self.strings_to_filter_origin.encode(w);
@@ -222,7 +222,7 @@ pub const PackedItemUseLegacyInventoryTransaction = struct {
             var present: codec.List(types.LegacySetSlot, types.LegacySetSlot) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 10) return error.InvalidValue;
+                if (count > 10) return codec.failure.invalid("PackedItemUseLegacyInventoryTransaction.legacy_set_item_slots", count, 10);
                 break :blk try codec.List(types.LegacySetSlot, types.LegacySetSlot).decode(r, count);
             };
             value.legacy_set_item_slots = present;
@@ -235,7 +235,7 @@ pub const PackedItemUseLegacyInventoryTransaction = struct {
         try w.writeVarI32(self.legacy_request_id);
         try w.writeBool(self.legacy_set_item_slots != null);
         if (self.legacy_set_item_slots) |present| {
-            if (present.len > 10) return error.InvalidValue;
+            if (present.len > 10) return codec.failure.invalid("PackedItemUseLegacyInventoryTransaction.legacy_set_item_slots", present.len, 10);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }
@@ -347,12 +347,12 @@ const ItemStackRequestDataStringsToFilterItemCodec = struct {
     pub fn decode(r: *Reader) DecodeError![]const u8 {
         var value: []const u8 = undefined;
         value = try r.readString();
-        if (value.len > 1000) return error.InvalidValue;
+        if (value.len > 1000) return codec.failure.invalid("PlayerAuthInput.raw_move_vector", value.len, 1000);
         return value;
     }
 
     pub fn encode(value: []const u8, w: anytype) EncodeError!void {
-        if (value.len > 1000) return error.InvalidValue;
+        if (value.len > 1000) return codec.failure.invalid("PlayerAuthInput.raw_move_vector", value.len, 1000);
         try w.writeString(value);
     }
 };

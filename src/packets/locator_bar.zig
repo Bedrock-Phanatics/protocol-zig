@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.waypoints = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 40000) return error.InvalidValue;
+            if (count > 40000) return codec.failure.invalid("LocatorBar.waypoints", count, 40000);
             break :blk try codec.List(LocatorBarWaypointPayload, LocatorBarWaypointPayload).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.waypoints.len > 40000) return error.InvalidValue;
+        if (self.waypoints.len > 40000) return codec.failure.invalid("LocatorBar.waypoints", self.waypoints.len, 40000);
         try w.writeCount(.var_u32, self.waypoints.len);
         try self.waypoints.encode(w);
     }

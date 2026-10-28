@@ -17,7 +17,7 @@ pub const Packet = struct {
         value.dimension_type = try r.readVarI32();
         value.sub_chunk_position_offset_list = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 8192) return error.InvalidValue;
+            if (count > 8192) return codec.failure.invalid("SubChunkRequest.sub_chunk_position_offset_list", count, 8192);
             break :blk try codec.List(types.SubChunkPosOffset, types.SubChunkPosOffset).decode(r, count);
         };
         value.center_pos = try r.readSubChunkPosition();
@@ -26,7 +26,7 @@ pub const Packet = struct {
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeVarI32(self.dimension_type);
-        if (self.sub_chunk_position_offset_list.len > 8192) return error.InvalidValue;
+        if (self.sub_chunk_position_offset_list.len > 8192) return codec.failure.invalid("SubChunkRequest.sub_chunk_position_offset_list", self.sub_chunk_position_offset_list.len, 8192);
         try w.writeCount(.var_u32, self.sub_chunk_position_offset_list.len);
         try self.sub_chunk_position_offset_list.encode(w);
         try w.writeSubChunkPosition(self.center_pos);

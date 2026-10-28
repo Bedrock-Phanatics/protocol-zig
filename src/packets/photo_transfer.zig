@@ -24,7 +24,7 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.photo_name = try r.readString();
         if (!codec.patterns.uuidJpeg(value.photo_name)) return error.InvalidValue;
-        value.photo_data = try r.readBoundedByteArray(20971520);
+        value.photo_data = try r.readBoundedByteArray("PhotoTransfer.photo_data", 20971520);
         value.book_id = try r.readString();
         value.type = try PhotoType.decode(r);
         value.source_type = try PhotoType.decode(r);
@@ -36,7 +36,7 @@ pub const Packet = struct {
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         if (!codec.patterns.uuidJpeg(self.photo_name)) return error.InvalidValue;
         try w.writeString(self.photo_name);
-        if (self.photo_data.len > 20971520) return error.InvalidValue;
+        if (self.photo_data.len > 20971520) return codec.failure.invalid("PhotoTransfer.photo_data", self.photo_data.len, 20971520);
         try w.writeByteArray(self.photo_data);
         try w.writeString(self.book_id);
         try self.type.encode(w);

@@ -20,7 +20,7 @@ pub const Packet = struct {
         value.center_pos = try r.readSubChunkPosition();
         value.sub_chunk_data = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 8192) return error.InvalidValue;
+            if (count > 8192) return codec.failure.invalid("SubChunk.sub_chunk_data", count, 8192);
             break :blk try codec.List(SubChunkData, SubChunkData).decode(r, count);
         };
         return value;
@@ -30,7 +30,7 @@ pub const Packet = struct {
         try w.writeBool(self.cache_enabled);
         try w.writeVarI32(self.dimension_type);
         try w.writeSubChunkPosition(self.center_pos);
-        if (self.sub_chunk_data.len > 8192) return error.InvalidValue;
+        if (self.sub_chunk_data.len > 8192) return codec.failure.invalid("SubChunk.sub_chunk_data", self.sub_chunk_data.len, 8192);
         try w.writeCount(.var_u32, self.sub_chunk_data.len);
         try self.sub_chunk_data.encode(w);
     }
@@ -104,7 +104,7 @@ pub const SubChunkHeightmapData = struct {
                 item1.* = blk: {
                     const count = try r.readCount(.var_u32);
                     if (count < 16) return error.InvalidValue;
-                    if (count > 16) return error.InvalidValue;
+                    if (count > 16) return codec.failure.invalid("SubChunkHeightmapData.subchunk_height_map", count, 16);
                     break :blk try codec.List(i8, codec.Prim(.i8)).decode(r, count);
                 };
             }
@@ -118,7 +118,7 @@ pub const SubChunkHeightmapData = struct {
                 item1.* = blk: {
                     const count = try r.readCount(.var_u32);
                     if (count < 16) return error.InvalidValue;
-                    if (count > 16) return error.InvalidValue;
+                    if (count > 16) return codec.failure.invalid("SubChunkHeightmapData.subchunk_render_height_map", count, 16);
                     break :blk try codec.List(i8, codec.Prim(.i8)).decode(r, count);
                 };
             }
@@ -133,7 +133,7 @@ pub const SubChunkHeightmapData = struct {
         if (self.subchunk_height_map) |present| {
             for (present) |item1| {
                 if (item1.len < 16) return error.InvalidValue;
-                if (item1.len > 16) return error.InvalidValue;
+                if (item1.len > 16) return codec.failure.invalid("SubChunkHeightmapData.subchunk_height_map", item1.len, 16);
                 try w.writeCount(.var_u32, item1.len);
                 try item1.encode(w);
             }
@@ -143,7 +143,7 @@ pub const SubChunkHeightmapData = struct {
         if (self.subchunk_render_height_map) |present| {
             for (present) |item1| {
                 if (item1.len < 16) return error.InvalidValue;
-                if (item1.len > 16) return error.InvalidValue;
+                if (item1.len > 16) return codec.failure.invalid("SubChunkHeightmapData.subchunk_render_height_map", item1.len, 16);
                 try w.writeCount(.var_u32, item1.len);
                 try item1.encode(w);
             }

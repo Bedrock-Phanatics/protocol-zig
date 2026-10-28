@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.purchase_receipts = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 10000) return error.InvalidValue;
+            if (count > 10000) return codec.failure.invalid("PurchaseReceipt.purchase_receipts", count, 10000);
             break :blk try codec.List([]const u8, codec.Prim(.string)).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.purchase_receipts.len > 10000) return error.InvalidValue;
+        if (self.purchase_receipts.len > 10000) return codec.failure.invalid("PurchaseReceipt.purchase_receipts", self.purchase_receipts.len, 10000);
         try w.writeCount(.var_u32, self.purchase_receipts.len);
         try self.purchase_receipts.encode(w);
     }

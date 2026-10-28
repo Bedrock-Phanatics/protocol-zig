@@ -16,7 +16,7 @@ pub const Packet = struct {
         value.map_unique_id = try r.readVarI64();
         value.client_pixels_list = blk: {
             const count = try r.readCount(.u32le);
-            if (count > 16384) return error.InvalidValue;
+            if (count > 16384) return codec.failure.invalid("MapInfoRequest.client_pixels_list", count, 16384);
             break :blk try codec.List(PixelRequest, PixelRequest).decode(r, count);
         };
         return value;
@@ -24,7 +24,7 @@ pub const Packet = struct {
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeVarI64(self.map_unique_id);
-        if (self.client_pixels_list.len > 16384) return error.InvalidValue;
+        if (self.client_pixels_list.len > 16384) return codec.failure.invalid("MapInfoRequest.client_pixels_list", self.client_pixels_list.len, 16384);
         try w.writeCount(.u32le, self.client_pixels_list.len);
         try self.client_pixels_list.encode(w);
     }

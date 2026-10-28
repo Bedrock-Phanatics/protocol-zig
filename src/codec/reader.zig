@@ -3,6 +3,7 @@ const DecodeLimits = @import("limits.zig").DecodeLimits;
 const DecodeError = @import("errors.zig").DecodeError;
 const vectors = @import("vectors.zig");
 const nbt = @import("nbt.zig");
+const failure = @import("failure.zig");
 
 pub const CountPrefix = enum { var_u32, u32le };
 
@@ -13,7 +14,8 @@ pub const Reader = struct {
     depth: usize = 0,
 
     pub fn init(input: []const u8, limits: DecodeLimits) DecodeError!Reader {
-        if (!limits.valid() or input.len > limits.max_packet_bytes) return error.LimitExceeded;
+        if (!limits.valid()) return error.LimitExceeded;
+        if (input.len > limits.max_packet_bytes) return failure.limited("max_packet_bytes", input.len, limits.max_packet_bytes);
         return .{ .input = input, .limits = limits };
     }
 
@@ -134,22 +136,22 @@ pub const Reader = struct {
         return @bitCast((v >> 1) ^ (0 -% (v & 1)));
     }
 
-    fn readLength(self: *Reader, maximum: usize) DecodeError!usize {
+    fn readLength(self: *Reader, comptime limit: []const u8, maximum: usize) DecodeError!usize {
         const length: usize = try self.readVarU32();
-        if (length > maximum) return error.LimitExceeded;
+        if (length > maximum) return failure.limited(limit, length, maximum);
         return length;
     }
     pub fn readString(self: *Reader) DecodeError![]const u8 {
-        const bytes = try self.take(try self.readLength(self.limits.max_string_bytes));
+        const bytes = try self.take(try self.readLength("max_string_bytes", self.limits.max_string_bytes));
         if (!std.unicode.utf8ValidateSlice(bytes)) return error.InvalidUtf8;
         return bytes;
     }
     pub fn readByteArray(self: *Reader) DecodeError![]const u8 {
-        return self.take(try self.readLength(self.limits.max_byte_array_bytes));
+        return self.take(try self.readLength("max_byte_array_bytes", self.limits.max_byte_array_bytes));
     }
-    pub fn readBoundedByteArray(self: *Reader, maximum: usize) DecodeError![]const u8 {
-        const length = try self.readLength(self.limits.max_byte_array_bytes);
-        if (length > maximum) return error.InvalidValue;
+    pub fn readBoundedByteArray(self: *Reader, comptime field: []const u8, maximum: usize) DecodeError![]const u8 {
+        const length = try self.readLength("max_byte_array_bytes", self.limits.max_byte_array_bytes);
+        if (length > maximum) return failure.invalid(field, length, maximum);
         return self.take(length);
     }
     pub fn readCount(self: *Reader, comptime prefix: CountPrefix) DecodeError!usize {
@@ -157,7 +159,7 @@ pub const Reader = struct {
             .var_u32 => try self.readVarU32(),
             .u32le => try self.readU32(),
         };
-        if (count > self.limits.max_array_elements) return error.LimitExceeded;
+        if (count > self.limits.max_array_elements) return failure.limited("max_array_elements", count, self.limits.max_array_elements);
         return count;
     }
     pub fn readNbt(self: *Reader) DecodeError![]const u8 {
@@ -165,7 +167,7 @@ pub const Reader = struct {
     }
 
     pub fn enter(self: *Reader) DecodeError!void {
-        if (self.depth >= self.limits.max_nesting_depth) return error.LimitExceeded;
+        if (self.depth >= self.limits.max_nesting_depth) return failure.limited("max_nesting_depth", self.depth + 1, self.limits.max_nesting_depth);
         self.depth += 1;
     }
     pub fn leave(self: *Reader) void {

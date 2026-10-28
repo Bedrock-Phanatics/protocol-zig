@@ -60,7 +60,7 @@ pub const SkinImage = struct {
         if (value.width > 4096) return error.InvalidValue;
         value.height = try r.readU32();
         if (value.height > 4096) return error.InvalidValue;
-        value.image_bytes = try r.readBoundedByteArray(67108864);
+        value.image_bytes = try r.readBoundedByteArray("SkinImage.image_bytes", 67108864);
         if (!codec.lengthIsProduct(value.image_bytes.len, .{ value.width, value.height }, 4)) return error.InvalidValue;
         return value;
     }
@@ -71,7 +71,7 @@ pub const SkinImage = struct {
         try w.writeU32(self.width);
         if (self.height > 4096) return error.InvalidValue;
         try w.writeU32(self.height);
-        if (self.image_bytes.len > 67108864) return error.InvalidValue;
+        if (self.image_bytes.len > 67108864) return codec.failure.invalid("SkinImage.image_bytes", self.image_bytes.len, 67108864);
         try w.writeByteArray(self.image_bytes);
     }
 };

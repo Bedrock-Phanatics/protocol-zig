@@ -3,6 +3,7 @@ pub const Reader = @import("reader.zig").Reader;
 pub const DecodeError = @import("errors.zig").DecodeError;
 pub const EncodeError = @import("errors.zig").EncodeError;
 pub const List = @import("list.zig").List;
+pub const failure = @import("failure.zig");
 pub const Bitset = @import("bitset.zig").Bitset;
 pub const patterns = @import("patterns.zig");
 const vectors = @import("vectors.zig");

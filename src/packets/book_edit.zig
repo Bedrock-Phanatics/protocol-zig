@@ -34,17 +34,17 @@ pub const BookEditActionAddPage = struct {
         var value: BookEditActionAddPage = undefined;
         value.page_index = try r.readVarI32();
         value.page_text = try r.readString();
-        if (value.page_text.len > 768) return error.InvalidValue;
+        if (value.page_text.len > 768) return codec.failure.invalid("BookEditActionAddPage.page_text", value.page_text.len, 768);
         value.photo_name = try r.readString();
-        if (value.photo_name.len > 768) return error.InvalidValue;
+        if (value.photo_name.len > 768) return codec.failure.invalid("BookEditActionAddPage.photo_name", value.photo_name.len, 768);
         return value;
     }
 
     pub fn encode(self: BookEditActionAddPage, w: anytype) EncodeError!void {
         try w.writeVarI32(self.page_index);
-        if (self.page_text.len > 768) return error.InvalidValue;
+        if (self.page_text.len > 768) return codec.failure.invalid("BookEditActionAddPage.page_text", self.page_text.len, 768);
         try w.writeString(self.page_text);
-        if (self.photo_name.len > 768) return error.InvalidValue;
+        if (self.photo_name.len > 768) return codec.failure.invalid("BookEditActionAddPage.photo_name", self.photo_name.len, 768);
         try w.writeString(self.photo_name);
     }
 };
@@ -58,20 +58,20 @@ pub const BookEditActionFinalize = struct {
     pub fn decode(r: *Reader) DecodeError!BookEditActionFinalize {
         var value: BookEditActionFinalize = undefined;
         value.title = try r.readString();
-        if (value.title.len > 768) return error.InvalidValue;
+        if (value.title.len > 768) return codec.failure.invalid("BookEditActionFinalize.title", value.title.len, 768);
         value.author = try r.readString();
-        if (value.author.len > 768) return error.InvalidValue;
+        if (value.author.len > 768) return codec.failure.invalid("BookEditActionFinalize.author", value.author.len, 768);
         value.xuid = try r.readString();
-        if (value.xuid.len > 768) return error.InvalidValue;
+        if (value.xuid.len > 768) return codec.failure.invalid("BookEditActionFinalize.xuid", value.xuid.len, 768);
         return value;
     }
 
     pub fn encode(self: BookEditActionFinalize, w: anytype) EncodeError!void {
-        if (self.title.len > 768) return error.InvalidValue;
+        if (self.title.len > 768) return codec.failure.invalid("BookEditActionFinalize.title", self.title.len, 768);
         try w.writeString(self.title);
-        if (self.author.len > 768) return error.InvalidValue;
+        if (self.author.len > 768) return codec.failure.invalid("BookEditActionFinalize.author", self.author.len, 768);
         try w.writeString(self.author);
-        if (self.xuid.len > 768) return error.InvalidValue;
+        if (self.xuid.len > 768) return codec.failure.invalid("BookEditActionFinalize.xuid", self.xuid.len, 768);
         try w.writeString(self.xuid);
     }
 };
@@ -86,17 +86,17 @@ pub const BookEditActionReplacePage = struct {
         var value: BookEditActionReplacePage = undefined;
         value.page_index = try r.readVarI32();
         value.page_text = try r.readString();
-        if (value.page_text.len > 768) return error.InvalidValue;
+        if (value.page_text.len > 768) return codec.failure.invalid("BookEditActionReplacePage.page_text", value.page_text.len, 768);
         value.photo_name = try r.readString();
-        if (value.photo_name.len > 768) return error.InvalidValue;
+        if (value.photo_name.len > 768) return codec.failure.invalid("BookEditActionReplacePage.photo_name", value.photo_name.len, 768);
         return value;
     }
 
     pub fn encode(self: BookEditActionReplacePage, w: anytype) EncodeError!void {
         try w.writeVarI32(self.page_index);
-        if (self.page_text.len > 768) return error.InvalidValue;
+        if (self.page_text.len > 768) return codec.failure.invalid("BookEditActionReplacePage.page_text", self.page_text.len, 768);
         try w.writeString(self.page_text);
-        if (self.photo_name.len > 768) return error.InvalidValue;
+        if (self.photo_name.len > 768) return codec.failure.invalid("BookEditActionReplacePage.photo_name", self.photo_name.len, 768);
         try w.writeString(self.photo_name);
     }
 };

@@ -392,7 +392,7 @@ pub const CameraSplineInstruction = struct {
             break :blk try codec.List(CameraRotationOption, CameraRotationOption).decode(r, count);
         };
         value.spline_identifier = try r.readString();
-        if (value.spline_identifier.len > 1024) return error.InvalidValue;
+        if (value.spline_identifier.len > 1024) return codec.failure.invalid("CameraSplineInstruction.spline_identifier", value.spline_identifier.len, 1024);
         value.load_from_json = try r.readBool();
         return value;
     }
@@ -406,7 +406,7 @@ pub const CameraSplineInstruction = struct {
         try self.progress_key_frames.encode(w);
         try w.writeCount(.var_u32, self.rotation_option.len);
         try self.rotation_option.encode(w);
-        if (self.spline_identifier.len > 1024) return error.InvalidValue;
+        if (self.spline_identifier.len > 1024) return codec.failure.invalid("CameraSplineInstruction.spline_identifier", self.spline_identifier.len, 1024);
         try w.writeString(self.spline_identifier);
         try w.writeBool(self.load_from_json);
     }

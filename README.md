@@ -135,6 +135,11 @@ Decoding returns a `protocol.DecodeError`: `EndOfStream`, `VarIntOverflow`,
 `InvalidValue` (a schema bound or invariant), `InvalidNbt`. Encoding returns
 `protocol.EncodeError`: `NoSpaceLeft` or `InvalidValue`.
 
+When a count or length breaks a schema bound or a `DecodeLimits` limit,
+`protocol.failure.take()` returns the field (such as `Emote.emote_id`) or limit
+(such as `max_string_bytes`), the size seen and the bound. The record is kept
+per thread until taken, so clear it before decoding if you read it afterwards.
+
 Enums are open: values the schema does not name are kept, not rejected. The
 exception is an enum that repeats a union tag (such as a Text message type),
 which must match its tag.

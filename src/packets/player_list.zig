@@ -14,14 +14,14 @@ pub const Packet = struct {
         var value: Packet = undefined;
         value.entries = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 1000) return error.InvalidValue;
+            if (count > 1000) return codec.failure.invalid("PlayerList.entries", count, 1000);
             break :blk try codec.List(PlayerListEntriesItem, PlayerListEntriesItem).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
-        if (self.entries.len > 1000) return error.InvalidValue;
+        if (self.entries.len > 1000) return codec.failure.invalid("PlayerList.entries", self.entries.len, 1000);
         try w.writeCount(.var_u32, self.entries.len);
         try self.entries.encode(w);
     }

@@ -22,7 +22,7 @@ pub const CommandOrigin = struct {
         value.type = try r.readString();
         value.uuid = try r.readUuid();
         value.request_id = try r.readString();
-        if (value.request_id.len > 39) return error.InvalidValue;
+        if (value.request_id.len > 39) return codec.failure.invalid("CommandOrigin.request_id", value.request_id.len, 39);
         value.player_id = try r.readI64();
         return value;
     }
@@ -30,7 +30,7 @@ pub const CommandOrigin = struct {
     pub fn encode(self: CommandOrigin, w: anytype) EncodeError!void {
         try w.writeString(self.type);
         try w.writeUuid(self.uuid);
-        if (self.request_id.len > 39) return error.InvalidValue;
+        if (self.request_id.len > 39) return codec.failure.invalid("CommandOrigin.request_id", self.request_id.len, 39);
         try w.writeString(self.request_id);
         try w.writeI64(self.player_id);
     }

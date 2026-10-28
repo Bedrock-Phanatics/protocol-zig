@@ -30,14 +30,14 @@ pub const AttributeLayerSettings = struct {
     pub fn decode(r: *Reader) DecodeError!AttributeLayerSettings {
         var value: AttributeLayerSettings = undefined;
         value.attribute_layer_name = try r.readString();
-        if (value.attribute_layer_name.len > 128) return error.InvalidValue;
+        if (value.attribute_layer_name.len > 128) return codec.failure.invalid("AttributeLayerSettings.attribute_layer_name", value.attribute_layer_name.len, 128);
         value.attribute_layer_dimension = try r.readVarI32();
         value.attributes_layer_settings = try EasAttributeLayerSettings.decode(r);
         return value;
     }
 
     pub fn encode(self: AttributeLayerSettings, w: anytype) EncodeError!void {
-        if (self.attribute_layer_name.len > 128) return error.InvalidValue;
+        if (self.attribute_layer_name.len > 128) return codec.failure.invalid("AttributeLayerSettings.attribute_layer_name", self.attribute_layer_name.len, 128);
         try w.writeString(self.attribute_layer_name);
         try w.writeVarI32(self.attribute_layer_dimension);
         try self.attributes_layer_settings.encode(w);
@@ -56,7 +56,7 @@ pub const ClientBoundAttributeLayerSyncData = union(enum(u32)) {
                 var value: codec.List(EasAttributeLayerData, EasAttributeLayerData) = undefined;
                 value = blk: {
                     const count = try r.readCount(.var_u32);
-                    if (count > 512) return error.InvalidValue;
+                    if (count > 512) return codec.failure.invalid("ClientBoundAttributeLayerSyncData.update_attribute_layers", count, 512);
                     break :blk try codec.List(EasAttributeLayerData, EasAttributeLayerData).decode(r, count);
                 };
                 return .{ .update_attribute_layers = value };
@@ -72,7 +72,7 @@ pub const ClientBoundAttributeLayerSyncData = union(enum(u32)) {
         try w.writeVarU32(@backingInt(self));
         switch (self) {
             .update_attribute_layers => |value| {
-                if (value.len > 512) return error.InvalidValue;
+                if (value.len > 512) return codec.failure.invalid("ClientBoundAttributeLayerSyncData.update_attribute_layers", value.len, 512);
                 try w.writeCount(.var_u32, value.len);
                 try value.encode(w);
             },
@@ -170,35 +170,35 @@ pub const EasAttributeLayerData = struct {
     pub fn decode(r: *Reader) DecodeError!EasAttributeLayerData {
         var value: EasAttributeLayerData = undefined;
         value.name = try r.readString();
-        if (value.name.len > 128) return error.InvalidValue;
+        if (value.name.len > 128) return codec.failure.invalid("EasAttributeLayerData.name", value.name.len, 128);
         value.noise_name = null;
         if (try r.readBool()) {
             var present: []const u8 = undefined;
             present = try r.readString();
-            if (present.len > 128) return error.InvalidValue;
+            if (present.len > 128) return codec.failure.invalid("EasAttributeLayerData.noise_name", present.len, 128);
             value.noise_name = present;
         }
         value.dimension = try r.readVarI32();
         value.settings = try EasAttributeLayerSettings.decode(r);
         value.attributes = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 1024) return error.InvalidValue;
+            if (count > 1024) return codec.failure.invalid("EasAttributeLayerData.attributes", count, 1024);
             break :blk try codec.List(EasEnvironmentAttributeData, EasEnvironmentAttributeData).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: EasAttributeLayerData, w: anytype) EncodeError!void {
-        if (self.name.len > 128) return error.InvalidValue;
+        if (self.name.len > 128) return codec.failure.invalid("EasAttributeLayerData.name", self.name.len, 128);
         try w.writeString(self.name);
         try w.writeBool(self.noise_name != null);
         if (self.noise_name) |present| {
-            if (present.len > 128) return error.InvalidValue;
+            if (present.len > 128) return codec.failure.invalid("EasAttributeLayerData.noise_name", present.len, 128);
             try w.writeString(present);
         }
         try w.writeVarI32(self.dimension);
         try self.settings.encode(w);
-        if (self.attributes.len > 1024) return error.InvalidValue;
+        if (self.attributes.len > 1024) return codec.failure.invalid("EasAttributeLayerData.attributes", self.attributes.len, 1024);
         try w.writeCount(.var_u32, self.attributes.len);
         try self.attributes.encode(w);
     }
@@ -244,7 +244,7 @@ pub const EasEnvironmentAttributeData = struct {
     pub fn decode(r: *Reader) DecodeError!EasEnvironmentAttributeData {
         var value: EasEnvironmentAttributeData = undefined;
         value.attribute_name = try r.readString();
-        if (value.attribute_name.len > 128) return error.InvalidValue;
+        if (value.attribute_name.len > 128) return codec.failure.invalid("EasEnvironmentAttributeData.attribute_name", value.attribute_name.len, 128);
         value.from_attribute = if (try r.readBool()) try EnvironmentAttributeValue.decode(r) else null;
         value.attribute = try EnvironmentAttributeValue.decode(r);
         value.to_attribute = if (try r.readBool()) try EnvironmentAttributeValue.decode(r) else null;
@@ -258,7 +258,7 @@ pub const EasEnvironmentAttributeData = struct {
     }
 
     pub fn encode(self: EasEnvironmentAttributeData, w: anytype) EncodeError!void {
-        if (self.attribute_name.len > 128) return error.InvalidValue;
+        if (self.attribute_name.len > 128) return codec.failure.invalid("EasEnvironmentAttributeData.attribute_name", self.attribute_name.len, 128);
         try w.writeString(self.attribute_name);
         try w.writeBool(self.from_attribute != null);
         if (self.from_attribute) |present| {
@@ -301,21 +301,21 @@ pub const EnvironmentAttributeData = struct {
     pub fn decode(r: *Reader) DecodeError!EnvironmentAttributeData {
         var value: EnvironmentAttributeData = undefined;
         value.attribute_layer_name = try r.readString();
-        if (value.attribute_layer_name.len > 128) return error.InvalidValue;
+        if (value.attribute_layer_name.len > 128) return codec.failure.invalid("EnvironmentAttributeData.attribute_layer_name", value.attribute_layer_name.len, 128);
         value.attribute_layer_dimension = try r.readVarI32();
         value.attributes = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 1024) return error.InvalidValue;
+            if (count > 1024) return codec.failure.invalid("EnvironmentAttributeData.attributes", count, 1024);
             break :blk try codec.List(EasEnvironmentAttributeData, EasEnvironmentAttributeData).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: EnvironmentAttributeData, w: anytype) EncodeError!void {
-        if (self.attribute_layer_name.len > 128) return error.InvalidValue;
+        if (self.attribute_layer_name.len > 128) return codec.failure.invalid("EnvironmentAttributeData.attribute_layer_name", self.attribute_layer_name.len, 128);
         try w.writeString(self.attribute_layer_name);
         try w.writeVarI32(self.attribute_layer_dimension);
-        if (self.attributes.len > 1024) return error.InvalidValue;
+        if (self.attributes.len > 1024) return codec.failure.invalid("EnvironmentAttributeData.attributes", self.attributes.len, 1024);
         try w.writeCount(.var_u32, self.attributes.len);
         try self.attributes.encode(w);
     }
@@ -378,21 +378,21 @@ pub const RemoveEnvironmentAttributes = struct {
     pub fn decode(r: *Reader) DecodeError!RemoveEnvironmentAttributes {
         var value: RemoveEnvironmentAttributes = undefined;
         value.attribute_layer_name = try r.readString();
-        if (value.attribute_layer_name.len > 128) return error.InvalidValue;
+        if (value.attribute_layer_name.len > 128) return codec.failure.invalid("RemoveEnvironmentAttributes.attribute_layer_name", value.attribute_layer_name.len, 128);
         value.attribute_layer_dimension = try r.readVarI32();
         value.attributes = blk: {
             const count = try r.readCount(.var_u32);
-            if (count > 1024) return error.InvalidValue;
+            if (count > 1024) return codec.failure.invalid("RemoveEnvironmentAttributes.attributes", count, 1024);
             break :blk try codec.List([]const u8, RemoveEnvironmentAttributesAttributesItemCodec).decode(r, count);
         };
         return value;
     }
 
     pub fn encode(self: RemoveEnvironmentAttributes, w: anytype) EncodeError!void {
-        if (self.attribute_layer_name.len > 128) return error.InvalidValue;
+        if (self.attribute_layer_name.len > 128) return codec.failure.invalid("RemoveEnvironmentAttributes.attribute_layer_name", self.attribute_layer_name.len, 128);
         try w.writeString(self.attribute_layer_name);
         try w.writeVarI32(self.attribute_layer_dimension);
-        if (self.attributes.len > 1024) return error.InvalidValue;
+        if (self.attributes.len > 1024) return codec.failure.invalid("RemoveEnvironmentAttributes.attributes", self.attributes.len, 1024);
         try w.writeCount(.var_u32, self.attributes.len);
         try self.attributes.encode(w);
     }
@@ -402,12 +402,12 @@ const RemoveEnvironmentAttributesAttributesItemCodec = struct {
     pub fn decode(r: *Reader) DecodeError![]const u8 {
         var value: []const u8 = undefined;
         value = try r.readString();
-        if (value.len > 128) return error.InvalidValue;
+        if (value.len > 128) return codec.failure.invalid("NoiseAlignment.value", value.len, 128);
         return value;
     }
 
     pub fn encode(value: []const u8, w: anytype) EncodeError!void {
-        if (value.len > 128) return error.InvalidValue;
+        if (value.len > 128) return codec.failure.invalid("NoiseAlignment.value", value.len, 128);
         try w.writeString(value);
     }
 };

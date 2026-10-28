@@ -33,7 +33,7 @@ pub const Packet = struct {
             var present: codec.List(i64, codec.Prim(.zigzag_i64)) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 65535) return error.InvalidValue;
+                if (count > 65535) return codec.failure.invalid("ClientBoundMapItemData.creation_map_i_ds", count, 65535);
                 break :blk try codec.List(i64, codec.Prim(.zigzag_i64)).decode(r, count);
             };
             value.creation_map_i_ds = present;
@@ -44,7 +44,7 @@ pub const Packet = struct {
             var present: codec.List(MapTrackedObject, MapTrackedObject) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 65535) return error.InvalidValue;
+                if (count > 65535) return codec.failure.invalid("ClientBoundMapItemData.tracked_actor_i_ds", count, 65535);
                 break :blk try codec.List(MapTrackedObject, MapTrackedObject).decode(r, count);
             };
             value.tracked_actor_i_ds = present;
@@ -54,7 +54,7 @@ pub const Packet = struct {
             var present: codec.List(MapDecoration, MapDecoration) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 65535) return error.InvalidValue;
+                if (count > 65535) return codec.failure.invalid("ClientBoundMapItemData.decorations", count, 65535);
                 break :blk try codec.List(MapDecoration, MapDecoration).decode(r, count);
             };
             value.decorations = present;
@@ -68,7 +68,7 @@ pub const Packet = struct {
             var present: codec.List(u32, codec.Prim(.u32le)) = undefined;
             present = blk: {
                 const count = try r.readCount(.var_u32);
-                if (count > 16384) return error.InvalidValue;
+                if (count > 16384) return codec.failure.invalid("ClientBoundMapItemData.pixels", count, 16384);
                 break :blk try codec.List(u32, codec.Prim(.u32le)).decode(r, count);
             };
             value.pixels = present;
@@ -83,7 +83,7 @@ pub const Packet = struct {
         try w.writeBlockPosition(self.map_origin);
         try w.writeBool(self.creation_map_i_ds != null);
         if (self.creation_map_i_ds) |present| {
-            if (present.len > 65535) return error.InvalidValue;
+            if (present.len > 65535) return codec.failure.invalid("ClientBoundMapItemData.creation_map_i_ds", present.len, 65535);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }
@@ -93,13 +93,13 @@ pub const Packet = struct {
         }
         try w.writeBool(self.tracked_actor_i_ds != null);
         if (self.tracked_actor_i_ds) |present| {
-            if (present.len > 65535) return error.InvalidValue;
+            if (present.len > 65535) return codec.failure.invalid("ClientBoundMapItemData.tracked_actor_i_ds", present.len, 65535);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }
         try w.writeBool(self.decorations != null);
         if (self.decorations) |present| {
-            if (present.len > 65535) return error.InvalidValue;
+            if (present.len > 65535) return codec.failure.invalid("ClientBoundMapItemData.decorations", present.len, 65535);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }
@@ -121,7 +121,7 @@ pub const Packet = struct {
         }
         try w.writeBool(self.pixels != null);
         if (self.pixels) |present| {
-            if (present.len > 16384) return error.InvalidValue;
+            if (present.len > 16384) return codec.failure.invalid("ClientBoundMapItemData.pixels", present.len, 16384);
             try w.writeCount(.var_u32, present.len);
             try present.encode(w);
         }

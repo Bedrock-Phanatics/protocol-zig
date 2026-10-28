@@ -529,3 +529,25 @@ test "nested inventory collection boundaries round trip and borrow their element
         }
     }
 }
+
+test "rejected bounds report the field, the size and the limit" {
+    var buffer: [256]u8 = undefined;
+    var w = p.Writer.init(&buffer);
+    try w.writeVarU32(p.registry.packetId(.emote).?);
+    try w.writeVarU64(1);
+    const id: [65]u8 = @splat('e');
+    try w.writeString(&id);
+    _ = p.failure.take();
+    try std.testing.expectError(error.InvalidValue, p.typed.decode(w.written(), .{}));
+    const failure = p.failure.take().?;
+    try std.testing.expectEqualStrings("Emote.emote_id", failure.field);
+    try std.testing.expectEqual(@as(u64, 65), failure.observed);
+    try std.testing.expectEqual(@as(u64, 64), failure.limit);
+    try std.testing.expectEqual(@as(?p.failure.Failure, null), p.failure.take());
+
+    try std.testing.expectError(error.LimitExceeded, p.typed.decode(w.written(), .{ .max_string_bytes = 8 }));
+    const limit = p.failure.take().?;
+    try std.testing.expectEqualStrings("max_string_bytes", limit.field);
+    try std.testing.expectEqual(@as(u64, 65), limit.observed);
+    try std.testing.expectEqual(@as(u64, 8), limit.limit);
+}
