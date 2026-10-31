@@ -1,6 +1,6 @@
 .{
     .name = .bedrock_protocol,
-    .version = "0.7.0",
+    .version = "0.8.0",
     .minimum_zig_version = "0.17.0",
     .fingerprint = 0xd6c4c0616ae4d32c,
     .dependencies = .{
