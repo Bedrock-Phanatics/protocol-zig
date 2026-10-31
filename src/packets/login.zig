@@ -14,13 +14,13 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.client_network_version = try r.readI32Be();
-        value.connection_request = try r.readBoundedByteArray("Login.connection_request", 2097152);
+        value.connection_request = try r.readBoundedByteArray("Login.connection_request", 3145728);
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeI32Be(self.client_network_version);
-        if (self.connection_request.len > 2097152) return codec.failure.invalid("Login.connection_request", self.connection_request.len, 2097152);
+        if (self.connection_request.len > 3145728) return codec.failure.invalid("Login.connection_request", self.connection_request.len, 3145728);
         try w.writeByteArray(self.connection_request);
     }
 };

@@ -1365,12 +1365,16 @@
       ]
     },
     "Login.connection_request": {
-      "max_len": 2097152,
-      "reason": "The connection request holds the identity chain and client data, whose largest part is the skin and cape images; two mebibytes leaves room for the largest skins while bounding what login parsing must hold.",
+      "max_len": 3145728,
+      "reason": "The connection request holds the identity chain and client data, whose largest part is the skin, geometry and cape data; large persona and marketplace skins go past two mebibytes, and three still bounds what login parsing must hold.",
       "evidence": [
         {
           "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/LoginPacket.php",
           "summary": "The request is a JSON chain of JWTs followed by the client data JWT carrying base64 skin, cape and animation images."
+        },
+        {
+          "locator": "https://github.com/pmmp/PocketMine-MP/commit/b77193b9876fe44bfde9eb6adc30fa48ae494a23",
+          "summary": "PocketMine raised its decompressed batch limit from 2 MiB to 8 MiB because real logins with larger skins went past 2 MiB."
         },
         {
           "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/handler/LoginPacketHandler.php",
