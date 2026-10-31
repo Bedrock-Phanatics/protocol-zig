@@ -147,9 +147,12 @@ type Reconciliation struct {
 		MaxLen   *uint64 `json:"max_len"`
 		// DropBounds removes published numeric bounds that describe policy
 		// (such as the current protocol number) rather than the wire.
-		DropBounds bool       `json:"drop_bounds"`
-		Reason     string     `json:"reason"`
-		Evidence   []evidence `json:"evidence"`
+		DropBounds bool `json:"drop_bounds"`
+		// Signed reads a published u8 as i8 where the game's values are
+		// negative. The wire bytes are unchanged.
+		Signed   bool       `json:"signed"`
+		Reason   string     `json:"reason"`
+		Evidence []evidence `json:"evidence"`
 	} `json:"constraints"`
 	// Checks adds reviewed cross-field invariants to a struct.
 	Checks map[string][]struct {
@@ -1076,6 +1079,14 @@ func (g *ingester) applyConstraints(s *Schema) {
 				g.errs = append(g.errs, "constraint decision "+path+" drops bounds the manifest no longer publishes")
 			}
 			n.Min, n.Max = nil, nil
+			continue
+		}
+		if n != nil && c.Signed && c.Reason != "" && len(c.Evidence) != 0 {
+			if n.Kind != "u8" {
+				g.errs = append(g.errs, "constraint decision "+path+" makes a field signed that the manifest no longer publishes as u8")
+				continue
+			}
+			n.Kind, n.Min, n.Max = "i8", nil, nil
 			continue
 		}
 		if n != nil && (n.Kind == "bytes" || n.Kind == "string") && c.MaxLen != nil && c.MinItems == nil && c.MaxItems == nil && c.Reason != "" && len(c.Evidence) != 0 {

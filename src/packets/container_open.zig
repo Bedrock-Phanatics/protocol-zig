@@ -9,7 +9,7 @@ const EncodeError = codec.EncodeError;
 
 pub const Packet = struct {
     container_id: u8,
-    container_type: u8,
+    container_type: i8,
     position: codec.BlockPosition,
     target_actor_id: i64,
 
@@ -20,7 +20,7 @@ pub const Packet = struct {
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.container_id = try r.readU8();
-        value.container_type = try r.readU8();
+        value.container_type = try r.readI8();
         value.position = try r.readBlockPosition();
         value.target_actor_id = try r.readVarI64();
         return value;
@@ -28,7 +28,7 @@ pub const Packet = struct {
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeU8(self.container_id);
-        try w.writeU8(self.container_type);
+        try w.writeI8(self.container_type);
         try w.writeBlockPosition(self.position);
         try w.writeVarI64(self.target_actor_id);
     }

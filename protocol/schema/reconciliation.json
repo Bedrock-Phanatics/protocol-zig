@@ -1234,6 +1234,38 @@
         }
       ]
     },
+    "ContainerOpen.container_type": {
+      "signed": true,
+      "reason": "Container types include the negative player inventory (-1) and none (-9) values, which the documented u8 range cannot hold. The byte is the same either way.",
+      "evidence": [
+        {
+          "locator": "https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/data/inventory/ContainerType.java",
+          "summary": "CloudburstMC defines NONE as -9 and INVENTORY as -1."
+        },
+        {
+          "locator": "https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v291/serializer/ContainerOpenSerializer_v291.java",
+          "summary": "CloudburstMC reads the container type with the signed readByte."
+        },
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/inventory/WindowTypes.php",
+          "summary": "PocketMine defines NONE as -9 and INVENTORY as -1."
+        }
+      ]
+    },
+    "ContainerClose.container_type": {
+      "signed": true,
+      "reason": "The close packet repeats the container type of the open packet, including the negative player inventory (-1) and none (-9) values. The byte is the same either way.",
+      "evidence": [
+        {
+          "locator": "https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/data/inventory/ContainerType.java",
+          "summary": "CloudburstMC defines NONE as -9 and INVENTORY as -1."
+        },
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/inventory/WindowTypes.php",
+          "summary": "PocketMine defines NONE as -9 and INVENTORY as -1."
+        }
+      ]
+    },
     "PlayerAuthInput.input_data": {
       "max_items": 128,
       "reason": "Each input flag is sent at most once, so a list longer than the flag enum is never legitimate; the ceiling leaves headroom for flags added by later releases.",

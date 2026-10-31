@@ -1924,9 +1924,7 @@
           "name": "container_type",
           "wire": "Container Type",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "i8"
           }
         },
         {
@@ -1968,9 +1966,7 @@
           "name": "container_type",
           "wire": "Container Type",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "i8"
           }
         },
         {

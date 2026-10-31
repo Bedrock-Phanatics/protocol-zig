@@ -265,4 +265,9 @@ func TestIngestFailsClosed(t *testing.T) {
 	extra := rec
 	extra.FieldNames = map[string]string{"Ping.Missing": "x"}
 	mustPanic(t, "stale field name", func() { runIngest(t, dir, extra) })
+
+	signed := rec
+	signed.Constraints = nil
+	must(json.Unmarshal([]byte(`{"Ping.wrapped":{"signed":true,"reason":"r","evidence":[{"locator":"l","summary":"s"}]}}`), &signed.Constraints))
+	mustPanic(t, "no longer publishes as u8", func() { runIngest(t, dir, signed) })
 }
