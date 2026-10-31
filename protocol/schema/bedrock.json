@@ -1915,9 +1915,7 @@
           "name": "container_id",
           "wire": "Container Id",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "i8"
           }
         },
         {
@@ -1957,9 +1955,7 @@
           "name": "container_id",
           "wire": "Container Id",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "i8"
           }
         },
         {
@@ -3123,7 +3119,7 @@
           "type": {
             "kind": "string",
             "prefix": "var_u32",
-            "max_len": 1000
+            "max_len": 2048
           }
         },
         {
@@ -11327,7 +11323,7 @@
           "type": {
             "kind": "string",
             "prefix": "var_u32",
-            "max_len": 768
+            "max_len": 2048
           }
         },
         {
@@ -11399,7 +11395,7 @@
           "type": {
             "kind": "string",
             "prefix": "var_u32",
-            "max_len": 768
+            "max_len": 2048
           }
         },
         {
@@ -14971,7 +14967,7 @@
           "type": {
             "kind": "u8",
             "min": 1,
-            "max": 64
+            "max": 255
           }
         },
         {
@@ -16384,7 +16380,7 @@
           "type": {
             "kind": "u8",
             "min": 1,
-            "max": 64
+            "max": 255
           }
         },
         {
@@ -16556,7 +16552,7 @@
           "type": {
             "kind": "u8",
             "min": 1,
-            "max": 64
+            "max": 255
           }
         },
         {
@@ -19345,7 +19341,7 @@
           "type": {
             "kind": "u16le",
             "min": 1,
-            "max": 64
+            "max": 255
           }
         },
         {
@@ -24029,7 +24025,7 @@
           "type": {
             "kind": "u8",
             "min": 1,
-            "max": 64
+            "max": 255
           }
         },
         {
@@ -25662,7 +25658,7 @@
           "wire": "StackSize",
           "type": {
             "kind": "u16le",
-            "min": 1,
+            "min": 0,
             "max": 65535
           }
         }
@@ -28408,7 +28404,7 @@
           "type": {
             "kind": "u8",
             "min": 1,
-            "max": 64
+            "max": 255
           }
         },
         {

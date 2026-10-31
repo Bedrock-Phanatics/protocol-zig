@@ -1234,6 +1234,34 @@
         }
       ]
     },
+    "ContainerOpen.container_id": {
+      "signed": true,
+      "reason": "Container IDs are signed: -1 means no container. The byte is the same either way.",
+      "evidence": [
+        {
+          "locator": "https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v291/serializer/ContainerOpenSerializer_v291.java",
+          "summary": "CloudburstMC reads the container ID with the signed readByte."
+        },
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/inventory/ContainerIds.php",
+          "summary": "PocketMine defines NONE as -1."
+        }
+      ]
+    },
+    "ContainerClose.container_id": {
+      "signed": true,
+      "reason": "The client closes a window it could not open by sending container ID -1. The byte is the same either way.",
+      "evidence": [
+        {
+          "locator": "https://github.com/CloudburstMC/Protocol/blob/989332f6d4c2a93cf41212c9ba1b5dd14b00f693/bedrock-codec/src/main/java/org/cloudburstmc/protocol/bedrock/codec/v291/serializer/ContainerCloseSerializer_v291.java",
+          "summary": "CloudburstMC reads the container ID with the signed readByte."
+        },
+        {
+          "locator": "https://github.com/pmmp/BedrockProtocol/blob/0e13c077d1060ae9e293908eff81fbef600ead5c/src/types/inventory/ContainerIds.php",
+          "summary": "PocketMine defines NONE as -1."
+        }
+      ]
+    },
     "ContainerOpen.container_type": {
       "signed": true,
       "reason": "Container types include the negative player inventory (-1) and none (-9) values, which the documented u8 range cannot hold. The byte is the same either way.",
@@ -1347,6 +1375,134 @@
         {
           "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/1193c6a8a/src/network/mcpe/handler/LoginPacketHandler.php",
           "summary": "Quark parses and verifies the whole request before the player is created."
+        }
+      ]
+    },
+    "TakeStackRequestAction.amount": {
+      "max": 255,
+      "reason": "Mojang documents 64, the vanilla stack size, but servers can hold larger stacks and the client acts on whatever count it was sent. A larger amount than the slot holds is still rejected by the server.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_stack.go",
+          "summary": "gophertunnel reads stack request amounts as a plain u8."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends stack counts up to 255, so the client can act on stacks above 64."
+        }
+      ]
+    },
+    "PlaceStackRequestAction.amount": {
+      "max": 255,
+      "reason": "Mojang documents 64, the vanilla stack size, but servers can hold larger stacks and the client acts on whatever count it was sent. A larger amount than the slot holds is still rejected by the server.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_stack.go",
+          "summary": "gophertunnel reads stack request amounts as a plain u8."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends stack counts up to 255, so the client can act on stacks above 64."
+        }
+      ]
+    },
+    "DropStackRequestAction.amount": {
+      "max": 255,
+      "reason": "Mojang documents 64, the vanilla stack size, but servers can hold larger stacks and the client acts on whatever count it was sent. A larger amount than the slot holds is still rejected by the server.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_stack.go",
+          "summary": "gophertunnel reads stack request amounts as a plain u8."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends stack counts up to 255, so the client can act on stacks above 64."
+        }
+      ]
+    },
+    "DestroyStackRequestAction.amount": {
+      "max": 255,
+      "reason": "Mojang documents 64, the vanilla stack size, but servers can hold larger stacks and the client acts on whatever count it was sent. A larger amount than the slot holds is still rejected by the server.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_stack.go",
+          "summary": "gophertunnel reads stack request amounts as a plain u8."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends stack counts up to 255, so the client can act on stacks above 64."
+        }
+      ]
+    },
+    "ConsumeStackRequestAction.amount": {
+      "max": 255,
+      "reason": "Mojang documents 64, the vanilla stack size, but servers can hold larger stacks and the client acts on whatever count it was sent. A larger amount than the slot holds is still rejected by the server.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_stack.go",
+          "summary": "gophertunnel reads stack request amounts as a plain u8."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends stack counts up to 255, so the client can act on stacks above 64."
+        }
+      ]
+    },
+    "ItemInstance.stack_size": {
+      "max": 255,
+      "reason": "Recipe results and creative items carry stack sizes above the vanilla 64, and the client echoes recipe results back in deprecated craft results.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go",
+          "summary": "gophertunnel reads the item instance count as a plain u16."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends stack counts up to 255."
+        }
+      ]
+    },
+    "RecipeIngredient.stack_size": {
+      "min": 0,
+      "reason": "Empty shaped recipe slots are sent with a count of 0, which the client may repeat in auto craft ingredients. The server does not trust this list.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/item_descriptor.go",
+          "summary": "gophertunnel reads stack request ingredient counts without a minimum."
+        },
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/network/mcpe/convert/TypeConverter.php",
+          "summary": "Quark sends empty recipe slots as ingredients with a count of 0."
+        }
+      ]
+    },
+    "CommandRequest.command": {
+      "max_len": 2048,
+      "reason": "The limit counts bytes, so a full 512 character command in Cyrillic or CJK text goes past the documented 1000. Matches the server's chat byte limit.",
+      "evidence": [
+        {
+          "locator": "https://github.com/Bedrock-Phanatics/Quark/blob/a8063ac7bacbe2dce9a7b9c76b99a369cbce5866/src/player/Player.php",
+          "summary": "Quark accepts chat and commands up to 512 characters and 2048 bytes and drops longer ones."
+        }
+      ]
+    },
+    "BookEditActionAddPage.page_text": {
+      "max_len": 2048,
+      "reason": "Clients can exceed the 256 character page limit by reopening the book, and the documented 768 bytes is under 256 four-byte characters. Matches the server's 512 character soft limit.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/PocketMine-MP/commit/0b6d8f8cb2aaa05ffad0b6386bd88d73ef54b395",
+          "summary": "PocketMine raised its soft page limit to 512 characters after 1.21.130 clients sent longer pages."
+        }
+      ]
+    },
+    "BookEditActionReplacePage.page_text": {
+      "max_len": 2048,
+      "reason": "Clients can exceed the 256 character page limit by reopening the book, and the documented 768 bytes is under 256 four-byte characters. Matches the server's 512 character soft limit.",
+      "evidence": [
+        {
+          "locator": "https://github.com/pmmp/PocketMine-MP/commit/0b6d8f8cb2aaa05ffad0b6386bd88d73ef54b395",
+          "summary": "PocketMine raised its soft page limit to 512 characters after 1.21.130 clients sent longer pages."
         }
       ]
     }

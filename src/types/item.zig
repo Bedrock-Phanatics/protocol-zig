@@ -18,7 +18,7 @@ pub const ItemInstance = struct {
         value.item_descriptor = try types.ItemDescriptor.decode(r);
         value.stack_size = try r.readU16();
         if (value.stack_size < 1) return error.InvalidValue;
-        if (value.stack_size > 64) return error.InvalidValue;
+        if (value.stack_size > 255) return error.InvalidValue;
         value.block_runtime_id = try r.readVarU32();
         value.user_data_buffer = try r.readByteArray();
         return value;
@@ -27,7 +27,7 @@ pub const ItemInstance = struct {
     pub fn encode(self: ItemInstance, w: anytype) EncodeError!void {
         try self.item_descriptor.encode(w);
         if (self.stack_size < 1) return error.InvalidValue;
-        if (self.stack_size > 64) return error.InvalidValue;
+        if (self.stack_size > 255) return error.InvalidValue;
         try w.writeU16(self.stack_size);
         try w.writeVarU32(self.block_runtime_id);
         try w.writeByteArray(self.user_data_buffer);

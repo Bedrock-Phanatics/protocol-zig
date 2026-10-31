@@ -270,4 +270,9 @@ func TestIngestFailsClosed(t *testing.T) {
 	signed.Constraints = nil
 	must(json.Unmarshal([]byte(`{"Ping.wrapped":{"signed":true,"reason":"r","evidence":[{"locator":"l","summary":"s"}]}}`), &signed.Constraints))
 	mustPanic(t, "no longer publishes as u8", func() { runIngest(t, dir, signed) })
+
+	bounded := rec
+	bounded.Constraints = nil
+	must(json.Unmarshal([]byte(`{"Ping.wrapped":{"max":5,"reason":"r","evidence":[{"locator":"l","summary":"s"}]}}`), &bounded.Constraints))
+	mustPanic(t, "numeric bounds the manifest no longer publishes", func() { runIngest(t, dir, bounded) })
 }

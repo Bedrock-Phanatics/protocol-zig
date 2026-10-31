@@ -15,13 +15,11 @@ pub const RecipeIngredient = struct {
         var value: RecipeIngredient = undefined;
         value.item_descriptor = try types.ItemDescriptor.decode(r);
         value.stack_size = try r.readU16();
-        if (value.stack_size < 1) return error.InvalidValue;
         return value;
     }
 
     pub fn encode(self: RecipeIngredient, w: anytype) EncodeError!void {
         try self.item_descriptor.encode(w);
-        if (self.stack_size < 1) return error.InvalidValue;
         try w.writeU16(self.stack_size);
     }
 };

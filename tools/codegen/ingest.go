@@ -150,9 +150,13 @@ type Reconciliation struct {
 		DropBounds bool `json:"drop_bounds"`
 		// Signed reads a published u8 as i8 where the game's values are
 		// negative. The wire bytes are unchanged.
-		Signed   bool       `json:"signed"`
-		Reason   string     `json:"reason"`
-		Evidence []evidence `json:"evidence"`
+		Signed bool `json:"signed"`
+		// Min and Max replace published numeric bounds that legitimate
+		// traffic exceeds.
+		Min      *json.Number `json:"min"`
+		Max      *json.Number `json:"max"`
+		Reason   string       `json:"reason"`
+		Evidence []evidence   `json:"evidence"`
 	} `json:"constraints"`
 	// Checks adds reviewed cross-field invariants to a struct.
 	Checks map[string][]struct {
@@ -1087,6 +1091,19 @@ func (g *ingester) applyConstraints(s *Schema) {
 				continue
 			}
 			n.Kind, n.Min, n.Max = "i8", nil, nil
+			continue
+		}
+		if n != nil && (c.Min != nil || c.Max != nil) && c.Reason != "" && len(c.Evidence) != 0 {
+			if (c.Min != nil && n.Min == nil) || (c.Max != nil && n.Max == nil) {
+				g.errs = append(g.errs, "constraint decision "+path+" replaces numeric bounds the manifest no longer publishes")
+				continue
+			}
+			if c.Min != nil {
+				n.Min = c.Min
+			}
+			if c.Max != nil {
+				n.Max = c.Max
+			}
 			continue
 		}
 		if n != nil && (n.Kind == "bytes" || n.Kind == "string") && c.MaxLen != nil && c.MinItems == nil && c.MaxItems == nil && c.Reason != "" && len(c.Evidence) != 0 {

@@ -98,7 +98,6 @@ pub const ConsumeStackRequestAction = struct {
         }
         value.amount = try r.readU8();
         if (value.amount < 1) return error.InvalidValue;
-        if (value.amount > 64) return error.InvalidValue;
         value.source = try StackRequestSlotInfo.decode(r);
         return value;
     }
@@ -110,7 +109,6 @@ pub const ConsumeStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.amount < 1) return error.InvalidValue;
-        if (self.amount > 64) return error.InvalidValue;
         try w.writeU8(self.amount);
         try self.source.encode(w);
     }
@@ -289,7 +287,6 @@ pub const DestroyStackRequestAction = struct {
         }
         value.amount = try r.readU8();
         if (value.amount < 1) return error.InvalidValue;
-        if (value.amount > 64) return error.InvalidValue;
         value.source = try StackRequestSlotInfo.decode(r);
         return value;
     }
@@ -301,7 +298,6 @@ pub const DestroyStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.amount < 1) return error.InvalidValue;
-        if (self.amount > 64) return error.InvalidValue;
         try w.writeU8(self.amount);
         try self.source.encode(w);
     }
@@ -323,7 +319,6 @@ pub const DropStackRequestAction = struct {
         }
         value.amount = try r.readU8();
         if (value.amount < 1) return error.InvalidValue;
-        if (value.amount > 64) return error.InvalidValue;
         value.source = try StackRequestSlotInfo.decode(r);
         value.randomly = try r.readBool();
         return value;
@@ -336,7 +331,6 @@ pub const DropStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.amount < 1) return error.InvalidValue;
-        if (self.amount > 64) return error.InvalidValue;
         try w.writeU8(self.amount);
         try self.source.encode(w);
         try w.writeBool(self.randomly);
@@ -424,7 +418,6 @@ pub const PlaceStackRequestAction = struct {
         }
         value.amount = try r.readU8();
         if (value.amount < 1) return error.InvalidValue;
-        if (value.amount > 64) return error.InvalidValue;
         value.source = try StackRequestSlotInfo.decode(r);
         value.destination = try StackRequestSlotInfo.decode(r);
         return value;
@@ -437,7 +430,6 @@ pub const PlaceStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.amount < 1) return error.InvalidValue;
-        if (self.amount > 64) return error.InvalidValue;
         try w.writeU8(self.amount);
         try self.source.encode(w);
         try self.destination.encode(w);
@@ -510,7 +502,6 @@ pub const TakeStackRequestAction = struct {
         }
         value.amount = try r.readU8();
         if (value.amount < 1) return error.InvalidValue;
-        if (value.amount > 64) return error.InvalidValue;
         value.source = try StackRequestSlotInfo.decode(r);
         value.destination = try StackRequestSlotInfo.decode(r);
         return value;
@@ -523,7 +514,6 @@ pub const TakeStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.amount < 1) return error.InvalidValue;
-        if (self.amount > 64) return error.InvalidValue;
         try w.writeU8(self.amount);
         try self.source.encode(w);
         try self.destination.encode(w);

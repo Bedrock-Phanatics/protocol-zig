@@ -34,7 +34,7 @@ pub const BookEditActionAddPage = struct {
         var value: BookEditActionAddPage = undefined;
         value.page_index = try r.readVarI32();
         value.page_text = try r.readString();
-        if (value.page_text.len > 768) return codec.failure.invalid("BookEditActionAddPage.page_text", value.page_text.len, 768);
+        if (value.page_text.len > 2048) return codec.failure.invalid("BookEditActionAddPage.page_text", value.page_text.len, 2048);
         value.photo_name = try r.readString();
         if (value.photo_name.len > 768) return codec.failure.invalid("BookEditActionAddPage.photo_name", value.photo_name.len, 768);
         return value;
@@ -42,7 +42,7 @@ pub const BookEditActionAddPage = struct {
 
     pub fn encode(self: BookEditActionAddPage, w: anytype) EncodeError!void {
         try w.writeVarI32(self.page_index);
-        if (self.page_text.len > 768) return codec.failure.invalid("BookEditActionAddPage.page_text", self.page_text.len, 768);
+        if (self.page_text.len > 2048) return codec.failure.invalid("BookEditActionAddPage.page_text", self.page_text.len, 2048);
         try w.writeString(self.page_text);
         if (self.photo_name.len > 768) return codec.failure.invalid("BookEditActionAddPage.photo_name", self.photo_name.len, 768);
         try w.writeString(self.photo_name);
@@ -86,7 +86,7 @@ pub const BookEditActionReplacePage = struct {
         var value: BookEditActionReplacePage = undefined;
         value.page_index = try r.readVarI32();
         value.page_text = try r.readString();
-        if (value.page_text.len > 768) return codec.failure.invalid("BookEditActionReplacePage.page_text", value.page_text.len, 768);
+        if (value.page_text.len > 2048) return codec.failure.invalid("BookEditActionReplacePage.page_text", value.page_text.len, 2048);
         value.photo_name = try r.readString();
         if (value.photo_name.len > 768) return codec.failure.invalid("BookEditActionReplacePage.photo_name", value.photo_name.len, 768);
         return value;
@@ -94,7 +94,7 @@ pub const BookEditActionReplacePage = struct {
 
     pub fn encode(self: BookEditActionReplacePage, w: anytype) EncodeError!void {
         try w.writeVarI32(self.page_index);
-        if (self.page_text.len > 768) return codec.failure.invalid("BookEditActionReplacePage.page_text", self.page_text.len, 768);
+        if (self.page_text.len > 2048) return codec.failure.invalid("BookEditActionReplacePage.page_text", self.page_text.len, 2048);
         try w.writeString(self.page_text);
         if (self.photo_name.len > 768) return codec.failure.invalid("BookEditActionReplacePage.photo_name", self.photo_name.len, 768);
         try w.writeString(self.photo_name);
