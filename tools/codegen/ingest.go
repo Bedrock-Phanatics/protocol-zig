@@ -196,6 +196,7 @@ type ingester struct {
 	restrict  map[string]bool   // reviewed enum restriction sites that were applied
 	shapes    map[string]string // anonymous type signature -> type name
 	reviewed  map[string]bool   // reviewed names that matched a schema site
+	renames   map[string]string // folded duplicate type -> the type it became
 	errs      []string
 }
 
@@ -221,7 +222,10 @@ func ingest(checkout, reconciliationPath string) Schema {
 	readVerified(sourceDir, "manifest.json", rec.Manifest.Files["manifest.json"], &manifest)
 	var naming, layout, domains overlayNames
 	readVerified(sourceDir, "naming.json", rec.Manifest.Files["naming.json"], &naming)
-	readVerified(sourceDir, "gophertunnel-layout.json", rec.Manifest.Files["gophertunnel-layout.json"], &layout)
+	// protocolgen stopped publishing the gophertunnel layout after 1.26.51.
+	if digest, ok := rec.Manifest.Files["gophertunnel-layout.json"]; ok {
+		readVerified(sourceDir, "gophertunnel-layout.json", digest, &layout)
+	}
 	readVerified(sourceDir, "domains.json", rec.Manifest.Files["domains.json"], &domains)
 	if manifest.SchemaVersion != 2 || manifest.Target.ProtocolVersion != rec.Target.ProtocolVersion {
 		panic(fmt.Errorf("manifest targets protocol %d schema %d, reconciliation targets %d", manifest.Target.ProtocolVersion, manifest.SchemaVersion, rec.Target.ProtocolVersion))
@@ -232,12 +236,24 @@ func ingest(checkout, reconciliationPath string) Schema {
 	}
 
 	g := &ingester{rec: rec, names: map[string]string{}, domains: map[string]string{}, types: map[string]*TypeDef{},
-		keys: map[string]string{}, usedNames: map[string]string{}, restrict: map[string]bool{}, shapes: map[string]string{}, reviewed: map[string]bool{}}
+		keys: map[string]string{}, usedNames: map[string]string{}, restrict: map[string]bool{}, shapes: map[string]string{}, reviewed: map[string]bool{},
+		renames: map[string]string{}}
 	for _, e := range naming.Entries {
 		g.names[normalizeTypeID(e.TypeID)] = e.Name
 	}
 	for _, e := range layout.Types {
 		g.names[normalizeTypeID(e.TypeID)] = e.Name
+	}
+	// Types, enum values and variants keep the names of the schema being
+	// replaced, so upstream renames don't ripple through consumers each release.
+	var previous Schema
+	if data, err := os.ReadFile(filepath.Join(filepath.Dir(reconciliationPath), "bedrock.json")); err == nil {
+		must(json.Unmarshal(data, &previous))
+		for _, t := range previous.Types {
+			for _, key := range t.Wire {
+				g.names[key] = t.Name
+			}
+		}
 	}
 	for id, name := range rec.TypeNames {
 		g.names[id] = name
@@ -266,7 +282,7 @@ func ingest(checkout, reconciliationPath string) Schema {
 		}
 		name := rec.PacketNames[strconv.Itoa(int(mp.ID))]
 		if name == "" {
-			panic(fmt.Errorf("packet %d %s has no reviewed name", mp.ID, mp.Name))
+			name = strings.TrimSuffix(mp.Name, "Packet")
 		}
 		seenNames[strconv.Itoa(int(mp.ID))] = true
 		p := Packet{ID: mp.ID, Name: name, Wire: mp.Name}
@@ -298,6 +314,26 @@ func ingest(checkout, reconciliationPath string) Schema {
 	}
 	for id := range overrides {
 		panic(fmt.Errorf("direction decision for %d has no manifest packet", id))
+	}
+	for i := range schema.Packets {
+		for j := range schema.Packets[i].Fields {
+			g.rename(&schema.Packets[i].Fields[j].Type)
+		}
+	}
+	for _, t := range g.types {
+		for i := range t.Fields {
+			g.rename(&t.Fields[i].Type)
+		}
+		for i := range t.Variants {
+			if t.Variants[i].Type != nil {
+				g.rename(t.Variants[i].Type)
+			}
+		}
+	}
+	for _, old := range previous.Types {
+		if t := g.types[old.Name]; t != nil && t.Kind == old.Kind {
+			g.keepValueNames(t, old)
+		}
 	}
 	g.restrictions(&schema)
 	g.applyConstraints(&schema)
@@ -385,7 +421,7 @@ func (g *ingester) primitive(n mNode) string {
 	}
 	code := n.Primitive.Code
 	if code == "nbt_le" {
-		if n.Encoding != "network" {
+		if n.Encoding != "network" && n.Encoding != "network_compound" {
 			g.errs = append(g.errs, fmt.Sprintf("NBT encoding %q is unsupported", n.Encoding))
 		}
 		return "nbt"
@@ -601,73 +637,94 @@ func (g *ingester) define(t TypeDef, typeID string) *TypeDef {
 		shape, err := json.Marshal(TypeDef{Kind: t.Kind, Fields: t.Fields, Repr: t.Repr, Values: t.Values, Variants: t.Variants})
 		must(err)
 		if name, ok := g.shapes[string(shape)]; ok {
-			return g.types[name]
+			return g.types[g.resolve(name)]
 		}
 		if name := g.rec.TypeNames[key]; name != "" {
 			t.Name = name
 		}
 		g.shapes[string(shape)] = t.Name
 	}
-	if claimed, ok := g.usedNames[t.Name]; ok && claimed != key {
-		g.errs = append(g.errs, fmt.Sprintf("type name %s is claimed by %q and %q; add a type_names decision", t.Name, claimed, key))
-		return g.types[t.Name]
+	t.Name = g.resolve(t.Name)
+	existing := g.types[t.Name]
+	if claimed, ok := g.usedNames[t.Name]; ok && claimed != key && g.keys[key] != t.Name {
+		// Mojang's docs and the server dump can publish one type under two IDs.
+		if existing == nil || !g.merge(existing, t) {
+			g.errs = append(g.errs, fmt.Sprintf("type name %s is claimed by %q and %q; add a type_names decision", t.Name, claimed, key))
+			return existing
+		}
+		existing.Wire = appendMissing(existing.Wire, key)
+		g.keys[key] = t.Name
+		return existing
 	}
 	g.usedNames[t.Name] = key
 	g.keys[key] = t.Name
-	existing := g.types[t.Name]
 	if existing == nil {
 		g.types[t.Name] = &t
 		return &t
 	}
-	switch t.Kind {
-	case "enum":
-		if existing.Kind != "enum" || existing.Repr != t.Repr {
-			g.errs = append(g.errs, t.Name+": enum occurrences disagree on representation")
-			return existing
-		}
-		existing.Values = dedupeValues(append(existing.Values, t.Values...))
-		sort.Slice(existing.Values, func(i, j int) bool { return existing.Values[i].Value < existing.Values[j].Value })
-	case "struct":
-		if !sameFields(existing.Fields, t.Fields) {
-			g.errs = append(g.errs, t.Name+": struct occurrences differ on the wire")
-			return existing
-		}
-		for i := range existing.Fields {
-			intersect(&existing.Fields[i].Type, t.Fields[i].Type)
-		}
-	case "union":
-		if existing.Kind != "union" || existing.Repr != t.Repr || len(existing.Variants) != len(t.Variants) {
-			g.errs = append(g.errs, t.Name+": union occurrences differ on the wire")
-			return existing
-		}
-		for i := range existing.Variants {
-			a, b := existing.Variants[i], t.Variants[i]
-			if a.Value != b.Value || a.Name != b.Name || (a.Type == nil) != (b.Type == nil) || (a.Type != nil && !sameShape(*a.Type, *b.Type)) {
-				g.errs = append(g.errs, t.Name+": union occurrences differ on the wire")
-				return existing
-			}
-			if a.Type != nil {
-				intersect(existing.Variants[i].Type, *b.Type)
-			}
-		}
-	}
+	g.merge(existing, t)
 	return existing
 }
 
-func sameFields(a, b []Field) bool {
-	if len(a) != len(b) {
+// merge folds a repeat occurrence into existing. Refs to differently named
+// but wire-identical types are unified, so one type published under two IDs
+// becomes one definition.
+func (g *ingester) merge(existing *TypeDef, t TypeDef) bool {
+	pairs := map[[2]string]bool{}
+	if !g.sameType(existing, &t, pairs) {
+		a, _ := json.Marshal(existing)
+		b, _ := json.Marshal(t)
+		g.errs = append(g.errs, fmt.Sprintf("%s: occurrences differ on the wire\n    %s\n    %s", t.Name, a, b))
 		return false
 	}
-	for i := range a {
-		if a[i].Name != b[i].Name || !sameShape(a[i].Type, b[i].Type) {
+	absorb(existing, t)
+	for pair := range pairs {
+		g.fold(pair[0], pair[1])
+	}
+	return true
+}
+
+func (g *ingester) sameType(a, b *TypeDef, pairs map[[2]string]bool) bool {
+	if a.Kind != b.Kind || a.Repr != b.Repr {
+		return false
+	}
+	switch a.Kind {
+	case "struct":
+		if len(a.Fields) != len(b.Fields) {
 			return false
+		}
+		for i := range a.Fields {
+			if a.Fields[i].Name != b.Fields[i].Name || !g.sameNode(a.Fields[i].Type, b.Fields[i].Type, pairs) {
+				return false
+			}
+		}
+	case "union":
+		if len(a.Variants) != len(b.Variants) {
+			return false
+		}
+		for i := range a.Variants {
+			x, y := a.Variants[i], b.Variants[i]
+			if x.Value != y.Value || (x.Type == nil) != (y.Type == nil) || (x.Type != nil && !g.sameNode(*x.Type, *y.Type, pairs)) {
+				return false
+			}
 		}
 	}
 	return true
 }
 
-// sameShape compares wire layout, ignoring validation annotations.
-func sameShape(a, b Node) bool {
+func (g *ingester) sameNode(a, b Node, pairs map[[2]string]bool) bool {
+	if a.Kind == "ref" && b.Kind == "ref" {
+		x, y := g.resolve(a.Ref), g.resolve(b.Ref)
+		if x == y || pairs[[2]string{x, y}] {
+			return true
+		}
+		tx, ty := g.types[x], g.types[y]
+		if tx == nil || ty == nil {
+			return false
+		}
+		pairs[[2]string{x, y}] = true
+		return g.sameType(tx, ty, pairs)
+	}
 	strip := func(n Node) Node {
 		n.Min, n.Max, n.MinLen, n.MaxLen, n.MinItems, n.MaxItems, n.Pattern, n.Allowed = nil, nil, nil, nil, nil, nil, "", nil
 		n.Element, n.Key, n.Value = nil, nil, nil
@@ -677,11 +734,122 @@ func sameShape(a, b Node) bool {
 		return false
 	}
 	for _, pair := range [][2]*Node{{a.Element, b.Element}, {a.Key, b.Key}, {a.Value, b.Value}} {
-		if (pair[0] == nil) != (pair[1] == nil) || (pair[0] != nil && !sameShape(*pair[0], *pair[1])) {
+		if (pair[0] == nil) != (pair[1] == nil) || (pair[0] != nil && !g.sameNode(*pair[0], *pair[1], pairs)) {
 			return false
 		}
 	}
 	return true
+}
+
+// absorb keeps the bounds every occurrence publishes and unions enum values.
+func absorb(existing *TypeDef, t TypeDef) {
+	switch t.Kind {
+	case "enum":
+		existing.Values = dedupeValues(append(existing.Values, t.Values...))
+		sort.Slice(existing.Values, func(i, j int) bool { return existing.Values[i].Value < existing.Values[j].Value })
+	case "struct":
+		for i := range existing.Fields {
+			intersect(&existing.Fields[i].Type, t.Fields[i].Type)
+		}
+	case "union":
+		for i := range existing.Variants {
+			if t.Variants[i].Type != nil {
+				intersect(existing.Variants[i].Type, *t.Variants[i].Type)
+			}
+		}
+	}
+}
+
+// fold replaces type b with the wire-identical type a.
+func (g *ingester) fold(a, b string) {
+	a, b = g.resolve(a), g.resolve(b)
+	ta, tb := g.types[a], g.types[b]
+	if a == b || ta == nil || tb == nil {
+		return
+	}
+	absorb(ta, *tb)
+	for _, key := range tb.Wire {
+		ta.Wire = appendMissing(ta.Wire, key)
+		g.keys[key] = a
+	}
+	g.renames[b] = a
+	delete(g.types, b)
+}
+
+// keepValueNames reuses previous enum value and union variant names when only
+// their spelling changed upstream (CraftNonImplemented once read
+// craftnonimplemented). Names are never matched by value, since Mojang can
+// insert values mid-enum. Reviewed names still win.
+func (g *ingester) keepValueNames(t *TypeDef, old TypeDef) {
+	spelling := func(name string) string { return strings.ToLower(strings.ReplaceAll(name, "_", "")) }
+	previous := map[string]string{}
+	for _, v := range old.Values {
+		previous[spelling(v.Name)] = v.Name
+	}
+	for _, v := range old.Variants {
+		previous[v.Wire] = v.Name
+		previous[spelling(v.Name)] = v.Name
+	}
+	names := make([]*string, 0, len(t.Values)+len(t.Variants))
+	keys := make([][]string, 0, cap(names))
+	pinned := map[string]bool{}
+	for i := range t.Values {
+		names, keys = append(names, &t.Values[i].Name), append(keys, []string{spelling(t.Values[i].Name)})
+	}
+	for i := range t.Variants {
+		if g.rec.VariantNames[t.Name+"."+t.Variants[i].Wire] != "" {
+			pinned[t.Variants[i].Name] = true
+			continue
+		}
+		names, keys = append(names, &t.Variants[i].Name), append(keys, []string{t.Variants[i].Wire, spelling(t.Variants[i].Name)})
+	}
+	keep := make([]bool, len(names))
+	for i, name := range names {
+		old, ok := previous[keys[i][0]]
+		if !ok && len(keys[i]) > 1 {
+			old, ok = previous[keys[i][1]]
+		}
+		if ok && !pinned[old] {
+			*name, keep[i], pinned[old] = old, true, true
+		}
+	}
+	for i, name := range names {
+		if keep[i] {
+			continue
+		}
+		base := *name
+		for n := 2; pinned[*name]; n++ {
+			*name = fmt.Sprintf("%s_%d", base, n)
+		}
+		pinned[*name] = true
+	}
+}
+
+func (g *ingester) resolve(name string) string {
+	for g.renames[name] != "" {
+		name = g.renames[name]
+	}
+	return name
+}
+
+func (g *ingester) rename(n *Node) {
+	if n.Kind == "ref" {
+		n.Ref = g.resolve(n.Ref)
+	}
+	for _, child := range []*Node{n.Element, n.Key, n.Value} {
+		if child != nil {
+			g.rename(child)
+		}
+	}
+}
+
+func appendMissing(list []string, value string) []string {
+	for _, v := range list {
+		if v == value {
+			return list
+		}
+	}
+	return append(list, value)
 }
 
 func intersect(a *Node, b Node) {

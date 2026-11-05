@@ -222,6 +222,51 @@ const tinyManifest = `{"schema_version":2,"target":{"minecraft_version":"1.0.0",
   {"name":"Mode","encode":{"kind":"enum","type_id":"enums/Mode","primitive":{"code":"u8"},"variants":[{"value":0,"name":"a","encode":{"kind":"void"}},{"value":1,"name":"b","encode":{"kind":"void"}}]},"symmetry":"symmetric"},
   {"name":"Wrapped","encode":{"kind":"struct","type_id":"Wrapper","fields":[{"name":"Inner","encode":{"kind":"primitive","primitive":{"code":"var_u64"}},"symmetry":"symmetric"}]},"symmetry":"symmetric"}]}]}`
 
+func TestIngestFoldsDuplicateTypesAndKeepsNames(t *testing.T) {
+	inner := func(id string) string {
+		return `{"kind":"struct","type_id":"` + id + `","fields":[{"name":"P","encode":{"kind":"primitive","primitive":{"code":"u8"}},"symmetry":"symmetric"},{"name":"Q","encode":{"kind":"primitive","primitive":{"code":"u8"}},"symmetry":"symmetric"}]}`
+	}
+	outer := func(id, innerID string) string {
+		return `{"kind":"struct","type_id":"` + id + `","fields":[{"name":"X","encode":` + inner(innerID) + `,"symmetry":"symmetric"},{"name":"Flag","encode":{"kind":"primitive","primitive":{"code":"bool"}},"symmetry":"symmetric"}]}`
+	}
+	union := `{"kind":"union","control":{"kind":"primitive","primitive":{"code":"u8"}},"variants":[{"value":0,"name":"New","encode":{"kind":"void"}},{"value":1,"name":"Old","encode":{"kind":"void"}}]}`
+	enum := `{"kind":"enum","primitive":{"code":"u8"},"variants":[{"value":0,"name":"Inserted","encode":{"kind":"void"}},{"value":1,"name":"KeptName","encode":{"kind":"void"}}]}`
+	manifest := `{"schema_version":2,"target":{"minecraft_version":"1.0.0","protocol_version":1},"packets":[{"id":1,"name":"PingPacket","direction":"serverbound","fields":[
+		{"name":"A","encode":` + outer("Outer.json#", "Inner.json#") + `,"symmetry":"symmetric"},
+		{"name":"B","encode":` + outer("Outer", "cerealizer_Inner") + `,"symmetry":"symmetric"},
+		{"name":"C","encode":` + union + `,"symmetry":"symmetric"},
+		{"name":"D","encode":` + enum + `,"symmetry":"symmetric"}]}]}`
+	dir, rec := writeSource(t, manifest)
+	recDir := t.TempDir()
+	previous := `{"schema_version":1,"types":[{"name":"Kept","kind":"struct","wire":["Outer"]},
+		{"name":"PingC","kind":"union","variants":[{"name":"was_old","wire":"Old","value":0}]},
+		{"name":"PingD","kind":"enum","values":[{"name":"keptname","value":0}]}]}`
+	must(os.WriteFile(filepath.Join(recDir, "bedrock.json"), []byte(previous), 0o644))
+	data, err := json.Marshal(rec)
+	must(err)
+	must(os.WriteFile(filepath.Join(recDir, "reconciliation.json"), data, 0o644))
+	s := ingest(dir, filepath.Join(recDir, "reconciliation.json"))
+
+	names := map[string]TypeDef{}
+	for _, ty := range s.Types {
+		names[ty.Name] = ty
+	}
+	if len(s.Types) != 4 || names["Kept"].Kind != "struct" {
+		t.Fatalf("expected Kept, one inner struct and the union, got %+v", s.Types)
+	}
+	a, b := s.Packets[0].Fields[0].Type, s.Packets[0].Fields[1].Type
+	if a.Ref != "Kept" || b.Ref != "Kept" {
+		t.Fatalf("both occurrences must share the kept name: %+v %+v", a, b)
+	}
+	// The variant moved to selector 1 but keeps its old name by wire name.
+	if v := names["PingC"].Variants; v[1].Name != "was_old" || v[0].Name == "was_old" {
+		t.Fatalf("variant names must follow wire names: %+v", v)
+	}
+	if v := names["PingD"].Values; v[0].Name != "inserted" || v[1].Name != "keptname" {
+		t.Fatalf("enum names must follow spelling, not values: %+v", v)
+	}
+}
+
 func TestIngestFailsClosed(t *testing.T) {
 	dir, rec := writeSource(t, tinyManifest)
 	s := runIngest(t, dir, rec)
@@ -260,7 +305,9 @@ func TestIngestFailsClosed(t *testing.T) {
 
 	unnamed := rec
 	unnamed.PacketNames = map[string]string{}
-	mustPanic(t, "no reviewed name", func() { runIngest(t, dir, unnamed) })
+	if s := runIngest(t, dir, unnamed); s.Packets[0].Name != "Ping" {
+		t.Fatalf("unnamed packets take the wire name without the suffix, got %q", s.Packets[0].Name)
+	}
 
 	extra := rec
 	extra.FieldNames = map[string]string{"Ping.Missing": "x"}
