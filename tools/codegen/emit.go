@@ -354,7 +354,8 @@ func (f *file) decode(n Node, target, hint string, depth int) []string {
 	case "optional":
 		present := local("present", depth)
 		inner := f.decode(*n.Value, present, hint, depth+1)
-		if single := strings.TrimSpace(inner[0]); len(inner) == 1 && strings.HasPrefix(single, present+" = ") {
+		// Nested optionals skip the one-line form since peer typing turns a present but empty value into null.
+		if single := strings.TrimSpace(inner[0]); len(inner) == 1 && strings.HasPrefix(single, present+" = ") && n.Value.Kind != "optional" {
 			add("%s = if (try r.readBool()) %s else null;", target, strings.TrimSuffix(strings.TrimPrefix(single, present+" = "), ";"))
 			break
 		}

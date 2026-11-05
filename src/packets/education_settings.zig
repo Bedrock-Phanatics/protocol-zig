@@ -60,7 +60,12 @@ pub const EducationLevelSettings = struct {
         value.disable_legacy_title_bar = try r.readBool();
         value.post_process_filter = try r.readString();
         value.screenshot_border_resource_path = try r.readString();
-        value.agent_capabilities = if (try r.readBool()) if (try r.readBool()) try r.readBool() else null else null;
+        value.agent_capabilities = null;
+        if (try r.readBool()) {
+            var present: ?bool = undefined;
+            present = if (try r.readBool()) try r.readBool() else null;
+            value.agent_capabilities = present;
+        }
         value.local_settings = if (try r.readBool()) try r.readString() else null;
         value.deprecated_always_false = try r.readBool();
         value.external_link_settings = if (try r.readBool()) try EducationExternalLinkSettings.decode(r) else null;
