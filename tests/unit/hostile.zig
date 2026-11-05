@@ -274,6 +274,7 @@ test "all inventory transaction action lists preserve boundaries and reject over
                 .runtime_id = 123,
                 .action_type = .attack,
                 .slot = 7,
+                .hand = .mainhand,
                 .item = item,
                 .from_position = zero,
                 .hit_position = zero,
@@ -284,6 +285,7 @@ test "all inventory transaction action lists preserve boundaries and reject over
                 .slot = 7,
                 .item = item,
                 .from_position = zero,
+                .hand = .mainhand,
             } },
         };
         for (transactions) |transaction| {

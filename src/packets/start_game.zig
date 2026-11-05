@@ -121,7 +121,22 @@ pub const ChatRestrictionLevel = enum(u8) {
     }
 };
 
-/// Wire type `Editor::WorldType`.
+/// Wire type `EditorLevelMigrationVersion`.
+pub const EditorLevelMigrationVersion = enum(i8) {
+    legacy = 0,
+    editor_achievements = 1,
+    _,
+
+    pub fn decode(r: *Reader) DecodeError!EditorLevelMigrationVersion {
+        return @fromBackingInt(@intCast(try r.readI8()));
+    }
+
+    pub fn encode(self: EditorLevelMigrationVersion, w: anytype) EncodeError!void {
+        try w.writeI8(@backingInt(self));
+    }
+};
+
+/// Wire type `EditorWorldType`.
 pub const EditorWorldType = enum(i32) {
     noneditor = 0,
     editorproject = 1,
@@ -178,7 +193,7 @@ pub const EventsServerTelemetryData = struct {
     }
 };
 
-/// Wire type `SharedTypes::Legacy::Difficulty`.
+/// Wire type `Difficulty`.
 pub const LegacyDifficulty = enum(i32) {
     peaceful = 0,
     easy = 1,
@@ -210,6 +225,7 @@ pub const LevelSettings = struct {
     editor_world_type: EditorWorldType,
     is_created_in_editor: bool,
     is_exported_from_editor: bool,
+    editor_level_migration_version: EditorLevelMigrationVersion,
     day_cycle_stop_time: i32,
     education_edition_offer: EducationEditionOffer,
     education_features_enabled: bool,
@@ -263,6 +279,7 @@ pub const LevelSettings = struct {
         value.editor_world_type = try EditorWorldType.decode(r);
         value.is_created_in_editor = try r.readBool();
         value.is_exported_from_editor = try r.readBool();
+        value.editor_level_migration_version = try EditorLevelMigrationVersion.decode(r);
         value.day_cycle_stop_time = try r.readVarI32();
         value.education_edition_offer = try EducationEditionOffer.decode(r);
         value.education_features_enabled = try r.readBool();
@@ -320,6 +337,7 @@ pub const LevelSettings = struct {
         try self.editor_world_type.encode(w);
         try w.writeBool(self.is_created_in_editor);
         try w.writeBool(self.is_exported_from_editor);
+        try self.editor_level_migration_version.encode(w);
         try w.writeVarI32(self.day_cycle_stop_time);
         try self.education_edition_offer.encode(w);
         try w.writeBool(self.education_features_enabled);
@@ -464,7 +482,7 @@ pub const ServerEditorConnectionPolicy = enum(i32) {
     }
 };
 
-/// Wire type `Social::GamePublishSetting`.
+/// Wire type `GamePublishSetting`.
 pub const SocialGamePublishSetting = enum(i32) {
     nomultiplay = 0,
     inviteonly = 1,

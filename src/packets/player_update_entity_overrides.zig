@@ -31,7 +31,7 @@ pub const Packet = struct {
     }
 };
 
-/// Wire type `FloatOverride`.
+/// Wire type `PlayerUpdateEntityOverridesPacketPayload::FloatOverride`.
 pub const FloatOverride = struct {
     type: []const u8,
     value: f32,
@@ -49,7 +49,7 @@ pub const FloatOverride = struct {
     }
 };
 
-/// Wire type `IntOverride`.
+/// Wire type `PlayerUpdateEntityOverridesPacketPayload::IntOverride`.
 pub const IntOverride = struct {
     type: []const u8,
     value: i32,

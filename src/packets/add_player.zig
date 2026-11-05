@@ -22,6 +22,7 @@ pub const Packet = struct {
     synched_properties: types.PropertySyncData,
     abilities_data: types.AbilityData,
     actor_links: codec.List(types.EntityLink, types.EntityLink),
+    passenger_block_data: ?types.PassengerOfBlockArguments,
     device_id: []const u8,
     build_platform: types.BuildPlatform,
 
@@ -51,6 +52,7 @@ pub const Packet = struct {
             const count = try r.readCount(.var_u32);
             break :blk try codec.List(types.EntityLink, types.EntityLink).decode(r, count);
         };
+        value.passenger_block_data = if (try r.readBool()) try types.PassengerOfBlockArguments.decode(r) else null;
         value.device_id = try r.readString();
         value.build_platform = try types.BuildPlatform.decode(r);
         return value;
@@ -73,6 +75,10 @@ pub const Packet = struct {
         try self.abilities_data.encode(w);
         try w.writeCount(.var_u32, self.actor_links.len);
         try self.actor_links.encode(w);
+        try w.writeBool(self.passenger_block_data != null);
+        if (self.passenger_block_data) |present| {
+            try present.encode(w);
+        }
         try w.writeString(self.device_id);
         try self.build_platform.encode(w);
     }

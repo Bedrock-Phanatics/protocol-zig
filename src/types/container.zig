@@ -75,6 +75,10 @@ pub const ContainerEnumName = enum(u8) {
     recipefoodcontainer = 64,
     recipeblockscontainer = 65,
     recipefurnaceitemscontainer = 66,
+    reserved_container_a = 67,
+    reserved_container_b = 68,
+    reserved_container_c = 69,
+    reserved_container_d = 70,
     _,
 
     pub fn decode(r: *Reader) DecodeError!ContainerEnumName {

@@ -108,6 +108,7 @@ pub const ItemReleaseInventoryTransaction = struct {
     slot: i32,
     item: types.NetworkItemStackDescriptor,
     from_position: codec.Vec3f,
+    hand: types.HandSlot,
 
     pub fn decode(r: *Reader) DecodeError!ItemReleaseInventoryTransaction {
         var value: ItemReleaseInventoryTransaction = undefined;
@@ -120,6 +121,7 @@ pub const ItemReleaseInventoryTransaction = struct {
         value.slot = try r.readVarI32();
         value.item = try types.NetworkItemStackDescriptor.decode(r);
         value.from_position = try r.readVec3f();
+        value.hand = try types.HandSlot.decode(r);
         return value;
     }
 
@@ -131,6 +133,7 @@ pub const ItemReleaseInventoryTransaction = struct {
         try w.writeVarI32(self.slot);
         try self.item.encode(w);
         try w.writeVec3f(self.from_position);
+        try self.hand.encode(w);
     }
 };
 
@@ -155,6 +158,7 @@ pub const ItemUseOnActorInventoryTransaction = struct {
     runtime_id: u64,
     action_type: ItemUseOnActorInventoryTransactionActionType,
     slot: i32,
+    hand: types.HandSlot,
     item: types.NetworkItemStackDescriptor,
     from_position: codec.Vec3f,
     hit_position: codec.Vec3f,
@@ -173,6 +177,7 @@ pub const ItemUseOnActorInventoryTransaction = struct {
         value.runtime_id = try r.readVarU64();
         value.action_type = try ItemUseOnActorInventoryTransactionActionType.decode(r);
         value.slot = try r.readVarI32();
+        value.hand = try types.HandSlot.decode(r);
         value.item = try types.NetworkItemStackDescriptor.decode(r);
         value.from_position = try r.readVec3f();
         value.hit_position = try r.readVec3f();
@@ -186,6 +191,7 @@ pub const ItemUseOnActorInventoryTransaction = struct {
         try w.writeVarU64(self.runtime_id);
         try self.action_type.encode(w);
         try w.writeVarI32(self.slot);
+        try self.hand.encode(w);
         try self.item.encode(w);
         try w.writeVec3f(self.from_position);
         try w.writeVec3f(self.hit_position);

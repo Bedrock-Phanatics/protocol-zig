@@ -15,6 +15,7 @@ pub const Packet = struct {
     cache_enabled: bool,
     cache_metadata: codec.List(u64, codec.Prim(.u64le)),
     serialized_chunk_data: []const u8,
+    is_client_biome_update: bool,
 
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
@@ -37,6 +38,7 @@ pub const Packet = struct {
             break :blk try codec.List(u64, codec.Prim(.u64le)).decode(r, count);
         };
         value.serialized_chunk_data = try r.readByteArray();
+        value.is_client_biome_update = try r.readBool();
         return value;
     }
 
@@ -56,5 +58,6 @@ pub const Packet = struct {
         try w.writeCount(.var_u32, self.cache_metadata.len);
         try self.cache_metadata.encode(w);
         try w.writeByteArray(self.serialized_chunk_data);
+        try w.writeBool(self.is_client_biome_update);
     }
 };

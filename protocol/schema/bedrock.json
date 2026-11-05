@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "target": {
-    "minecraft_version": "1.26.51",
-    "protocol_version": 2193
+    "minecraft_version": "1.26.60",
+    "protocol_version": 2225
   },
   "sources": [
     {
       "id": "protocolgen",
       "repository": "https://github.com/cinnabar-mc/protocolgen",
-      "revision": "4e9dc032f2e3a1cf9ef4e35393af696988dfbb07",
-      "path": "generated/1.26.51/manifest.json",
-      "sha256": "sha256:7a0ce6c98c247c0ea12b809b1010e696e5110cd11993fdb9915acb5567f00466"
+      "revision": "cb7319a9e6275dfe7739e780c10d7bcf3e292c44",
+      "path": "generated/1.26.60/manifest.json",
+      "sha256": "sha256:44bb0819bd92c863eb6050309e3c78b275fb5a1e3ce4369c97f07e62c44e2732"
     },
     {
       "id": "gophertunnel",
@@ -671,6 +671,17 @@
           }
         },
         {
+          "name": "passenger_block_data",
+          "wire": "Passenger Block Data",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "ref",
+              "ref": "PassengerOfBlockArguments"
+            }
+          }
+        },
+        {
           "name": "device_id",
           "wire": "Device Id",
           "type": {
@@ -797,6 +808,17 @@
             "element": {
               "kind": "ref",
               "ref": "EntityLink"
+            }
+          }
+        },
+        {
+          "name": "passenger_block_data",
+          "wire": "Passenger Block Data",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "ref",
+              "ref": "PassengerOfBlockArguments"
             }
           }
         }
@@ -1865,6 +1887,14 @@
               "prefix": "var_u32"
             }
           }
+        },
+        {
+          "name": "hand",
+          "wire": "Hand",
+          "type": {
+            "kind": "ref",
+            "ref": "HandSlot"
+          }
         }
       ]
     },
@@ -2422,6 +2452,13 @@
           "type": {
             "kind": "bytes",
             "prefix": "var_u32"
+          }
+        },
+        {
+          "name": "is_client_biome_update",
+          "wire": "Is Client Biome Update",
+          "type": {
+            "kind": "bool"
           }
         }
       ]
@@ -4944,7 +4981,10 @@
           "name": "structures_nbt",
           "wire": "Structure's NBT",
           "type": {
-            "kind": "nbt"
+            "kind": "optional",
+            "value": {
+              "kind": "nbt"
+            }
           }
         },
         {
@@ -7471,11 +7511,14 @@
           "name": "system_categories",
           "wire": "System Categories",
           "type": {
-            "kind": "list",
-            "prefix": "var_u32",
-            "element": {
-              "kind": "ref",
-              "ref": "SystemCategory"
+            "kind": "optional",
+            "value": {
+              "kind": "list",
+              "prefix": "var_u32",
+              "element": {
+                "kind": "ref",
+                "ref": "SystemCategory"
+              }
             }
           }
         },
@@ -8460,56 +8503,8 @@
           }
         },
         {
-          "name": "stop",
-          "wire": "Stop",
-          "type": {
-            "kind": "ref",
-            "ref": "SoundDataEvent"
-          }
-        },
-        {
-          "name": "set_volume",
-          "wire": "SetVolume",
-          "type": {
-            "kind": "ref",
-            "ref": "SoundDataEvent"
-          }
-        },
-        {
-          "name": "set_pitch",
-          "wire": "SetPitch",
-          "type": {
-            "kind": "ref",
-            "ref": "SoundDataEvent"
-          }
-        },
-        {
-          "name": "fade",
-          "wire": "Fade",
-          "type": {
-            "kind": "ref",
-            "ref": "SoundDataEvent"
-          }
-        },
-        {
-          "name": "seek_to",
-          "wire": "SeekTo",
-          "type": {
-            "kind": "ref",
-            "ref": "SoundDataEvent"
-          }
-        },
-        {
-          "name": "pause",
-          "wire": "Pause",
-          "type": {
-            "kind": "ref",
-            "ref": "SoundDataEvent"
-          }
-        },
-        {
-          "name": "resume",
-          "wire": "Resume",
+          "name": "event",
+          "wire": "Event",
           "type": {
             "kind": "ref",
             "ref": "SoundDataEvent"
@@ -8627,6 +8622,225 @@
           "wire": "Server Sound Handle",
           "type": {
             "kind": "u64le"
+          }
+        }
+      ]
+    },
+    {
+      "id": 353,
+      "name": "ClientboundMatchmakingState",
+      "wire": "ClientboundMatchmakingStatePacket",
+      "directions": [
+        "server"
+      ],
+      "fields": [
+        {
+          "name": "state",
+          "wire": "State",
+          "type": {
+            "kind": "ref",
+            "ref": "MatchmakingState"
+          }
+        },
+        {
+          "name": "destination_name",
+          "wire": "Destination Name",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 100
+          }
+        },
+        {
+          "name": "options",
+          "wire": "Options",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "ref",
+              "ref": "MatchmakingStateOptions"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 354,
+      "name": "ServerboundStonecutterSetRecipe",
+      "wire": "ServerboundStonecutterSetRecipePacket",
+      "directions": [
+        "client"
+      ],
+      "fields": [
+        {
+          "name": "container_id",
+          "wire": "Container Id",
+          "type": {
+            "kind": "u8",
+            "min": 0,
+            "max": 255
+          }
+        },
+        {
+          "name": "recipe_index",
+          "wire": "Recipe Index",
+          "type": {
+            "kind": "zigzag_i32"
+          }
+        }
+      ]
+    },
+    {
+      "id": 355,
+      "name": "ClientboundStonecutterSetRecipe",
+      "wire": "ClientboundStonecutterSetRecipePacket",
+      "directions": [
+        "server"
+      ],
+      "fields": [
+        {
+          "name": "player_id",
+          "wire": "Player Id",
+          "type": {
+            "kind": "zigzag_i64"
+          }
+        },
+        {
+          "name": "container_id",
+          "wire": "Container Id",
+          "type": {
+            "kind": "u8",
+            "min": 0,
+            "max": 255
+          }
+        },
+        {
+          "name": "recipe_index",
+          "wire": "Recipe Index",
+          "type": {
+            "kind": "zigzag_i32"
+          }
+        }
+      ]
+    },
+    {
+      "id": 356,
+      "name": "ServerboundMatchmakingCancel",
+      "wire": "ServerboundMatchmakingCancelPacket",
+      "directions": [
+        "client"
+      ],
+      "fields": []
+    },
+    {
+      "id": 357,
+      "name": "SetPassengerOfBlock",
+      "wire": "SetPassengerOfBlockPacket",
+      "directions": [
+        "server"
+      ],
+      "fields": [
+        {
+          "name": "passenger",
+          "wire": "Passenger",
+          "type": {
+            "kind": "zigzag_i64"
+          }
+        },
+        {
+          "name": "passenger_of_block_data",
+          "wire": "PassengerOfBlockData",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "ref",
+              "ref": "PassengerOfBlockArguments"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 358,
+      "name": "ServerboundCursorItemDrag",
+      "wire": "ServerboundCursorItemDragPacket",
+      "directions": [
+        "client"
+      ],
+      "fields": [
+        {
+          "name": "state",
+          "wire": "State",
+          "type": {
+            "kind": "ref",
+            "ref": "CursorItemDragState"
+          }
+        }
+      ]
+    },
+    {
+      "id": 359,
+      "name": "ClientboundPlayAudioContent",
+      "wire": "ClientboundPlayAudioContentPacket",
+      "directions": [
+        "server"
+      ],
+      "fields": [
+        {
+          "name": "shared_metadata",
+          "wire": "Shared Metadata",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 32768
+          }
+        },
+        {
+          "name": "playback_content",
+          "wire": "Playback Content",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 32768
+          }
+        },
+        {
+          "name": "playback_type",
+          "wire": "Playback Type",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32"
+          }
+        },
+        {
+          "name": "play_sound",
+          "wire": "Play Sound",
+          "type": {
+            "kind": "ref",
+            "ref": "AudioSound"
+          }
+        }
+      ]
+    },
+    {
+      "id": 360,
+      "name": "ServerboundRegisterAudioContent",
+      "wire": "ServerboundRegisterAudioContentPacket",
+      "directions": [
+        "client"
+      ],
+      "fields": [
+        {
+          "name": "registrations",
+          "wire": "Registrations",
+          "type": {
+            "kind": "list",
+            "prefix": "var_u32",
+            "element": {
+              "kind": "ref",
+              "ref": "AudioContentRegistrationEntry"
+            },
+            "max_items": 64
           }
         }
       ]
@@ -9410,6 +9624,10 @@
           "value": 199540
         },
         {
+          "name": "frostbite",
+          "value": 199579
+        },
+        {
           "name": "arthropod",
           "value": 264960
         },
@@ -9576,6 +9794,10 @@
         {
           "name": "windchargeprojectile",
           "value": 4194447
+        },
+        {
+          "name": "ice_ball",
+          "value": 4194460
         },
         {
           "name": "abstractarrow",
@@ -10057,6 +10279,128 @@
       ]
     },
     {
+      "name": "AudioContentRegistrationEntry",
+      "kind": "struct",
+      "owner": "ServerboundRegisterAudioContent",
+      "wire": [
+        "AudioContentRegistrationEntry"
+      ],
+      "fields": [
+        {
+          "name": "audio_content_id",
+          "wire": "Audio Content ID",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "min_len": 1,
+            "max_len": 36
+          }
+        },
+        {
+          "name": "shared_metadata",
+          "wire": "Shared Metadata",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 32768
+          }
+        },
+        {
+          "name": "server_content",
+          "wire": "Server Content",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 32768
+          }
+        },
+        {
+          "name": "playback_content",
+          "wire": "Playback Content",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 32768
+          }
+        }
+      ]
+    },
+    {
+      "name": "AudioSound",
+      "kind": "struct",
+      "owner": "ClientboundPlayAudioContent",
+      "wire": [
+        "PlaySoundPacketPayload"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "wire": "Name",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32"
+          }
+        },
+        {
+          "name": "position",
+          "wire": "Position",
+          "type": {
+            "kind": "ref",
+            "ref": "BlockPos"
+          }
+        },
+        {
+          "name": "volume",
+          "wire": "Volume",
+          "type": {
+            "kind": "f32le"
+          }
+        },
+        {
+          "name": "pitch",
+          "wire": "Pitch",
+          "type": {
+            "kind": "f32le"
+          }
+        },
+        {
+          "name": "loop_count",
+          "wire": "Loop Count",
+          "type": {
+            "kind": "zigzag_i32"
+          }
+        },
+        {
+          "name": "bypass_listener_range_check",
+          "wire": "Bypass Listener Range Check",
+          "type": {
+            "kind": "bool"
+          }
+        },
+        {
+          "name": "server_sound_handle",
+          "wire": "Server Sound Handle",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "u64le",
+              "min": 0
+            }
+          }
+        },
+        {
+          "name": "playback_position_seconds",
+          "wire": "Playback Position Seconds",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "f32le"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "AutoCraftRecipeStackRequestAction",
       "kind": "struct",
       "domain": "item_stack",
@@ -10130,7 +10474,7 @@
           "type": {
             "kind": "zigzag_i32",
             "min": 0,
-            "max": 37
+            "max": 38
           }
         },
         {
@@ -10139,7 +10483,7 @@
           "type": {
             "kind": "zigzag_i32",
             "min": 0,
-            "max": 37
+            "max": 38
           }
         }
       ]
@@ -13222,7 +13566,7 @@
           "name": "item_id",
           "wire": "Item Id",
           "type": {
-            "kind": "zigzag_i32"
+            "kind": "i16le"
           }
         }
       ]
@@ -13246,14 +13590,14 @@
           "name": "contents_type",
           "wire": "Contents Type",
           "type": {
-            "kind": "zigzag_i32"
+            "kind": "i16le"
           }
         },
         {
           "name": "fill_level",
           "wire": "Fill Level",
           "type": {
-            "kind": "zigzag_i32"
+            "kind": "i16le"
           }
         }
       ]
@@ -13847,7 +14191,7 @@
       "kind": "struct",
       "owner": "AvailableCommands",
       "wire": [
-        "AvailableCommandsPacketCommandData"
+        "AvailableCommandsPacketPayload::CommandData"
       ],
       "fields": [
         {
@@ -13856,7 +14200,7 @@
           "type": {
             "kind": "string",
             "prefix": "var_u32",
-            "max_len": 1000
+            "max_len": 512
           }
         },
         {
@@ -13872,8 +14216,7 @@
           "name": "flags",
           "wire": "Flags",
           "type": {
-            "kind": "u16le",
-            "min": 0
+            "kind": "u16le"
           }
         },
         {
@@ -14294,7 +14637,7 @@
           "name": "item_id",
           "wire": "Item Id",
           "type": {
-            "kind": "zigzag_i32"
+            "kind": "i16le"
           }
         }
       ]
@@ -14939,6 +15282,10 @@
         {
           "name": "unsupportedtransport",
           "value": 149
+        },
+        {
+          "name": "sub_client_login_not_bound",
+          "value": 150
         }
       ]
     },
@@ -15256,6 +15603,22 @@
         {
           "name": "recipefurnaceitemscontainer",
           "value": 66
+        },
+        {
+          "name": "reserved_container_a",
+          "value": 67
+        },
+        {
+          "name": "reserved_container_b",
+          "value": 68
+        },
+        {
+          "name": "reserved_container_c",
+          "value": 69
+        },
+        {
+          "name": "reserved_container_d",
+          "value": 70
         }
       ]
     },
@@ -15386,6 +15749,44 @@
         {
           "name": "number_of_requested_crafts",
           "wire": "Number of requested crafts",
+          "type": {
+            "kind": "u8",
+            "min": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "CraftDiscPressStackRequestAction",
+      "kind": "struct",
+      "domain": "item_stack",
+      "wire": [
+        "ItemStackRequestCereal::CraftDiscPressActionData"
+      ],
+      "fields": [
+        {
+          "name": "action_type",
+          "wire": "Action type",
+          "type": {
+            "kind": "ref",
+            "ref": "ItemStackRequestActionType",
+            "allowed": [
+              18
+            ]
+          }
+        },
+        {
+          "name": "reserved_id",
+          "wire": "Reserved Id",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 256
+          }
+        },
+        {
+          "name": "num_crafts",
+          "wire": "Num Crafts",
           "type": {
             "kind": "u8",
             "min": 1
@@ -15560,7 +15961,7 @@
             "kind": "ref",
             "ref": "ItemStackRequestActionType",
             "allowed": [
-              19
+              20
             ]
           }
         },
@@ -15714,6 +16115,25 @@
       ]
     },
     {
+      "name": "CursorItemDragState",
+      "kind": "enum",
+      "owner": "ServerboundCursorItemDrag",
+      "wire": [
+        "CursorItemDragState"
+      ],
+      "repr": "u8",
+      "values": [
+        {
+          "name": "start",
+          "value": 0
+        },
+        {
+          "name": "stop",
+          "value": 1
+        }
+      ]
+    },
+    {
       "name": "CylinderShape",
       "kind": "struct",
       "owner": "PrimitiveShapes",
@@ -15776,9 +16196,7 @@
           "name": "value",
           "wire": "Value",
           "type": {
-            "kind": "i8",
-            "min": -128,
-            "max": 127
+            "kind": "i8"
           }
         }
       ]
@@ -15823,8 +16241,7 @@
           "name": "id",
           "wire": "ID",
           "type": {
-            "kind": "var_u32",
-            "min": 0
+            "kind": "var_u32"
           }
         },
         {
@@ -16445,6 +16862,20 @@
             "prefix": "var_u32",
             "max_len": 256
           }
+        },
+        {
+          "name": "cloud_height",
+          "wire": "Cloud Height",
+          "type": {
+            "kind": "zigzag_i32"
+          }
+        },
+        {
+          "name": "render_clouds",
+          "wire": "Render Clouds",
+          "type": {
+            "kind": "bool"
+          }
         }
       ]
     },
@@ -16501,7 +16932,7 @@
       "kind": "struct",
       "owner": "ResourcePackClientResponse",
       "wire": [
-        "Resource_Pack_Client_Response_-_Downloading"
+        "ResourcePackClientResponsePacketPayload::Downloading"
       ],
       "fields": [
         {
@@ -16687,7 +17118,7 @@
       "kind": "struct",
       "owner": "ClientBoundAttributeLayerSync",
       "wire": [
-        "BoolAttributeData"
+        "EAS::BoolAttributeData"
       ],
       "fields": [
         {
@@ -16712,7 +17143,7 @@
       "kind": "struct",
       "owner": "ClientBoundAttributeLayerSync",
       "wire": [
-        "ColorAttributeData"
+        "EAS::ColorAttributeData"
       ],
       "fields": [
         {
@@ -16741,7 +17172,7 @@
       "kind": "struct",
       "owner": "ClientBoundAttributeLayerSync",
       "wire": [
-        "FloatAttributeData"
+        "EAS::FloatAttributeData"
       ],
       "fields": [
         {
@@ -16796,18 +17227,6 @@
             "kind": "string",
             "prefix": "var_u32",
             "max_len": 128
-          }
-        },
-        {
-          "name": "noise_name",
-          "wire": "NoiseName",
-          "type": {
-            "kind": "optional",
-            "value": {
-              "kind": "string",
-              "prefix": "var_u32",
-              "max_len": 128
-            }
           }
         },
         {
@@ -16896,80 +17315,46 @@
           }
         },
         {
-          "name": "from_attribute",
-          "wire": "FromAttribute",
+          "name": "payload",
+          "wire": "Payload",
           "type": {
-            "kind": "optional",
-            "value": {
-              "kind": "ref",
-              "ref": "EnvironmentAttributeValue"
-            }
+            "kind": "ref",
+            "ref": "EasEnvironmentAttributeDataPayload"
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "EasEnvironmentAttributeDataPayload",
+      "kind": "union",
+      "owner": "ClientBoundAttributeLayerSync",
+      "repr": "var_u32",
+      "variants": [
         {
-          "name": "attribute",
-          "wire": "Attribute",
+          "name": "constant",
+          "wire": "EAS::ConstantAttributeData",
+          "value": 0,
           "type": {
             "kind": "ref",
             "ref": "EnvironmentAttributeValue"
           }
         },
         {
-          "name": "to_attribute",
-          "wire": "ToAttribute",
+          "name": "transition",
+          "wire": "EAS::TransitionAttributeData",
+          "value": 1,
           "type": {
-            "kind": "optional",
-            "value": {
-              "kind": "ref",
-              "ref": "EnvironmentAttributeValue"
-            }
-          }
-        },
-        {
-          "name": "current_transition_ticks",
-          "wire": "CurrentTransitionTicks",
-          "type": {
-            "kind": "u32le",
-            "min": 0
-          }
-        },
-        {
-          "name": "total_transition_ticks",
-          "wire": "TotalTransitionTicks",
-          "type": {
-            "kind": "u32le",
-            "min": 0
-          }
-        },
-        {
-          "name": "easing",
-          "wire": "Easing",
-          "type": {
-            "kind": "string",
-            "prefix": "var_u32"
-          }
-        },
-        {
-          "name": "local_transition_ticks",
-          "wire": "LocalTransitionTicks",
-          "type": {
-            "kind": "u32le",
-            "min": 0
+            "kind": "ref",
+            "ref": "TransitionEnvironmentAttribute"
           }
         },
         {
           "name": "noise_transition",
-          "wire": "NoiseTransition",
-          "type": {
-            "kind": "bool"
-          }
-        },
-        {
-          "name": "noise_alignment",
-          "wire": "NoiseAlignment",
+          "wire": "EAS::NoiseTransitionAttributeData",
+          "value": 2,
           "type": {
             "kind": "ref",
-            "ref": "NoiseAlignment"
+            "ref": "NoiseTransitionEnvironmentAttribute"
           }
         }
       ]
@@ -16990,11 +17375,275 @@
       ]
     },
     {
+      "name": "EasNoiseTransitionSettingsData",
+      "kind": "struct",
+      "owner": "ClientBoundAttributeLayerSync",
+      "wire": [
+        "EAS::NoiseTransitionSettingsData"
+      ],
+      "fields": [
+        {
+          "name": "total_transition_ticks",
+          "wire": "TotalTransitionTicks",
+          "type": {
+            "kind": "var_u32"
+          }
+        },
+        {
+          "name": "current_transition_ticks",
+          "wire": "CurrentTransitionTicks",
+          "type": {
+            "kind": "var_u32"
+          }
+        },
+        {
+          "name": "easing",
+          "wire": "Easing",
+          "type": {
+            "kind": "ref",
+            "ref": "EasingType"
+          }
+        },
+        {
+          "name": "clock_name",
+          "wire": "ClockName",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 128
+          }
+        },
+        {
+          "name": "local_transition_ticks",
+          "wire": "LocalTransitionTicks",
+          "type": {
+            "kind": "var_u32"
+          }
+        },
+        {
+          "name": "noise_name",
+          "wire": "NoiseName",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 128
+          }
+        },
+        {
+          "name": "noise_alignment",
+          "wire": "NoiseAlignment",
+          "type": {
+            "kind": "ref",
+            "ref": "NoiseAlignment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "EasTransitionSettingsData",
+      "kind": "struct",
+      "owner": "ClientBoundAttributeLayerSync",
+      "wire": [
+        "EAS::TransitionSettingsData"
+      ],
+      "fields": [
+        {
+          "name": "total_transition_ticks",
+          "wire": "TotalTransitionTicks",
+          "type": {
+            "kind": "var_u32"
+          }
+        },
+        {
+          "name": "current_transition_ticks",
+          "wire": "CurrentTransitionTicks",
+          "type": {
+            "kind": "var_u32"
+          }
+        },
+        {
+          "name": "easing",
+          "wire": "Easing",
+          "type": {
+            "kind": "ref",
+            "ref": "EasingType"
+          }
+        },
+        {
+          "name": "clock_name",
+          "wire": "ClockName",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32",
+            "max_len": 128
+          }
+        }
+      ]
+    },
+    {
+      "name": "EasingType",
+      "kind": "enum",
+      "owner": "ClientBoundAttributeLayerSync",
+      "wire": [
+        "EasingType"
+      ],
+      "repr": "zigzag_i32",
+      "values": [
+        {
+          "name": "linear",
+          "value": 0
+        },
+        {
+          "name": "spring",
+          "value": 1
+        },
+        {
+          "name": "in_quad",
+          "value": 2
+        },
+        {
+          "name": "out_quad",
+          "value": 3
+        },
+        {
+          "name": "in_out_quad",
+          "value": 4
+        },
+        {
+          "name": "in_cubic",
+          "value": 5
+        },
+        {
+          "name": "out_cubic",
+          "value": 6
+        },
+        {
+          "name": "in_out_cubic",
+          "value": 7
+        },
+        {
+          "name": "in_quart",
+          "value": 8
+        },
+        {
+          "name": "out_quart",
+          "value": 9
+        },
+        {
+          "name": "in_out_quart",
+          "value": 10
+        },
+        {
+          "name": "in_quint",
+          "value": 11
+        },
+        {
+          "name": "out_quint",
+          "value": 12
+        },
+        {
+          "name": "in_out_quint",
+          "value": 13
+        },
+        {
+          "name": "in_sine",
+          "value": 14
+        },
+        {
+          "name": "out_sine",
+          "value": 15
+        },
+        {
+          "name": "in_out_sine",
+          "value": 16
+        },
+        {
+          "name": "in_expo",
+          "value": 17
+        },
+        {
+          "name": "out_expo",
+          "value": 18
+        },
+        {
+          "name": "in_out_expo",
+          "value": 19
+        },
+        {
+          "name": "in_circ",
+          "value": 20
+        },
+        {
+          "name": "out_circ",
+          "value": 21
+        },
+        {
+          "name": "in_out_circ",
+          "value": 22
+        },
+        {
+          "name": "in_bounce",
+          "value": 23
+        },
+        {
+          "name": "out_bounce",
+          "value": 24
+        },
+        {
+          "name": "in_out_bounce",
+          "value": 25
+        },
+        {
+          "name": "in_back",
+          "value": 26
+        },
+        {
+          "name": "out_back",
+          "value": 27
+        },
+        {
+          "name": "in_out_back",
+          "value": 28
+        },
+        {
+          "name": "in_elastic",
+          "value": 29
+        },
+        {
+          "name": "out_elastic",
+          "value": 30
+        },
+        {
+          "name": "in_out_elastic",
+          "value": 31
+        }
+      ]
+    },
+    {
+      "name": "EditorLevelMigrationVersion",
+      "kind": "enum",
+      "owner": "StartGame",
+      "wire": [
+        "EditorLevelMigrationVersion"
+      ],
+      "repr": "i8",
+      "values": [
+        {
+          "name": "legacy",
+          "value": 0
+        },
+        {
+          "name": "editor_achievements",
+          "value": 1
+        }
+      ]
+    },
+    {
       "name": "EditorWorldType",
       "kind": "enum",
       "owner": "StartGame",
       "wire": [
-        "Editor::WorldType"
+        "EditorWorldType"
       ],
       "repr": "zigzag_i32",
       "values": [
@@ -17125,7 +17774,10 @@
           "type": {
             "kind": "optional",
             "value": {
-              "kind": "bool"
+              "kind": "optional",
+              "value": {
+                "kind": "bool"
+              }
             }
           }
         },
@@ -17418,9 +18070,7 @@
           "name": "enchant_level",
           "wire": "Enchant Level",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "u8"
           }
         }
       ]
@@ -17732,7 +18382,7 @@
           "wire": "LegacyTelemetryEventPacketPayload::BellUsed",
           "value": 12,
           "type": {
-            "kind": "zigzag_i32"
+            "kind": "i16le"
           }
         },
         {
@@ -17865,7 +18515,8 @@
       "kind": "struct",
       "domain": "experiment",
       "wire": [
-        "cerealizer_ExperimentsAnon::ExperimentToggle"
+        "cerealizer_ExperimentsAnon::ExperimentToggle",
+        "ExperimentToggle"
       ],
       "fields": [
         {
@@ -17945,7 +18596,7 @@
       "kind": "struct",
       "owner": "PlayerUpdateEntityOverrides",
       "wire": [
-        "FloatOverride"
+        "PlayerUpdateEntityOverridesPacketPayload::FloatOverride"
       ],
       "fields": [
         {
@@ -18149,12 +18800,12 @@
       "variants": [
         {
           "name": "empty",
-          "wire": "Empty0",
+          "wire": "Variant0",
           "value": 0
         },
         {
           "name": "bool",
-          "wire": "bool",
+          "wire": "Variant1",
           "value": 1,
           "type": {
             "kind": "bool"
@@ -18162,7 +18813,7 @@
         },
         {
           "name": "int32",
-          "wire": "int32",
+          "wire": "Variant2",
           "value": 2,
           "type": {
             "kind": "i32le"
@@ -18170,7 +18821,7 @@
         },
         {
           "name": "float",
-          "wire": "float",
+          "wire": "Variant3",
           "value": 3,
           "type": {
             "kind": "f32le"
@@ -18735,7 +19386,7 @@
       "kind": "struct",
       "owner": "PlayerUpdateEntityOverrides",
       "wire": [
-        "IntOverride"
+        "PlayerUpdateEntityOverridesPacketPayload::IntOverride"
       ],
       "fields": [
         {
@@ -19254,9 +19905,7 @@
           "name": "cost",
           "wire": "Cost",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "u8"
           }
         },
         {
@@ -19411,6 +20060,14 @@
           "type": {
             "kind": "ref",
             "ref": "Vec3"
+          }
+        },
+        {
+          "name": "hand",
+          "wire": "Hand",
+          "type": {
+            "kind": "ref",
+            "ref": "HandSlot"
           }
         }
       ]
@@ -19799,12 +20456,16 @@
           "value": 17
         },
         {
-          "name": "craftnonimplemented",
+          "name": "craft_reserved_action",
           "value": 18
         },
         {
-          "name": "craftresults",
+          "name": "craftnonimplemented",
           "value": 19
+        },
+        {
+          "name": "craftresults",
+          "value": 20
         }
       ]
     },
@@ -20320,6 +20981,14 @@
           }
         },
         {
+          "name": "hand",
+          "wire": "Hand",
+          "type": {
+            "kind": "ref",
+            "ref": "HandSlot"
+          }
+        },
+        {
           "name": "item",
           "wire": "Item",
           "type": {
@@ -20551,7 +21220,7 @@
       "kind": "enum",
       "owner": "StartGame",
       "wire": [
-        "SharedTypes::Legacy::Difficulty"
+        "Difficulty"
       ],
       "repr": "zigzag_i32",
       "values": [
@@ -20936,6 +21605,14 @@
           }
         },
         {
+          "name": "editor_level_migration_version",
+          "wire": "Editor Level Migration Version",
+          "type": {
+            "kind": "ref",
+            "ref": "EditorLevelMigrationVersion"
+          }
+        },
+        {
           "name": "day_cycle_stop_time",
           "wire": "Day Cycle Stop Time",
           "type": {
@@ -21281,27 +21958,21 @@
           "name": "rotation",
           "wire": "Rotation",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "u8"
           }
         },
         {
           "name": "x",
           "wire": "X",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "u8"
           }
         },
         {
           "name": "y",
           "wire": "Y",
           "type": {
-            "kind": "u8",
-            "min": 0,
-            "max": 255
+            "kind": "u8"
           }
         },
         {
@@ -21513,6 +22184,85 @@
             "value": {
               "kind": "ref",
               "ref": "BlockPos"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MatchmakingState",
+      "kind": "enum",
+      "owner": "ClientboundMatchmakingState",
+      "wire": [
+        "MatchmakingState"
+      ],
+      "repr": "u8",
+      "values": [
+        {
+          "name": "idle",
+          "value": 0
+        },
+        {
+          "name": "matchmaking",
+          "value": 1
+        },
+        {
+          "name": "match_found",
+          "value": 2
+        },
+        {
+          "name": "canceled",
+          "value": 3
+        },
+        {
+          "name": "player_left_party",
+          "value": 4
+        },
+        {
+          "name": "player_left_server",
+          "value": 5
+        },
+        {
+          "name": "server_shutdown",
+          "value": 6
+        },
+        {
+          "name": "timed_out",
+          "value": 7
+        },
+        {
+          "name": "requeue_as_party",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "name": "MatchmakingStateOptions",
+      "kind": "struct",
+      "owner": "ClientboundMatchmakingState",
+      "wire": [
+        "MatchmakingStateOptions"
+      ],
+      "fields": [
+        {
+          "name": "triggering_player_name",
+          "wire": "Triggering Player Name",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "string",
+              "prefix": "var_u32",
+              "max_len": 40
+            }
+          }
+        },
+        {
+          "name": "triggered_by_local_player",
+          "wire": "Triggered By Local Player",
+          "type": {
+            "kind": "optional",
+            "value": {
+              "kind": "bool"
             }
           }
         }
@@ -22019,6 +22769,10 @@
         {
           "name": "gameface_layout",
           "value": 109
+        },
+        {
+          "name": "executable",
+          "value": 110
         }
       ]
     },
@@ -22042,8 +22796,7 @@
           "name": "current_bytes",
           "wire": "Current Bytes",
           "type": {
-            "kind": "u64le",
-            "min": 0
+            "kind": "u64le"
           }
         }
       ]
@@ -22426,6 +23179,10 @@
         {
           "name": "plethoraofcats",
           "value": 126
+        },
+        {
+          "name": "what_goes_around_comes_around",
+          "value": 127
         }
       ]
     },
@@ -23324,7 +24081,7 @@
       "fields": [
         {
           "name": "type",
-          "wire": "type",
+          "wire": "Type",
           "type": {
             "kind": "ref",
             "ref": "EasNoiseAlignmentType"
@@ -23332,10 +24089,9 @@
         },
         {
           "name": "value",
-          "wire": "value",
+          "wire": "Value",
           "type": {
-            "kind": "var_u32",
-            "min": 0
+            "kind": "var_u32"
           }
         }
       ]
@@ -23414,6 +24170,40 @@
             },
             "min_items": 1,
             "max_items": 100
+          }
+        }
+      ]
+    },
+    {
+      "name": "NoiseTransitionEnvironmentAttribute",
+      "kind": "struct",
+      "owner": "ClientBoundAttributeLayerSync",
+      "wire": [
+        "EAS::NoiseTransitionAttributeData"
+      ],
+      "fields": [
+        {
+          "name": "from_attribute",
+          "wire": "FromAttribute",
+          "type": {
+            "kind": "ref",
+            "ref": "EnvironmentAttributeValue"
+          }
+        },
+        {
+          "name": "to_attribute",
+          "wire": "ToAttribute",
+          "type": {
+            "kind": "ref",
+            "ref": "EnvironmentAttributeValue"
+          }
+        },
+        {
+          "name": "settings",
+          "wire": "Settings",
+          "type": {
+            "kind": "ref",
+            "ref": "EasNoiseTransitionSettingsData"
           }
         }
       ]
@@ -23690,9 +24480,84 @@
       ]
     },
     {
+      "name": "PassengerOfBlockArguments",
+      "kind": "struct",
+      "domain": "actor",
+      "wire": [
+        "PassengerOfBlockArguments"
+      ],
+      "fields": [
+        {
+          "name": "block_pos",
+          "wire": "BlockPos",
+          "type": {
+            "kind": "ref",
+            "ref": "BlockPos"
+          }
+        },
+        {
+          "name": "offset",
+          "wire": "Offset",
+          "type": {
+            "kind": "ref",
+            "ref": "Vec3"
+          }
+        },
+        {
+          "name": "rotation",
+          "wire": "Rotation",
+          "type": {
+            "kind": "f32le",
+            "min": 0,
+            "max": 360
+          }
+        },
+        {
+          "name": "rotation_limit",
+          "wire": "RotationLimit",
+          "type": {
+            "kind": "f32le",
+            "min": 0,
+            "max": 360
+          }
+        },
+        {
+          "name": "emote_type",
+          "wire": "EmoteType",
+          "type": {
+            "kind": "ref",
+            "ref": "PassengerOfBlockArgumentsEmoteType"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PassengerOfBlockArgumentsEmoteType",
+      "kind": "enum",
+      "domain": "actor",
+      "wire": [
+        "PassengerOfBlockArguments::EmoteType"
+      ],
+      "repr": "u8",
+      "values": [
+        {
+          "name": "standing",
+          "value": 0
+        },
+        {
+          "name": "riding",
+          "value": 1
+        },
+        {
+          "name": "laying",
+          "value": 2
+        }
+      ]
+    },
+    {
       "name": "PersonaAnimatedTextureType",
       "kind": "enum",
-      "domain": "misc",
+      "domain": "types",
       "wire": [
         "persona::AnimatedTextureType"
       ],
@@ -23719,7 +24584,7 @@
     {
       "name": "PersonaAnimationExpression",
       "kind": "enum",
-      "domain": "misc",
+      "domain": "types",
       "wire": [
         "persona::AnimationExpression"
       ],
@@ -23738,9 +24603,10 @@
     {
       "name": "PersonaArmSizeType",
       "kind": "enum",
-      "domain": "misc",
+      "domain": "types",
       "wire": [
-        "SharedTypes::persona::ArmSizeType"
+        "SharedTypes::persona::ArmSizeType",
+        "persona::ArmSize::Type"
       ],
       "repr": "u8",
       "values": [
@@ -23805,9 +24671,10 @@
     {
       "name": "PersonaPieceType",
       "kind": "enum",
-      "domain": "skin",
+      "domain": "types",
       "wire": [
-        "SharedTypes::persona::PieceType"
+        "SharedTypes::persona::PieceType",
+        "persona::PieceType"
       ],
       "repr": "u32le",
       "values": [
@@ -23924,8 +24791,12 @@
           "value": 27
         },
         {
-          "name": "unsupported",
+          "name": "co_co",
           "value": 28
+        },
+        {
+          "name": "unsupported",
+          "value": 29
         }
       ]
     },
@@ -24687,6 +25558,14 @@
         {
           "name": "xbl_xuid",
           "wire": "XBL XUID",
+          "type": {
+            "kind": "string",
+            "prefix": "var_u32"
+          }
+        },
+        {
+          "name": "play_fab_id",
+          "wire": "PlayFab ID",
           "type": {
             "kind": "string",
             "prefix": "var_u32"
@@ -25917,7 +26796,7 @@
     {
       "name": "SafetyRedactableString",
       "kind": "struct",
-      "owner": "ItemStackResponse",
+      "domain": "bedrock_safety",
       "wire": [
         "Bedrock::Safety::RedactableString"
       ],
@@ -26095,22 +26974,15 @@
     {
       "name": "SerializedSkinRef",
       "kind": "struct",
-      "domain": "misc",
+      "domain": "types",
       "wire": [
-        "SerializedSkinRef"
+        "SerializedSkinRef",
+        "SerializedSkin"
       ],
       "fields": [
         {
           "name": "id",
           "wire": "ID",
-          "type": {
-            "kind": "string",
-            "prefix": "var_u32"
-          }
-        },
-        {
-          "name": "play_fab_id",
-          "wire": "PlayFabID",
           "type": {
             "kind": "string",
             "prefix": "var_u32"
@@ -27050,7 +27922,7 @@
       "kind": "enum",
       "owner": "StartGame",
       "wire": [
-        "Social::GamePublishSetting"
+        "GamePublishSetting"
       ],
       "repr": "zigzag_i32",
       "values": [
@@ -27103,11 +27975,11 @@
       "name": "SoundDataEvent",
       "kind": "union",
       "owner": "ClientboundUpdateSoundData",
-      "repr": "var_u32",
+      "repr": "u8",
       "variants": [
         {
           "name": "stop",
-          "wire": "SoundDataEvent::Stop",
+          "wire": "Stop",
           "value": 0,
           "type": {
             "kind": "ref",
@@ -27116,7 +27988,7 @@
         },
         {
           "name": "set_volume",
-          "wire": "SoundDataEvent::SetVolume",
+          "wire": "SetVolume",
           "value": 1,
           "type": {
             "kind": "f32le"
@@ -27124,7 +27996,7 @@
         },
         {
           "name": "set_pitch",
-          "wire": "SoundDataEvent::SetPitch",
+          "wire": "SetPitch",
           "value": 2,
           "type": {
             "kind": "f32le"
@@ -27132,7 +28004,7 @@
         },
         {
           "name": "fade",
-          "wire": "SoundDataEvent::Fade",
+          "wire": "Fade",
           "value": 3,
           "type": {
             "kind": "ref",
@@ -27141,7 +28013,7 @@
         },
         {
           "name": "seek_to",
-          "wire": "SoundDataEvent::SeekTo",
+          "wire": "SeekTo",
           "value": 4,
           "type": {
             "kind": "f32le"
@@ -27149,7 +28021,7 @@
         },
         {
           "name": "pause",
-          "wire": "SoundDataEvent::Pause",
+          "wire": "Pause",
           "value": 5,
           "type": {
             "kind": "ref",
@@ -27158,7 +28030,7 @@
         },
         {
           "name": "resume",
-          "wire": "SoundDataEvent::Resume",
+          "wire": "Resume",
           "value": 6,
           "type": {
             "kind": "ref",
@@ -27440,21 +28312,30 @@
           }
         },
         {
+          "name": "craft_disc_press",
+          "wire": "ItemStackRequestCereal::CraftDiscPressActionData",
+          "value": 16,
+          "type": {
+            "kind": "ref",
+            "ref": "CraftDiscPressStackRequestAction"
+          }
+        },
+        {
           "name": "craft_non_implemented",
           "wire": "ItemStackRequestCereal::CraftNonImplementedActionData",
-          "value": 16,
+          "value": 17,
           "type": {
             "kind": "ref",
             "ref": "ItemStackRequestActionType",
             "allowed": [
-              18
+              19
             ]
           }
         },
         {
           "name": "craft_results",
           "wire": "ItemStackRequestCereal::CraftResultsActionData",
-          "value": 17,
+          "value": 18,
           "type": {
             "kind": "ref",
             "ref": "CraftResultsDeprecatedStackRequestAction"
@@ -27601,16 +28482,8 @@
           "name": "structure_name",
           "wire": "Structure Name",
           "type": {
-            "kind": "string",
-            "prefix": "var_u32"
-          }
-        },
-        {
-          "name": "filtered_structure_name",
-          "wire": "Filtered Structure Name",
-          "type": {
-            "kind": "string",
-            "prefix": "var_u32"
+            "kind": "ref",
+            "ref": "SafetyRedactableString"
           }
         },
         {
@@ -27783,7 +28656,8 @@
           "name": "integrity_seed",
           "wire": "Integrity Seed",
           "type": {
-            "kind": "u32le"
+            "kind": "u32le",
+            "min": 0
           }
         },
         {
@@ -28824,6 +29698,40 @@
             "value": {
               "kind": "i32le"
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TransitionEnvironmentAttribute",
+      "kind": "struct",
+      "owner": "ClientBoundAttributeLayerSync",
+      "wire": [
+        "EAS::TransitionAttributeData"
+      ],
+      "fields": [
+        {
+          "name": "from_attribute",
+          "wire": "FromAttribute",
+          "type": {
+            "kind": "ref",
+            "ref": "EnvironmentAttributeValue"
+          }
+        },
+        {
+          "name": "to_attribute",
+          "wire": "ToAttribute",
+          "type": {
+            "kind": "ref",
+            "ref": "EnvironmentAttributeValue"
+          }
+        },
+        {
+          "name": "settings",
+          "wire": "Settings",
+          "type": {
+            "kind": "ref",
+            "ref": "EasTransitionSettingsData"
           }
         }
       ]

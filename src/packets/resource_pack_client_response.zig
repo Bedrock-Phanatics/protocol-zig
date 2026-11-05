@@ -21,7 +21,7 @@ pub const Packet = struct {
     }
 };
 
-/// Wire type `Resource_Pack_Client_Response_-_Downloading`.
+/// Wire type `ResourcePackClientResponsePacketPayload::Downloading`.
 pub const Downloading = struct {
     response_type: []const u8,
     downloading_packs: codec.List([]const u8, codec.Prim(.string)),

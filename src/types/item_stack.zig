@@ -61,10 +61,10 @@ pub const BeaconPaymentStackRequestAction = struct {
         }
         value.primary_effect_id = try r.readVarI32();
         if (value.primary_effect_id < 0) return error.InvalidValue;
-        if (value.primary_effect_id > 37) return error.InvalidValue;
+        if (value.primary_effect_id > 38) return error.InvalidValue;
         value.secondary_effect_id = try r.readVarI32();
         if (value.secondary_effect_id < 0) return error.InvalidValue;
-        if (value.secondary_effect_id > 37) return error.InvalidValue;
+        if (value.secondary_effect_id > 38) return error.InvalidValue;
         return value;
     }
 
@@ -75,10 +75,10 @@ pub const BeaconPaymentStackRequestAction = struct {
         }
         try self.action_type.encode(w);
         if (self.primary_effect_id < 0) return error.InvalidValue;
-        if (self.primary_effect_id > 37) return error.InvalidValue;
+        if (self.primary_effect_id > 38) return error.InvalidValue;
         try w.writeVarI32(self.primary_effect_id);
         if (self.secondary_effect_id < 0) return error.InvalidValue;
-        if (self.secondary_effect_id > 37) return error.InvalidValue;
+        if (self.secondary_effect_id > 38) return error.InvalidValue;
         try w.writeVarI32(self.secondary_effect_id);
     }
 };
@@ -144,6 +144,39 @@ pub const CraftCreativeStackRequestAction = struct {
         try w.writeVarU32(self.creative_item_net_id);
         if (self.number_of_requested_crafts < 1) return error.InvalidValue;
         try w.writeU8(self.number_of_requested_crafts);
+    }
+};
+
+/// Wire type `ItemStackRequestCereal::CraftDiscPressActionData`.
+pub const CraftDiscPressStackRequestAction = struct {
+    action_type: ItemStackRequestActionType,
+    reserved_id: []const u8,
+    num_crafts: u8,
+
+    pub fn decode(r: *Reader) DecodeError!CraftDiscPressStackRequestAction {
+        var value: CraftDiscPressStackRequestAction = undefined;
+        value.action_type = try ItemStackRequestActionType.decode(r);
+        switch (value.action_type) {
+            .craft_reserved_action => {},
+            else => return error.InvalidValue,
+        }
+        value.reserved_id = try r.readString();
+        if (value.reserved_id.len > 256) return codec.failure.invalid("CraftDiscPressStackRequestAction.reserved_id", value.reserved_id.len, 256);
+        value.num_crafts = try r.readU8();
+        if (value.num_crafts < 1) return error.InvalidValue;
+        return value;
+    }
+
+    pub fn encode(self: CraftDiscPressStackRequestAction, w: anytype) EncodeError!void {
+        switch (self.action_type) {
+            .craft_reserved_action => {},
+            else => return error.InvalidValue,
+        }
+        try self.action_type.encode(w);
+        if (self.reserved_id.len > 256) return codec.failure.invalid("CraftDiscPressStackRequestAction.reserved_id", self.reserved_id.len, 256);
+        try w.writeString(self.reserved_id);
+        if (self.num_crafts < 1) return error.InvalidValue;
+        try w.writeU8(self.num_crafts);
     }
 };
 
@@ -357,8 +390,9 @@ pub const ItemStackRequestActionType = enum(u8) {
     craftrecipeoptional = 15,
     craftrepairanddisenchant = 16,
     craftloom = 17,
-    craftnonimplemented = 18,
-    craftresults = 19,
+    craft_reserved_action = 18,
+    craftnonimplemented = 19,
+    craftresults = 20,
     _,
 
     pub fn decode(r: *Reader) DecodeError!ItemStackRequestActionType {

@@ -34,6 +34,7 @@ pub const PlayerListAddEntry = struct {
     actor_unique_id: i64,
     player_name: []const u8,
     xbl_xuid: []const u8,
+    play_fab_id: []const u8,
     platform_online_id: []const u8,
     build_platform: types.BuildPlatform,
     serialized_skin: types.SerializedSkinRef,
@@ -57,6 +58,7 @@ pub const PlayerListAddEntry = struct {
         value.actor_unique_id = try r.readVarI64();
         value.player_name = try r.readString();
         value.xbl_xuid = try r.readString();
+        value.play_fab_id = try r.readString();
         value.platform_online_id = try r.readString();
         value.build_platform = try types.BuildPlatform.decode(r);
         value.serialized_skin = try types.SerializedSkinRef.decode(r);
@@ -77,6 +79,7 @@ pub const PlayerListAddEntry = struct {
         try w.writeVarI64(self.actor_unique_id);
         try w.writeString(self.player_name);
         try w.writeString(self.xbl_xuid);
+        try w.writeString(self.play_fab_id);
         try w.writeString(self.platform_online_id);
         try self.build_platform.encode(w);
         try self.serialized_skin.encode(w);

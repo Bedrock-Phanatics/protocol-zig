@@ -89,7 +89,7 @@ pub const ClientBoundAttributeLayerSyncData = union(enum(u32)) {
     }
 };
 
-/// Wire type `BoolAttributeData`.
+/// Wire type `EAS::BoolAttributeData`.
 pub const EASBoolAttributeData = struct {
     value: bool,
     operation: []const u8,
@@ -107,7 +107,7 @@ pub const EASBoolAttributeData = struct {
     }
 };
 
-/// Wire type `ColorAttributeData`.
+/// Wire type `EAS::ColorAttributeData`.
 pub const EASColorAttributeData = struct {
     value: [4]i32,
     operation: []const u8,
@@ -129,7 +129,7 @@ pub const EASColorAttributeData = struct {
     }
 };
 
-/// Wire type `FloatAttributeData`.
+/// Wire type `EAS::FloatAttributeData`.
 pub const EASFloatAttributeData = struct {
     value: f32,
     operation: []const u8,
@@ -162,7 +162,6 @@ pub const EASFloatAttributeData = struct {
 /// Wire type `EAS::AttributeLayerData`.
 pub const EasAttributeLayerData = struct {
     name: []const u8,
-    noise_name: ?[]const u8,
     dimension: i32,
     settings: EasAttributeLayerSettings,
     attributes: codec.List(EasEnvironmentAttributeData, EasEnvironmentAttributeData),
@@ -171,13 +170,6 @@ pub const EasAttributeLayerData = struct {
         var value: EasAttributeLayerData = undefined;
         value.name = try r.readString();
         if (value.name.len > 128) return codec.failure.invalid("EasAttributeLayerData.name", value.name.len, 128);
-        value.noise_name = null;
-        if (try r.readBool()) {
-            var present: []const u8 = undefined;
-            present = try r.readString();
-            if (present.len > 128) return codec.failure.invalid("EasAttributeLayerData.noise_name", present.len, 128);
-            value.noise_name = present;
-        }
         value.dimension = try r.readVarI32();
         value.settings = try EasAttributeLayerSettings.decode(r);
         value.attributes = blk: {
@@ -191,11 +183,6 @@ pub const EasAttributeLayerData = struct {
     pub fn encode(self: EasAttributeLayerData, w: anytype) EncodeError!void {
         if (self.name.len > 128) return codec.failure.invalid("EasAttributeLayerData.name", self.name.len, 128);
         try w.writeString(self.name);
-        try w.writeBool(self.noise_name != null);
-        if (self.noise_name) |present| {
-            if (present.len > 128) return codec.failure.invalid("EasAttributeLayerData.noise_name", present.len, 128);
-            try w.writeString(present);
-        }
         try w.writeVarI32(self.dimension);
         try self.settings.encode(w);
         if (self.attributes.len > 1024) return codec.failure.invalid("EasAttributeLayerData.attributes", self.attributes.len, 1024);
@@ -231,50 +218,50 @@ pub const EasAttributeLayerSettings = struct {
 /// Wire type `EAS::EnvironmentAttributeData`.
 pub const EasEnvironmentAttributeData = struct {
     attribute_name: []const u8,
-    from_attribute: ?EnvironmentAttributeValue,
-    attribute: EnvironmentAttributeValue,
-    to_attribute: ?EnvironmentAttributeValue,
-    current_transition_ticks: u32,
-    total_transition_ticks: u32,
-    easing: []const u8,
-    local_transition_ticks: u32,
-    noise_transition: bool,
-    noise_alignment: NoiseAlignment,
+    payload: EasEnvironmentAttributeDataPayload,
 
     pub fn decode(r: *Reader) DecodeError!EasEnvironmentAttributeData {
         var value: EasEnvironmentAttributeData = undefined;
         value.attribute_name = try r.readString();
         if (value.attribute_name.len > 128) return codec.failure.invalid("EasEnvironmentAttributeData.attribute_name", value.attribute_name.len, 128);
-        value.from_attribute = if (try r.readBool()) try EnvironmentAttributeValue.decode(r) else null;
-        value.attribute = try EnvironmentAttributeValue.decode(r);
-        value.to_attribute = if (try r.readBool()) try EnvironmentAttributeValue.decode(r) else null;
-        value.current_transition_ticks = try r.readU32();
-        value.total_transition_ticks = try r.readU32();
-        value.easing = try r.readString();
-        value.local_transition_ticks = try r.readU32();
-        value.noise_transition = try r.readBool();
-        value.noise_alignment = try NoiseAlignment.decode(r);
+        value.payload = try EasEnvironmentAttributeDataPayload.decode(r);
         return value;
     }
 
     pub fn encode(self: EasEnvironmentAttributeData, w: anytype) EncodeError!void {
         if (self.attribute_name.len > 128) return codec.failure.invalid("EasEnvironmentAttributeData.attribute_name", self.attribute_name.len, 128);
         try w.writeString(self.attribute_name);
-        try w.writeBool(self.from_attribute != null);
-        if (self.from_attribute) |present| {
-            try present.encode(w);
+        try self.payload.encode(w);
+    }
+};
+
+pub const EasEnvironmentAttributeDataPayload = union(enum(u32)) {
+    constant: EnvironmentAttributeValue,
+    transition: TransitionEnvironmentAttribute,
+    noise_transition: NoiseTransitionEnvironmentAttribute,
+
+    pub fn decode(r: *Reader) DecodeError!EasEnvironmentAttributeDataPayload {
+        switch (try r.readVarU32()) {
+            0 => return .{ .constant = try EnvironmentAttributeValue.decode(r) },
+            1 => return .{ .transition = try TransitionEnvironmentAttribute.decode(r) },
+            2 => return .{ .noise_transition = try NoiseTransitionEnvironmentAttribute.decode(r) },
+            else => return error.InvalidEnum,
         }
-        try self.attribute.encode(w);
-        try w.writeBool(self.to_attribute != null);
-        if (self.to_attribute) |present| {
-            try present.encode(w);
+    }
+
+    pub fn encode(self: EasEnvironmentAttributeDataPayload, w: anytype) EncodeError!void {
+        try w.writeVarU32(@backingInt(self));
+        switch (self) {
+            .constant => |value| {
+                try value.encode(w);
+            },
+            .transition => |value| {
+                try value.encode(w);
+            },
+            .noise_transition => |value| {
+                try value.encode(w);
+            },
         }
-        try w.writeU32(self.current_transition_ticks);
-        try w.writeU32(self.total_transition_ticks);
-        try w.writeString(self.easing);
-        try w.writeU32(self.local_transition_ticks);
-        try w.writeBool(self.noise_transition);
-        try self.noise_alignment.encode(w);
     }
 };
 
@@ -289,6 +276,114 @@ pub const EasNoiseAlignmentType = enum(u8) {
 
     pub fn encode(self: EasNoiseAlignmentType, w: anytype) EncodeError!void {
         try w.writeU8(@backingInt(self));
+    }
+};
+
+/// Wire type `EAS::NoiseTransitionSettingsData`.
+pub const EasNoiseTransitionSettingsData = struct {
+    total_transition_ticks: u32,
+    current_transition_ticks: u32,
+    easing: EasingType,
+    clock_name: []const u8,
+    local_transition_ticks: u32,
+    noise_name: []const u8,
+    noise_alignment: NoiseAlignment,
+
+    pub fn decode(r: *Reader) DecodeError!EasNoiseTransitionSettingsData {
+        var value: EasNoiseTransitionSettingsData = undefined;
+        value.total_transition_ticks = try r.readVarU32();
+        value.current_transition_ticks = try r.readVarU32();
+        value.easing = try EasingType.decode(r);
+        value.clock_name = try r.readString();
+        if (value.clock_name.len > 128) return codec.failure.invalid("EasNoiseTransitionSettingsData.clock_name", value.clock_name.len, 128);
+        value.local_transition_ticks = try r.readVarU32();
+        value.noise_name = try r.readString();
+        if (value.noise_name.len > 128) return codec.failure.invalid("EasNoiseTransitionSettingsData.noise_name", value.noise_name.len, 128);
+        value.noise_alignment = try NoiseAlignment.decode(r);
+        return value;
+    }
+
+    pub fn encode(self: EasNoiseTransitionSettingsData, w: anytype) EncodeError!void {
+        try w.writeVarU32(self.total_transition_ticks);
+        try w.writeVarU32(self.current_transition_ticks);
+        try self.easing.encode(w);
+        if (self.clock_name.len > 128) return codec.failure.invalid("EasNoiseTransitionSettingsData.clock_name", self.clock_name.len, 128);
+        try w.writeString(self.clock_name);
+        try w.writeVarU32(self.local_transition_ticks);
+        if (self.noise_name.len > 128) return codec.failure.invalid("EasNoiseTransitionSettingsData.noise_name", self.noise_name.len, 128);
+        try w.writeString(self.noise_name);
+        try self.noise_alignment.encode(w);
+    }
+};
+
+/// Wire type `EAS::TransitionSettingsData`.
+pub const EasTransitionSettingsData = struct {
+    total_transition_ticks: u32,
+    current_transition_ticks: u32,
+    easing: EasingType,
+    clock_name: []const u8,
+
+    pub fn decode(r: *Reader) DecodeError!EasTransitionSettingsData {
+        var value: EasTransitionSettingsData = undefined;
+        value.total_transition_ticks = try r.readVarU32();
+        value.current_transition_ticks = try r.readVarU32();
+        value.easing = try EasingType.decode(r);
+        value.clock_name = try r.readString();
+        if (value.clock_name.len > 128) return codec.failure.invalid("EasTransitionSettingsData.clock_name", value.clock_name.len, 128);
+        return value;
+    }
+
+    pub fn encode(self: EasTransitionSettingsData, w: anytype) EncodeError!void {
+        try w.writeVarU32(self.total_transition_ticks);
+        try w.writeVarU32(self.current_transition_ticks);
+        try self.easing.encode(w);
+        if (self.clock_name.len > 128) return codec.failure.invalid("EasTransitionSettingsData.clock_name", self.clock_name.len, 128);
+        try w.writeString(self.clock_name);
+    }
+};
+
+/// Wire type `EasingType`.
+pub const EasingType = enum(i32) {
+    linear = 0,
+    spring = 1,
+    in_quad = 2,
+    out_quad = 3,
+    in_out_quad = 4,
+    in_cubic = 5,
+    out_cubic = 6,
+    in_out_cubic = 7,
+    in_quart = 8,
+    out_quart = 9,
+    in_out_quart = 10,
+    in_quint = 11,
+    out_quint = 12,
+    in_out_quint = 13,
+    in_sine = 14,
+    out_sine = 15,
+    in_out_sine = 16,
+    in_expo = 17,
+    out_expo = 18,
+    in_out_expo = 19,
+    in_circ = 20,
+    out_circ = 21,
+    in_out_circ = 22,
+    in_bounce = 23,
+    out_bounce = 24,
+    in_out_bounce = 25,
+    in_back = 26,
+    out_back = 27,
+    in_out_back = 28,
+    in_elastic = 29,
+    out_elastic = 30,
+    in_out_elastic = 31,
+    _,
+
+    pub fn decode(r: *Reader) DecodeError!EasingType {
+        return @fromBackingInt(@intCast(try r.readVarI32()));
+    }
+
+    pub fn encode(self: EasingType, w: anytype) EncodeError!void {
+        try w.writeVarI32(@backingInt(self));
     }
 };
 
@@ -369,6 +464,27 @@ pub const NoiseAlignment = struct {
     }
 };
 
+/// Wire type `EAS::NoiseTransitionAttributeData`.
+pub const NoiseTransitionEnvironmentAttribute = struct {
+    from_attribute: EnvironmentAttributeValue,
+    to_attribute: EnvironmentAttributeValue,
+    settings: EasNoiseTransitionSettingsData,
+
+    pub fn decode(r: *Reader) DecodeError!NoiseTransitionEnvironmentAttribute {
+        var value: NoiseTransitionEnvironmentAttribute = undefined;
+        value.from_attribute = try EnvironmentAttributeValue.decode(r);
+        value.to_attribute = try EnvironmentAttributeValue.decode(r);
+        value.settings = try EasNoiseTransitionSettingsData.decode(r);
+        return value;
+    }
+
+    pub fn encode(self: NoiseTransitionEnvironmentAttribute, w: anytype) EncodeError!void {
+        try self.from_attribute.encode(w);
+        try self.to_attribute.encode(w);
+        try self.settings.encode(w);
+    }
+};
+
 /// Wire type `AttributeLayerSyncPacketData::RemoveEnvironmentAttributesData`.
 pub const RemoveEnvironmentAttributes = struct {
     attribute_layer_name: []const u8,
@@ -398,16 +514,37 @@ pub const RemoveEnvironmentAttributes = struct {
     }
 };
 
+/// Wire type `EAS::TransitionAttributeData`.
+pub const TransitionEnvironmentAttribute = struct {
+    from_attribute: EnvironmentAttributeValue,
+    to_attribute: EnvironmentAttributeValue,
+    settings: EasTransitionSettingsData,
+
+    pub fn decode(r: *Reader) DecodeError!TransitionEnvironmentAttribute {
+        var value: TransitionEnvironmentAttribute = undefined;
+        value.from_attribute = try EnvironmentAttributeValue.decode(r);
+        value.to_attribute = try EnvironmentAttributeValue.decode(r);
+        value.settings = try EasTransitionSettingsData.decode(r);
+        return value;
+    }
+
+    pub fn encode(self: TransitionEnvironmentAttribute, w: anytype) EncodeError!void {
+        try self.from_attribute.encode(w);
+        try self.to_attribute.encode(w);
+        try self.settings.encode(w);
+    }
+};
+
 const RemoveEnvironmentAttributesAttributesItemCodec = struct {
     pub fn decode(r: *Reader) DecodeError![]const u8 {
         var value: []const u8 = undefined;
         value = try r.readString();
-        if (value.len > 128) return codec.failure.invalid("NoiseAlignment.value", value.len, 128);
+        if (value.len > 128) return codec.failure.invalid("NoiseTransitionEnvironmentAttribute.settings", value.len, 128);
         return value;
     }
 
     pub fn encode(value: []const u8, w: anytype) EncodeError!void {
-        if (value.len > 128) return codec.failure.invalid("NoiseAlignment.value", value.len, 128);
+        if (value.len > 128) return codec.failure.invalid("NoiseTransitionEnvironmentAttribute.settings", value.len, 128);
         try w.writeString(value);
     }
 };

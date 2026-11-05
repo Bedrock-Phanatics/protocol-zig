@@ -120,7 +120,7 @@ pub const ChainedSubcommandValue = struct {
     }
 };
 
-/// Wire type `AvailableCommandsPacketCommandData`.
+/// Wire type `AvailableCommandsPacketPayload::CommandData`.
 pub const Command = struct {
     name: []const u8,
     description: []const u8,
@@ -133,7 +133,7 @@ pub const Command = struct {
     pub fn decode(r: *Reader) DecodeError!Command {
         var value: Command = undefined;
         value.name = try r.readString();
-        if (value.name.len > 1000) return codec.failure.invalid("Command.name", value.name.len, 1000);
+        if (value.name.len > 512) return codec.failure.invalid("Command.name", value.name.len, 512);
         value.description = try r.readString();
         if (value.description.len > 1000) return codec.failure.invalid("Command.description", value.description.len, 1000);
         value.flags = try r.readU16();
@@ -153,7 +153,7 @@ pub const Command = struct {
     }
 
     pub fn encode(self: Command, w: anytype) EncodeError!void {
-        if (self.name.len > 1000) return codec.failure.invalid("Command.name", self.name.len, 1000);
+        if (self.name.len > 512) return codec.failure.invalid("Command.name", self.name.len, 512);
         try w.writeString(self.name);
         if (self.description.len > 1000) return codec.failure.invalid("Command.description", self.description.len, 1000);
         try w.writeString(self.description);

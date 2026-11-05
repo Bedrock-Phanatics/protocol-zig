@@ -62,39 +62,39 @@ pub const BossKilledEvent = struct {
 /// Wire type `LegacyTelemetryEventPacketPayload::POICauldronUsed`.
 pub const CauldronInteractEvent = struct {
     block_interaction_type: MinecraftEventingPoiBlockInteractionType,
-    item_id: i32,
+    item_id: i16,
 
     pub fn decode(r: *Reader) DecodeError!CauldronInteractEvent {
         var value: CauldronInteractEvent = undefined;
         value.block_interaction_type = try MinecraftEventingPoiBlockInteractionType.decode(r);
-        value.item_id = try r.readVarI32();
+        value.item_id = try r.readI16();
         return value;
     }
 
     pub fn encode(self: CauldronInteractEvent, w: anytype) EncodeError!void {
         try self.block_interaction_type.encode(w);
-        try w.writeVarI32(self.item_id);
+        try w.writeI16(self.item_id);
     }
 };
 
 /// Wire type `LegacyTelemetryEventPacketPayload::CauldronUsed`.
 pub const CauldronUsedEvent = struct {
     contents_color: u32,
-    contents_type: i32,
-    fill_level: i32,
+    contents_type: i16,
+    fill_level: i16,
 
     pub fn decode(r: *Reader) DecodeError!CauldronUsedEvent {
         var value: CauldronUsedEvent = undefined;
         value.contents_color = try r.readVarU32();
-        value.contents_type = try r.readVarI32();
-        value.fill_level = try r.readVarI32();
+        value.contents_type = try r.readI16();
+        value.fill_level = try r.readI16();
         return value;
     }
 
     pub fn encode(self: CauldronUsedEvent, w: anytype) EncodeError!void {
         try w.writeVarU32(self.contents_color);
-        try w.writeVarI32(self.contents_type);
-        try w.writeVarI32(self.fill_level);
+        try w.writeI16(self.contents_type);
+        try w.writeI16(self.fill_level);
     }
 };
 
@@ -121,18 +121,18 @@ pub const CodeBuilderScoreboardEvent = struct {
 /// Wire type `LegacyTelemetryEventPacketPayload::ComposterUsed`.
 pub const ComposterInteractEvent = struct {
     block_interaction_type: MinecraftEventingPoiBlockInteractionType,
-    item_id: i32,
+    item_id: i16,
 
     pub fn decode(r: *Reader) DecodeError!ComposterInteractEvent {
         var value: ComposterInteractEvent = undefined;
         value.block_interaction_type = try MinecraftEventingPoiBlockInteractionType.decode(r);
-        value.item_id = try r.readVarI32();
+        value.item_id = try r.readI16();
         return value;
     }
 
     pub fn encode(self: ComposterInteractEvent, w: anytype) EncodeError!void {
         try self.block_interaction_type.encode(w);
-        try w.writeVarI32(self.item_id);
+        try w.writeI16(self.item_id);
     }
 };
 
@@ -149,7 +149,7 @@ pub const EventEventData = union(enum(u32)) {
     mob_born: MobBornEvent,
     poi_cauldron_used: CauldronInteractEvent,
     composter_used: ComposterInteractEvent,
-    bell_used: i32,
+    bell_used: i16,
     actor_definition: []const u8,
     raid_update: RaidUpdateEvent,
     target_block_hit: i32,
@@ -174,7 +174,7 @@ pub const EventEventData = union(enum(u32)) {
             9 => return .{ .mob_born = try MobBornEvent.decode(r) },
             10 => return .{ .poi_cauldron_used = try CauldronInteractEvent.decode(r) },
             11 => return .{ .composter_used = try ComposterInteractEvent.decode(r) },
-            12 => return .{ .bell_used = try r.readVarI32() },
+            12 => return .{ .bell_used = try r.readI16() },
             13 => {
                 var value: []const u8 = undefined;
                 value = try r.readString();
@@ -238,7 +238,7 @@ pub const EventEventData = union(enum(u32)) {
                 try value.encode(w);
             },
             .bell_used => |value| {
-                try w.writeVarI32(value);
+                try w.writeI16(value);
             },
             .actor_definition => |value| {
                 if (value.len > 256) return codec.failure.invalid("EventEventData.actor_definition", value.len, 256);
@@ -498,6 +498,7 @@ pub const MinecraftEventingAchievementIds = enum(u8) {
     monsterhunter = 124,
     diamonds = 125,
     plethoraofcats = 126,
+    what_goes_around_comes_around = 127,
     _,
 
     pub fn decode(r: *Reader) DecodeError!MinecraftEventingAchievementIds {

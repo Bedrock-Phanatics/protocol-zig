@@ -167,7 +167,7 @@ pub const ItemStackResponseSlotInfo = struct {
     slot: u8,
     amount: u8,
     item_stack_net_id: ?i32,
-    custom_name: SafetyRedactableString,
+    custom_name: types.SafetyRedactableString,
     durability_correction: i32,
 
     pub fn decode(r: *Reader) DecodeError!ItemStackResponseSlotInfo {
@@ -176,7 +176,7 @@ pub const ItemStackResponseSlotInfo = struct {
         value.slot = try r.readU8();
         value.amount = try r.readU8();
         value.item_stack_net_id = if (try r.readBool()) try r.readVarI32() else null;
-        value.custom_name = try SafetyRedactableString.decode(r);
+        value.custom_name = try types.SafetyRedactableString.decode(r);
         value.durability_correction = try r.readVarI32();
         if (value.durability_correction < -32768) return error.InvalidValue;
         if (value.durability_correction > 32767) return error.InvalidValue;
@@ -195,26 +195,5 @@ pub const ItemStackResponseSlotInfo = struct {
         if (self.durability_correction < -32768) return error.InvalidValue;
         if (self.durability_correction > 32767) return error.InvalidValue;
         try w.writeVarI32(self.durability_correction);
-    }
-};
-
-/// Wire type `Bedrock::Safety::RedactableString`.
-pub const SafetyRedactableString = struct {
-    unredacted: []const u8,
-    redacted: ?[]const u8,
-
-    pub fn decode(r: *Reader) DecodeError!SafetyRedactableString {
-        var value: SafetyRedactableString = undefined;
-        value.unredacted = try r.readString();
-        value.redacted = if (try r.readBool()) try r.readString() else null;
-        return value;
-    }
-
-    pub fn encode(self: SafetyRedactableString, w: anytype) EncodeError!void {
-        try w.writeString(self.unredacted);
-        try w.writeBool(self.redacted != null);
-        if (self.redacted) |present| {
-            try w.writeString(present);
-        }
     }
 };

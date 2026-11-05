@@ -105,11 +105,11 @@
     },
     "RemoveScore.objective_name/value": {
       "strings": [
-        "",
-        "objective"
+        "kills",
+        "deaths"
       ],
-      "reason": "Exercise present-but-empty objective names in the extended corpus: gophertunnel re-encodes them as absent, as documented in accepted-divergences.json.",
-      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/scoreboard.go#L58-L66"
+      "reason": "gophertunnel writes a present but empty objective name as absent.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/0e179fc4bb082c13e946c7d81ab1cf9f623d942c/minecraft/protocol/scoreboard.go"
     },
     "RemoveScore.action": {
       "strings": [
@@ -475,6 +475,12 @@
       "unique": true,
       "reason": "gophertunnel stores input flags as a set and rejects repeated flags; vanilla sends each flag once.",
       "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/input_flags.go#L79"
+    },
+    "AudioSound.position": {
+      "min": -8388608,
+      "max": 8388607,
+      "reason": "gophertunnel converts the fixed-point sound position through float32, which is exact only below 2^24.",
+      "evidence": "https://github.com/Sandertv/gophertunnel/blob/e75d578f7dd986712ab5e2e15b0c3eec93e4ff6a/minecraft/protocol/reader.go"
     }
   }
 }

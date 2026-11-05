@@ -6,48 +6,6 @@ const Reader = codec.Reader;
 const DecodeError = codec.DecodeError;
 const EncodeError = codec.EncodeError;
 
-/// Wire type `SharedTypes::persona::PieceType`.
-pub const PersonaPieceType = enum(u32) {
-    unknown = 0,
-    skeleton = 1,
-    body = 2,
-    skin = 3,
-    bottom = 4,
-    feet = 5,
-    dress = 6,
-    top = 7,
-    high_pants = 8,
-    hands = 9,
-    outerwear = 10,
-    facialhair = 11,
-    mouth = 12,
-    eyes = 13,
-    hair = 14,
-    hood = 15,
-    back = 16,
-    faceaccessory = 17,
-    head = 18,
-    legs = 19,
-    leftleg = 20,
-    rightleg = 21,
-    arms = 22,
-    leftarm = 23,
-    rightarm = 24,
-    capes = 25,
-    classicskin = 26,
-    emote = 27,
-    unsupported = 28,
-    _,
-
-    pub fn decode(r: *Reader) DecodeError!PersonaPieceType {
-        return @fromBackingInt(@intCast(try r.readU32()));
-    }
-
-    pub fn encode(self: PersonaPieceType, w: anytype) EncodeError!void {
-        try w.writeU32(@backingInt(self));
-    }
-};
-
 /// Wire type `SkinImage`.
 pub const SkinImage = struct {
     width: u32,

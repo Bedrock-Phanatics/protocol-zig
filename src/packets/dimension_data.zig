@@ -33,6 +33,8 @@ pub const DimensionDefinitionGroupDimensionDefinition = struct {
     dimension_type: i32,
     pack_id: [16]u8,
     default_biome: []const u8,
+    cloud_height: i32,
+    render_clouds: bool,
 
     pub fn decode(r: *Reader) DecodeError!DimensionDefinitionGroupDimensionDefinition {
         var value: DimensionDefinitionGroupDimensionDefinition = undefined;
@@ -43,6 +45,8 @@ pub const DimensionDefinitionGroupDimensionDefinition = struct {
         value.pack_id = try r.readUuid();
         value.default_biome = try r.readString();
         if (value.default_biome.len > 256) return codec.failure.invalid("DimensionDefinitionGroupDimensionDefinition.default_biome", value.default_biome.len, 256);
+        value.cloud_height = try r.readVarI32();
+        value.render_clouds = try r.readBool();
         return value;
     }
 
@@ -54,6 +58,8 @@ pub const DimensionDefinitionGroupDimensionDefinition = struct {
         try w.writeUuid(self.pack_id);
         if (self.default_biome.len > 256) return codec.failure.invalid("DimensionDefinitionGroupDimensionDefinition.default_biome", self.default_biome.len, 256);
         try w.writeString(self.default_biome);
+        try w.writeVarI32(self.cloud_height);
+        try w.writeBool(self.render_clouds);
     }
 };
 

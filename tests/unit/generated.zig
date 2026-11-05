@@ -5,7 +5,7 @@ const v = root.version;
 comptime {
     @setEvalBranchQuota(10_000);
     const kinds = @typeInfo(v.Kind).@"enum".field_names;
-    if (kinds.len != 231) @compileError("protocol 2193 defines 231 packets");
+    if (kinds.len != 239) @compileError("protocol 2225 defines 239 packets");
     for (kinds) |kind| {
         const P = @field(v.packets, kind).Packet;
         if (@FieldType(root.typed.Packet, kind) != P) @compileError(kind ++ " has an inconsistent union type");

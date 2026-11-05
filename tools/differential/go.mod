@@ -2,7 +2,7 @@ module differential
 
 go 1.25.0
 
-require github.com/sandertv/gophertunnel v1.62.1-0.20260926093405-e75d578f7dd9
+require github.com/sandertv/gophertunnel v1.63.1-0.20261030102901-0e179fc4bb08
 
 require (
 	github.com/go-gl/mathgl v1.1.0 // indirect

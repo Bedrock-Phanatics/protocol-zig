@@ -47,7 +47,7 @@ pub const EducationLevelSettings = struct {
     disable_legacy_title_bar: bool,
     post_process_filter: []const u8,
     screenshot_border_resource_path: []const u8,
-    agent_capabilities: ?bool,
+    agent_capabilities: ??bool,
     local_settings: ?[]const u8,
     deprecated_always_false: bool,
     external_link_settings: ?EducationExternalLinkSettings,
@@ -60,7 +60,7 @@ pub const EducationLevelSettings = struct {
         value.disable_legacy_title_bar = try r.readBool();
         value.post_process_filter = try r.readString();
         value.screenshot_border_resource_path = try r.readString();
-        value.agent_capabilities = if (try r.readBool()) try r.readBool() else null;
+        value.agent_capabilities = if (try r.readBool()) if (try r.readBool()) try r.readBool() else null else null;
         value.local_settings = if (try r.readBool()) try r.readString() else null;
         value.deprecated_always_false = try r.readBool();
         value.external_link_settings = if (try r.readBool()) try EducationExternalLinkSettings.decode(r) else null;
@@ -76,7 +76,10 @@ pub const EducationLevelSettings = struct {
         try w.writeString(self.screenshot_border_resource_path);
         try w.writeBool(self.agent_capabilities != null);
         if (self.agent_capabilities) |present| {
-            try w.writeBool(present);
+            try w.writeBool(present != null);
+            if (present) |present1| {
+                try w.writeBool(present1);
+            }
         }
         try w.writeBool(self.local_settings != null);
         if (self.local_settings) |present| {

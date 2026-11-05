@@ -9,20 +9,23 @@ const EncodeError = codec.EncodeError;
 
 pub const Packet = struct {
     structure_name: []const u8,
-    structures_nbt: []const u8,
+    structures_nbt: ?[]const u8,
     response_type: StructureTemplateResponseType,
 
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.structure_name = try r.readString();
-        value.structures_nbt = try r.readNbt();
+        value.structures_nbt = if (try r.readBool()) try r.readNbt() else null;
         value.response_type = try StructureTemplateResponseType.decode(r);
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeString(self.structure_name);
-        try w.writeNbt(self.structures_nbt);
+        try w.writeBool(self.structures_nbt != null);
+        if (self.structures_nbt) |present| {
+            try w.writeNbt(present);
+        }
         try self.response_type.encode(w);
     }
 };

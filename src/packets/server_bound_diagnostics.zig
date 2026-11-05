@@ -20,7 +20,7 @@ pub const Packet = struct {
     memory_category_values: codec.List(MemoryCategoryCounter, MemoryCategoryCounter),
     entity_diagnostics: codec.List(EntityDiagnosticTimingInfo, EntityDiagnosticTimingInfo),
     system_diagnostics: codec.List(SystemDiagnosticTimingInfo, SystemDiagnosticTimingInfo),
-    system_categories: codec.List(SystemCategory, SystemCategory),
+    system_categories: ?codec.List(SystemCategory, SystemCategory),
     whisker_scopes: codec.List(WhiskerScopeDataSummary, WhiskerScopeDataSummary),
 
     pub fn decode(r: *Reader) DecodeError!Packet {
@@ -46,10 +46,15 @@ pub const Packet = struct {
             const count = try r.readCount(.var_u32);
             break :blk try codec.List(SystemDiagnosticTimingInfo, SystemDiagnosticTimingInfo).decode(r, count);
         };
-        value.system_categories = blk: {
-            const count = try r.readCount(.var_u32);
-            break :blk try codec.List(SystemCategory, SystemCategory).decode(r, count);
-        };
+        value.system_categories = null;
+        if (try r.readBool()) {
+            var present: codec.List(SystemCategory, SystemCategory) = undefined;
+            present = blk: {
+                const count = try r.readCount(.var_u32);
+                break :blk try codec.List(SystemCategory, SystemCategory).decode(r, count);
+            };
+            value.system_categories = present;
+        }
         value.whisker_scopes = blk: {
             const count = try r.readCount(.var_u32);
             break :blk try codec.List(WhiskerScopeDataSummary, WhiskerScopeDataSummary).decode(r, count);
@@ -73,8 +78,11 @@ pub const Packet = struct {
         try self.entity_diagnostics.encode(w);
         try w.writeCount(.var_u32, self.system_diagnostics.len);
         try self.system_diagnostics.encode(w);
-        try w.writeCount(.var_u32, self.system_categories.len);
-        try self.system_categories.encode(w);
+        try w.writeBool(self.system_categories != null);
+        if (self.system_categories) |present| {
+            try w.writeCount(.var_u32, present.len);
+            try present.encode(w);
+        }
         try w.writeCount(.var_u32, self.whisker_scopes.len);
         try self.whisker_scopes.encode(w);
     }
@@ -228,6 +236,7 @@ pub const MemoryCategory = enum(u8) {
     gameface_scriptengine = 107,
     gameface_script = 108,
     gameface_layout = 109,
+    executable = 110,
     _,
 
     pub fn decode(r: *Reader) DecodeError!MemoryCategory {

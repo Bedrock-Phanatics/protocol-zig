@@ -50,6 +50,7 @@
     "ChangeMobProperty.actor_id",
     "ChangePlayerScore.player_unique_id",
     "ClientMovementPredictionSync.actor_unique_id",
+    "ClientboundStonecutterSetRecipe.player_id",
     "CommandOrigin.player_id",
     "ContainerOpen.target_actor_id",
     "CreatePhoto.raw_id",
@@ -72,6 +73,7 @@
     "RemoveActor.target_actor_id",
     "RequestPermissions.target_player_ids_raw_id",
     "ScoreboardIdentityPacketInfo.player_unique_id",
+    "SetPassengerOfBlock.passenger",
     "SpawnParticleEffect.actor_id",
     "StartGame.entity_id",
     "StructureSettings.last_edit_player",
@@ -84,6 +86,7 @@
     "Waypoint.actor_unique_id"
   ],
   "other": [
+    "AudioSound.server_sound_handle",
     "ChangeEntityScore.scoreboard_id",
     "ChangeFakePlayerScore.scoreboard_id",
     "ChangePlayerScore.scoreboard_id",

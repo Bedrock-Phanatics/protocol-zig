@@ -41,16 +41,16 @@ pub const AbilityData = struct {
 /// Wire type `AnimatedImageData`.
 pub const AnimatedImageData = struct {
     skin_image: types.SkinImage,
-    animated_texture_type: PersonaAnimatedTextureType,
+    animated_texture_type: types.PersonaAnimatedTextureType,
     frames: f32,
-    animation_expression: PersonaAnimationExpression,
+    animation_expression: types.PersonaAnimationExpression,
 
     pub fn decode(r: *Reader) DecodeError!AnimatedImageData {
         var value: AnimatedImageData = undefined;
         value.skin_image = try types.SkinImage.decode(r);
-        value.animated_texture_type = try PersonaAnimatedTextureType.decode(r);
+        value.animated_texture_type = try types.PersonaAnimatedTextureType.decode(r);
         value.frames = try r.readF32();
-        value.animation_expression = try PersonaAnimationExpression.decode(r);
+        value.animation_expression = try types.PersonaAnimationExpression.decode(r);
         return value;
     }
 
@@ -983,53 +983,6 @@ pub const NetworkItemStackDescriptor = struct {
     }
 };
 
-/// Wire type `persona::AnimatedTextureType`.
-pub const PersonaAnimatedTextureType = enum(u32) {
-    none = 0,
-    face = 1,
-    body32x32 = 2,
-    body128x128 = 3,
-    _,
-
-    pub fn decode(r: *Reader) DecodeError!PersonaAnimatedTextureType {
-        return @fromBackingInt(@intCast(try r.readVarU32()));
-    }
-
-    pub fn encode(self: PersonaAnimatedTextureType, w: anytype) EncodeError!void {
-        try w.writeVarU32(@backingInt(self));
-    }
-};
-
-/// Wire type `persona::AnimationExpression`.
-pub const PersonaAnimationExpression = enum(u32) {
-    linear = 0,
-    blinking = 1,
-    _,
-
-    pub fn decode(r: *Reader) DecodeError!PersonaAnimationExpression {
-        return @fromBackingInt(@intCast(try r.readVarU32()));
-    }
-
-    pub fn encode(self: PersonaAnimationExpression, w: anytype) EncodeError!void {
-        try w.writeVarU32(@backingInt(self));
-    }
-};
-
-/// Wire type `SharedTypes::persona::ArmSizeType`.
-pub const PersonaArmSizeType = enum(u8) {
-    slim = 0,
-    wide = 1,
-    _,
-
-    pub fn decode(r: *Reader) DecodeError!PersonaArmSizeType {
-        return @fromBackingInt(@intCast(try r.readU8()));
-    }
-
-    pub fn encode(self: PersonaArmSizeType, w: anytype) EncodeError!void {
-        try w.writeU8(@backingInt(self));
-    }
-};
-
 /// Wire type `SerializedPersonaPieceHandle`.
 pub const PersonaPiece = struct {
     piece_id: []const u8,
@@ -1166,102 +1119,6 @@ pub const SerializedAbilitiesDataSerializedLayer = struct {
     }
 };
 
-/// Wire type `SerializedSkinRef`.
-pub const SerializedSkinRef = struct {
-    id: []const u8,
-    play_fab_id: []const u8,
-    resource_patch: []const u8,
-    image_data: types.SkinImage,
-    animated_image_data: codec.List(AnimatedImageData, AnimatedImageData),
-    cape_image_data: types.SkinImage,
-    geometry_data: []const u8,
-    geometry_data_min_engine_version: []const u8,
-    animation_data: []const u8,
-    cape_id: []const u8,
-    full_id: []const u8,
-    arm_size: PersonaArmSizeType,
-    skin_color: i32,
-    persona_pieces: codec.List(PersonaPiece, PersonaPiece),
-    piece_tint_colors: codec.List(SerializedSkinRefPieceTintColorsEntry, SerializedSkinRefPieceTintColorsEntry),
-    is_premium: bool,
-    is_persona: bool,
-    is_persona_cape_on_classic_skin: bool,
-    is_primary_user: bool,
-    overrides_player_appearance: bool,
-    trusted_skin_flag: []const u8,
-    profile_hash: []const u8,
-
-    pub fn decode(r: *Reader) DecodeError!SerializedSkinRef {
-        var value: SerializedSkinRef = undefined;
-        value.id = try r.readString();
-        value.play_fab_id = try r.readString();
-        value.resource_patch = try r.readString();
-        value.image_data = try types.SkinImage.decode(r);
-        value.animated_image_data = blk: {
-            const count = try r.readCount(.var_u32);
-            if (count > 32) return codec.failure.invalid("SerializedSkinRef.animated_image_data", count, 32);
-            break :blk try codec.List(AnimatedImageData, AnimatedImageData).decode(r, count);
-        };
-        value.cape_image_data = try types.SkinImage.decode(r);
-        value.geometry_data = try r.readString();
-        value.geometry_data_min_engine_version = try r.readString();
-        value.animation_data = try r.readString();
-        value.cape_id = try r.readString();
-        value.full_id = try r.readString();
-        value.arm_size = try PersonaArmSizeType.decode(r);
-        value.skin_color = try r.readI32();
-        value.persona_pieces = blk: {
-            const count = try r.readCount(.var_u32);
-            if (count > 64) return codec.failure.invalid("SerializedSkinRef.persona_pieces", count, 64);
-            break :blk try codec.List(PersonaPiece, PersonaPiece).decode(r, count);
-        };
-        value.piece_tint_colors = blk: {
-            const count = try r.readCount(.var_u32);
-            if (count > 16) return codec.failure.invalid("SerializedSkinRef.piece_tint_colors", count, 16);
-            break :blk try codec.List(SerializedSkinRefPieceTintColorsEntry, SerializedSkinRefPieceTintColorsEntry).decode(r, count);
-        };
-        value.is_premium = try r.readBool();
-        value.is_persona = try r.readBool();
-        value.is_persona_cape_on_classic_skin = try r.readBool();
-        value.is_primary_user = try r.readBool();
-        value.overrides_player_appearance = try r.readBool();
-        value.trusted_skin_flag = try r.readString();
-        value.profile_hash = try r.readString();
-        return value;
-    }
-
-    pub fn encode(self: SerializedSkinRef, w: anytype) EncodeError!void {
-        try w.writeString(self.id);
-        try w.writeString(self.play_fab_id);
-        try w.writeString(self.resource_patch);
-        try self.image_data.encode(w);
-        if (self.animated_image_data.len > 32) return codec.failure.invalid("SerializedSkinRef.animated_image_data", self.animated_image_data.len, 32);
-        try w.writeCount(.var_u32, self.animated_image_data.len);
-        try self.animated_image_data.encode(w);
-        try self.cape_image_data.encode(w);
-        try w.writeString(self.geometry_data);
-        try w.writeString(self.geometry_data_min_engine_version);
-        try w.writeString(self.animation_data);
-        try w.writeString(self.cape_id);
-        try w.writeString(self.full_id);
-        try self.arm_size.encode(w);
-        try w.writeI32(self.skin_color);
-        if (self.persona_pieces.len > 64) return codec.failure.invalid("SerializedSkinRef.persona_pieces", self.persona_pieces.len, 64);
-        try w.writeCount(.var_u32, self.persona_pieces.len);
-        try self.persona_pieces.encode(w);
-        if (self.piece_tint_colors.len > 16) return codec.failure.invalid("SerializedSkinRef.piece_tint_colors", self.piece_tint_colors.len, 16);
-        try w.writeCount(.var_u32, self.piece_tint_colors.len);
-        try self.piece_tint_colors.encode(w);
-        try w.writeBool(self.is_premium);
-        try w.writeBool(self.is_persona);
-        try w.writeBool(self.is_persona_cape_on_classic_skin);
-        try w.writeBool(self.is_primary_user);
-        try w.writeBool(self.overrides_player_appearance);
-        try w.writeString(self.trusted_skin_flag);
-        try w.writeString(self.profile_hash);
-    }
-};
-
 pub const StackRequestAction = union(enum(u32)) {
     take: types.TakeStackRequestAction,
     place: types.PlaceStackRequestAction,
@@ -1279,6 +1136,7 @@ pub const StackRequestAction = union(enum(u32)) {
     craft_recipe_optional: types.CraftRecipeOptionalStackRequestAction,
     craft_repair_and_disenchant: CraftRepairAndDisenchantStackRequestAction,
     craft_loom: CraftLoomStackRequestAction,
+    craft_disc_press: types.CraftDiscPressStackRequestAction,
     craft_non_implemented: types.ItemStackRequestActionType,
     craft_results: types.CraftResultsDeprecatedStackRequestAction,
 
@@ -1308,7 +1166,8 @@ pub const StackRequestAction = union(enum(u32)) {
             13 => return .{ .craft_recipe_optional = try types.CraftRecipeOptionalStackRequestAction.decode(r) },
             14 => return .{ .craft_repair_and_disenchant = try CraftRepairAndDisenchantStackRequestAction.decode(r) },
             15 => return .{ .craft_loom = try CraftLoomStackRequestAction.decode(r) },
-            16 => {
+            16 => return .{ .craft_disc_press = try types.CraftDiscPressStackRequestAction.decode(r) },
+            17 => {
                 var value: types.ItemStackRequestActionType = undefined;
                 value = try types.ItemStackRequestActionType.decode(r);
                 switch (value) {
@@ -1317,7 +1176,7 @@ pub const StackRequestAction = union(enum(u32)) {
                 }
                 return .{ .craft_non_implemented = value };
             },
-            17 => return .{ .craft_results = try types.CraftResultsDeprecatedStackRequestAction.decode(r) },
+            18 => return .{ .craft_results = try types.CraftResultsDeprecatedStackRequestAction.decode(r) },
             else => return error.InvalidEnum,
         }
     }
@@ -1377,6 +1236,9 @@ pub const StackRequestAction = union(enum(u32)) {
             .craft_loom => |value| {
                 try value.encode(w);
             },
+            .craft_disc_press => |value| {
+                try value.encode(w);
+            },
             .craft_non_implemented => |value| {
                 switch (value) {
                     .craftnonimplemented => {},
@@ -1406,26 +1268,5 @@ pub const StoreEntryPointInfo = struct {
     pub fn encode(self: StoreEntryPointInfo, w: anytype) EncodeError!void {
         try w.writeString(self.store_id);
         try w.writeString(self.store_name);
-    }
-};
-
-pub const SerializedSkinRefPieceTintColorsEntry = struct {
-    key: []const u8,
-    value: [4]i32,
-
-    pub fn decode(r: *Reader) DecodeError!SerializedSkinRefPieceTintColorsEntry {
-        var value: SerializedSkinRefPieceTintColorsEntry = undefined;
-        value.key = try r.readString();
-        for (&value.value) |*item| {
-            item.* = try r.readI32();
-        }
-        return value;
-    }
-
-    pub fn encode(self: SerializedSkinRefPieceTintColorsEntry, w: anytype) EncodeError!void {
-        try w.writeString(self.key);
-        for (self.value) |item| {
-            try w.writeI32(item);
-        }
     }
 };

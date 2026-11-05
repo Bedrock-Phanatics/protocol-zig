@@ -58,6 +58,7 @@ test "nested entity links swap only the side that matches" {
         .actor_data = .empty,
         .synched_properties = .{ .int_entries_list = .empty, .float_entries_list = .empty },
         .actor_links = .init(&links),
+        .passenger_block_data = null,
     } });
     try std.testing.expect(add.packet.add_actor.actor_links.data == .wire);
     try std.testing.expect(try actor_refs.rewrite(arena.allocator(), &add.packet, Swap{}));

@@ -12,6 +12,7 @@ pub const Packet = struct {
     target_actor_runtime_id: u64,
     data: f32,
     swing_source: ?[]const u8,
+    hand: types.HandSlot,
 
     pub const actor_refs = .{
         .target_actor_runtime_id = codec.ActorRef.runtime,
@@ -23,6 +24,7 @@ pub const Packet = struct {
         value.target_actor_runtime_id = try r.readVarU64();
         value.data = try r.readF32();
         value.swing_source = if (try r.readBool()) try r.readString() else null;
+        value.hand = try types.HandSlot.decode(r);
         return value;
     }
 
@@ -34,6 +36,7 @@ pub const Packet = struct {
         if (self.swing_source) |present| {
             try w.writeString(present);
         }
+        try self.hand.encode(w);
     }
 };
 

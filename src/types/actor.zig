@@ -135,6 +135,7 @@ pub const ActorType = enum(i32) {
     husk = 199471,
     drowned = 199534,
     zombievillagerv2 = 199540,
+    frostbite = 199579,
     arthropod = 264960,
     spider = 264995,
     silverfish = 264999,
@@ -177,6 +178,7 @@ pub const ActorType = enum(i32) {
     icebomb = 4194410,
     breezewindchargeprojectile = 4194445,
     windchargeprojectile = 4194447,
+    ice_ball = 4194460,
     abstractarrow = 8388608,
     trident = 12582985,
     arrow = 12582992,
@@ -191,5 +193,56 @@ pub const ActorType = enum(i32) {
 
     pub fn encode(self: ActorType, w: anytype) EncodeError!void {
         try w.writeVarI32(@backingInt(self));
+    }
+};
+
+/// Wire type `PassengerOfBlockArguments`.
+pub const PassengerOfBlockArguments = struct {
+    block_pos: codec.BlockPosition,
+    offset: codec.Vec3f,
+    rotation: f32,
+    rotation_limit: f32,
+    emote_type: PassengerOfBlockArgumentsEmoteType,
+
+    pub fn decode(r: *Reader) DecodeError!PassengerOfBlockArguments {
+        var value: PassengerOfBlockArguments = undefined;
+        value.block_pos = try r.readBlockPosition();
+        value.offset = try r.readVec3f();
+        value.rotation = try r.readF32();
+        if (!(value.rotation >= 0)) return error.InvalidValue;
+        if (!(value.rotation <= 360)) return error.InvalidValue;
+        value.rotation_limit = try r.readF32();
+        if (!(value.rotation_limit >= 0)) return error.InvalidValue;
+        if (!(value.rotation_limit <= 360)) return error.InvalidValue;
+        value.emote_type = try PassengerOfBlockArgumentsEmoteType.decode(r);
+        return value;
+    }
+
+    pub fn encode(self: PassengerOfBlockArguments, w: anytype) EncodeError!void {
+        try w.writeBlockPosition(self.block_pos);
+        try w.writeVec3f(self.offset);
+        if (!(self.rotation >= 0)) return error.InvalidValue;
+        if (!(self.rotation <= 360)) return error.InvalidValue;
+        try w.writeF32(self.rotation);
+        if (!(self.rotation_limit >= 0)) return error.InvalidValue;
+        if (!(self.rotation_limit <= 360)) return error.InvalidValue;
+        try w.writeF32(self.rotation_limit);
+        try self.emote_type.encode(w);
+    }
+};
+
+/// Wire type `PassengerOfBlockArguments::EmoteType`.
+pub const PassengerOfBlockArgumentsEmoteType = enum(u8) {
+    standing = 0,
+    riding = 1,
+    laying = 2,
+    _,
+
+    pub fn decode(r: *Reader) DecodeError!PassengerOfBlockArgumentsEmoteType {
+        return @fromBackingInt(@intCast(try r.readU8()));
+    }
+
+    pub fn encode(self: PassengerOfBlockArgumentsEmoteType, w: anytype) EncodeError!void {
+        try w.writeU8(@backingInt(self));
     }
 };

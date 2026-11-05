@@ -51,8 +51,7 @@ pub const StructureBlockType = enum(i32) {
 
 /// Wire type `StructureEditorData`.
 pub const StructureEditorData = struct {
-    structure_name: []const u8,
-    filtered_structure_name: []const u8,
+    structure_name: types.SafetyRedactableString,
     data_field: []const u8,
     should_include_players: bool,
     should_show_bounding_box: bool,
@@ -62,8 +61,7 @@ pub const StructureEditorData = struct {
 
     pub fn decode(r: *Reader) DecodeError!StructureEditorData {
         var value: StructureEditorData = undefined;
-        value.structure_name = try r.readString();
-        value.filtered_structure_name = try r.readString();
+        value.structure_name = try types.SafetyRedactableString.decode(r);
         value.data_field = try r.readString();
         value.should_include_players = try r.readBool();
         value.should_show_bounding_box = try r.readBool();
@@ -74,8 +72,7 @@ pub const StructureEditorData = struct {
     }
 
     pub fn encode(self: StructureEditorData, w: anytype) EncodeError!void {
-        try w.writeString(self.structure_name);
-        try w.writeString(self.filtered_structure_name);
+        try self.structure_name.encode(w);
         try w.writeString(self.data_field);
         try w.writeBool(self.should_include_players);
         try w.writeBool(self.should_show_bounding_box);

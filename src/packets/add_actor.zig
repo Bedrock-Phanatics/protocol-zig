@@ -20,6 +20,7 @@ pub const Packet = struct {
     actor_data: codec.List(types.DataItemEntry, types.DataItemEntry),
     synched_properties: types.PropertySyncData,
     actor_links: codec.List(types.EntityLink, types.EntityLink),
+    passenger_block_data: ?types.PassengerOfBlockArguments,
 
     pub const actor_refs = .{
         .target_actor_id = codec.ActorRef.unique,
@@ -49,6 +50,7 @@ pub const Packet = struct {
             const count = try r.readCount(.var_u32);
             break :blk try codec.List(types.EntityLink, types.EntityLink).decode(r, count);
         };
+        value.passenger_block_data = if (try r.readBool()) try types.PassengerOfBlockArguments.decode(r) else null;
         return value;
     }
 
@@ -68,6 +70,10 @@ pub const Packet = struct {
         try self.synched_properties.encode(w);
         try w.writeCount(.var_u32, self.actor_links.len);
         try self.actor_links.encode(w);
+        try w.writeBool(self.passenger_block_data != null);
+        if (self.passenger_block_data) |present| {
+            try present.encode(w);
+        }
     }
 };
 

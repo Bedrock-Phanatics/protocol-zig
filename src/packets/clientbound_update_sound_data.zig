@@ -9,40 +9,22 @@ const EncodeError = codec.EncodeError;
 
 pub const Packet = struct {
     server_sound_handle: u64,
-    stop: SoundDataEvent,
-    set_volume: SoundDataEvent,
-    set_pitch: SoundDataEvent,
-    fade: SoundDataEvent,
-    seek_to: SoundDataEvent,
-    pause: SoundDataEvent,
-    @"resume": SoundDataEvent,
+    event: SoundDataEvent,
 
     pub fn decode(r: *Reader) DecodeError!Packet {
         var value: Packet = undefined;
         value.server_sound_handle = try r.readU64();
-        value.stop = try SoundDataEvent.decode(r);
-        value.set_volume = try SoundDataEvent.decode(r);
-        value.set_pitch = try SoundDataEvent.decode(r);
-        value.fade = try SoundDataEvent.decode(r);
-        value.seek_to = try SoundDataEvent.decode(r);
-        value.pause = try SoundDataEvent.decode(r);
-        value.@"resume" = try SoundDataEvent.decode(r);
+        value.event = try SoundDataEvent.decode(r);
         return value;
     }
 
     pub fn encode(self: Packet, w: anytype) EncodeError!void {
         try w.writeU64(self.server_sound_handle);
-        try self.stop.encode(w);
-        try self.set_volume.encode(w);
-        try self.set_pitch.encode(w);
-        try self.fade.encode(w);
-        try self.seek_to.encode(w);
-        try self.pause.encode(w);
-        try self.@"resume".encode(w);
+        try self.event.encode(w);
     }
 };
 
-pub const SoundDataEvent = union(enum(u32)) {
+pub const SoundDataEvent = union(enum(u8)) {
     stop: SoundDataEventStop,
     set_volume: f32,
     set_pitch: f32,
@@ -52,7 +34,7 @@ pub const SoundDataEvent = union(enum(u32)) {
     @"resume": SoundDataEventResume,
 
     pub fn decode(r: *Reader) DecodeError!SoundDataEvent {
-        switch (try r.readVarU32()) {
+        switch (try r.readU8()) {
             0 => return .{ .stop = try SoundDataEventStop.decode(r) },
             1 => return .{ .set_volume = try r.readF32() },
             2 => return .{ .set_pitch = try r.readF32() },
@@ -65,7 +47,7 @@ pub const SoundDataEvent = union(enum(u32)) {
     }
 
     pub fn encode(self: SoundDataEvent, w: anytype) EncodeError!void {
-        try w.writeVarU32(@backingInt(self));
+        try w.writeU8(@backingInt(self));
         switch (self) {
             .stop => |value| {
                 try value.encode(w);

@@ -1,20 +1,14 @@
 # protocol-zig
 
 Minecraft: Bedrock Edition packet codecs for Zig: every packet of protocol
-**2193** (Minecraft **1.26.51**), decoded into typed fields and encoded back
+**2225** (Minecraft **1.26.60**), decoded into typed fields and encoded back
 byte for byte.
 
 protocol-zig supports **one stable protocol at a time**. When a new stable
 protocol ships, the library moves to it and the old one is dropped; there is
 no multi-version support.
 
-The version constants identify the pinned schema release. Mojang released
-[26.52](https://feedback.minecraft.net/hc/en-us/articles/49175370527501-Minecraft-Bedrock-Edition-26-52-Hotfix-Changelog)
-on September 25, 2026, but the current protocolgen manifest still targets
-1.26.51. Compatibility with 26.52 has not been verified against a matching
-manifest or vanilla packet capture.
-
-- **Complete:** all 231 packets have generated codecs; none are opaque payloads.
+- **Complete:** all 239 packets have generated codecs; none are opaque payloads.
 - **Zero-copy:** decoding never allocates. Strings, byte arrays, NBT and lists
   borrow the input buffer.
 - **Strict:** canonical varints and booleans only, schema bounds enforced,
@@ -233,10 +227,7 @@ and no vanilla capture has settled it yet. protocol-zig follows the schema
 `tools/differential/accepted-divergences.json`:
 
 - Event (65)
-- StructureTemplateDataResponse (133)
 - CameraInstruction spline type (300)
-- ServerboundDiagnostics (315)
-- PlayerVideoCapture action order (324)
 - CameraSpline (338)
 - ClientboundAttributeLayerSync (345)
 

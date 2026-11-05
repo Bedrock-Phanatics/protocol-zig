@@ -176,6 +176,7 @@ pub const ConnectionDisconnectFailReason = enum(i32) {
     editornotallowed = 147,
     missingstructuredata = 148,
     unsupportedtransport = 149,
+    sub_client_login_not_bound = 150,
     _,
 
     pub fn decode(r: *Reader) DecodeError!ConnectionDisconnectFailReason {
