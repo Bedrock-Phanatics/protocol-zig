@@ -1,6 +1,7 @@
 // Command codegen turns a pinned protocolgen manifest into the canonical
 // protocol-zig schema and generates Zig codecs from that schema.
 //
+//	codegen update   -manifest DIR -release V [-root DIR]  move to a protocolgen release and regenerate everything
 //	codegen ingest   -manifest DIR [-root DIR]   refresh protocol/schema/bedrock.json
 //	codegen generate [-check] [-root DIR]         write or verify the generated codecs
 //	codegen corpus   [-check] [-samples N] [-out F] write or verify tests/corpus.txt
@@ -26,18 +27,45 @@ func must(err error) {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: codegen ingest|generate|corpus|coverage|diff ...")
+		fmt.Fprintln(os.Stderr, "usage: codegen update|ingest|generate|corpus|coverage|diff ...")
 		os.Exit(2)
 	}
 	flags := flag.NewFlagSet(os.Args[1], flag.ExitOnError)
 	root := flags.String("root", ".", "repository root")
 	manifest := flags.String("manifest", "", "protocolgen checkout at the pinned revision")
+	release := flags.String("release", "", "Minecraft release under protocolgen's generated/ to move to")
 	check := flags.Bool("check", false, "fail instead of writing when output differs")
 	samples := flags.Int("samples", 1, "corpus samples per packet and direction")
 	out := flags.String("out", "", "corpus output file (default: tests/corpus.txt under -root)")
 	must(flags.Parse(os.Args[2:]))
 	schemaPath := filepath.Join(*root, "protocol", "schema", "bedrock.json")
 	switch os.Args[1] {
+	case "update":
+		if *manifest == "" || *release == "" {
+			fmt.Fprintln(os.Stderr, "update requires -manifest and -release")
+			os.Exit(2)
+		}
+		reconciliation := filepath.Join(*root, "protocol", "schema", "reconciliation.json")
+		old := loadSchema(schemaPath)
+		pin(reconciliation, *manifest, *release)
+		if code := sync(map[string]string{schemaPath: ingest(*manifest, reconciliation).encode()}, nil, false); code != 0 {
+			os.Exit(code)
+		}
+		schema := loadSchema(schemaPath)
+		files := map[string]string{}
+		for path, contents := range generate(schema, loadActorRefs(filepath.Join(*root, "protocol", "schema", "actor-refs.json"))) {
+			files[filepath.Join(*root, filepath.FromSlash(path))] = contents
+		}
+		hints := loadHints(filepath.Join(*root, "protocol", "schema", "sample-hints.json"))
+		files[filepath.Join(*root, "tests", "corpus.txt")] = corpus(schema, hints, uint64(schema.Target.ProtocolVersion), 1)
+		if code := sync(files, generatedDirs(*root), false); code != 0 {
+			os.Exit(code)
+		}
+		fmt.Print(diffSchemas(old, schema))
+		if _, err := coverage(schema); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	case "ingest":
 		if *manifest == "" {
 			fmt.Fprintln(os.Stderr, "ingest requires -manifest")

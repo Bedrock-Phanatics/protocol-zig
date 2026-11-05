@@ -14,28 +14,30 @@ reconciliation's Minecraft version and protocol number.
 
 Only stable releases are supported, and only one at a time.
 
-1. Keep the current schema to diff against: `cp protocol/schema/bedrock.json /tmp/old.json`.
-2. In `schema/reconciliation.json`, set `target`, `manifest.revision`,
-   `manifest.path` and the four `manifest.files` digests (sha256 of the
-   committed files) for the new protocolgen output.
-3. Rebuild the schema. Ingest fails on every decision that no longer matches;
-   review each one against the new evidence.
+1. Check out [protocolgen](https://github.com/cinnabar-mc/protocolgen) at the
+   commit that publishes the release under `generated/<version>`, then run:
 
    ```sh
-   go -C tools/codegen run . ingest -root ../.. -manifest /path/to/protocolgen
-   go -C tools/codegen run . diff /tmp/old.json ../../protocol/schema/bedrock.json
+   go -C tools/codegen run . update -root ../.. -manifest /path/to/protocolgen -release 1.26.60
    ```
 
-4. Regenerate (stale generated files are deleted), rebuild the corpus and
-   check coverage. Generation names every new 64-bit field missing from
-   `schema/actor-refs.json`; classify each one before continuing.
+   This pins the release in `schema/reconciliation.json` (target, revision,
+   path, digests), rebuilds `bedrock.json`, regenerates the codecs and corpus,
+   checks coverage and prints what changed on the wire.
 
-   ```sh
-   go -C tools/codegen run . generate -root ../..
-   go -C tools/codegen run . corpus -root ../..
-   go -C tools/codegen run . coverage -root ../..
-   ```
+2. If ingest stops, review each failing decision against the new evidence,
+   fix it in `schema/reconciliation.json` and run `update` again. Generation
+   names every new 64-bit field missing from `schema/actor-refs.json`; classify
+   each one. Enum restrictions are values, so recheck any whose enum gained
+   members in the middle.
 
-5. Bump the gophertunnel oracle in `tools/differential`, then run
+3. Bump the gophertunnel oracle in `tools/differential`, then run
    `go -C tools/differential run .` and `zig build test`. Every accepted
    divergence must still occur or be removed.
+
+Names stay stable across releases without decisions: types keep their previous
+name by type ID, enum values and union variants keep theirs when only the
+spelling changed, and a type that Mojang's docs and the server dump publish
+under two IDs is folded into one. New packets take their wire name without the
+`Packet` suffix. Use `type_names`, `variant_names` or `packet_names` only when
+upstream renames a type ID outright or the default reads badly.
